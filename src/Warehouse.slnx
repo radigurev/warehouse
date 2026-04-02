@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/Databases/">
+    <Project Path="Databases/Warehouse.DBModel/Warehouse.DBModel.csproj" />
+  </Folder>
+  <Folder Name="/Interfaces/">
+    <Project Path="Interfaces/Warehouse.API.Tests/Warehouse.API.Tests.csproj" />
+    <Project Path="Interfaces/Warehouse.API/Warehouse.API.csproj" />
+  </Folder>
+  <Project Path="Warehouse.Common/Warehouse.Common.csproj" />
+  <Project Path="Warehouse.GenericFiltering/Warehouse.GenericFiltering.csproj" />
+  <Project Path="Warehouse.Mapping/Warehouse.Mapping.csproj" />
+  <Project Path="Warehouse.ServiceModel/Warehouse.ServiceModel.csproj" />
+</Solution>
