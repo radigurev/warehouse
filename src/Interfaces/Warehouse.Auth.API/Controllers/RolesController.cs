@@ -1,0 +1,153 @@
+using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Warehouse.Auth.API.Interfaces;
+using Warehouse.Common.Models;
+using Warehouse.ServiceModel.DTOs.Auth;
+using Warehouse.ServiceModel.Requests.Auth;
+
+namespace Warehouse.Auth.API.Controllers;
+
+/// <summary>
+/// Handles role management: CRUD and permission assignment.
+/// <para>See <see cref="IRoleService"/>.</para>
+/// </summary>
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/roles")]
+[Authorize]
+public sealed class RolesController : BaseAuthController
+{
+    private readonly IRoleService _roleService;
+
+    /// <summary>
+    /// Initializes a new instance with the specified role service.
+    /// </summary>
+    public RolesController(IRoleService roleService)
+    {
+        _roleService = roleService;
+    }
+
+    /// <summary>
+    /// Gets all roles.
+    /// </summary>
+    [HttpGet]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(IReadOnlyList<RoleDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAllRolesAsync(CancellationToken cancellationToken)
+    {
+        Result<IReadOnlyList<RoleDto>> result = await _roleService.GetAllAsync(cancellationToken);
+        return ToActionResult(result);
+    }
+
+    /// <summary>
+    /// Gets a role by ID with its permissions.
+    /// </summary>
+    [HttpGet("{id:int}", Name = "GetRoleById")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(RoleDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetRoleByIdAsync(int id, CancellationToken cancellationToken)
+    {
+        Result<RoleDetailDto> result = await _roleService.GetByIdAsync(id, cancellationToken);
+        return ToActionResult(result);
+    }
+
+    /// <summary>
+    /// Creates a new role.
+    /// </summary>
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(RoleDetailDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> CreateRoleAsync(
+        [FromBody] CreateRoleRequest request,
+        CancellationToken cancellationToken)
+    {
+        Result<RoleDetailDto> result = await _roleService
+            .CreateAsync(request, GetIpAddress(), cancellationToken);
+
+        return ToCreatedResult(result, "GetRoleById", dto => new { id = dto.Id });
+    }
+
+    /// <summary>
+    /// Updates an existing role.
+    /// </summary>
+    [HttpPut("{id:int}")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(RoleDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> UpdateRoleAsync(
+        int id,
+        [FromBody] UpdateRoleRequest request,
+        CancellationToken cancellationToken)
+    {
+        Result<RoleDetailDto> result = await _roleService
+            .UpdateAsync(id, request, GetIpAddress(), cancellationToken);
+
+        return ToActionResult(result);
+    }
+
+    /// <summary>
+    /// Deletes a role if it is not system-protected and not assigned to users.
+    /// </summary>
+    [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> DeleteRoleAsync(int id, CancellationToken cancellationToken)
+    {
+        Result result = await _roleService.DeleteAsync(id, GetIpAddress(), cancellationToken);
+        return ToActionResult(result);
+    }
+
+    /// <summary>
+    /// Gets the permissions assigned to a role.
+    /// </summary>
+    [HttpGet("{id:int}/permissions")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(IReadOnlyList<PermissionDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetPermissionsAsync(int id, CancellationToken cancellationToken)
+    {
+        Result<IReadOnlyList<PermissionDto>> result = await _roleService.GetPermissionsAsync(id, cancellationToken);
+        return ToActionResult(result);
+    }
+
+    /// <summary>
+    /// Assigns permissions to a role.
+    /// </summary>
+    [HttpPost("{id:int}/permissions")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> AssignPermissionsAsync(
+        int id,
+        [FromBody] AssignPermissionsRequest request,
+        CancellationToken cancellationToken)
+    {
+        Result result = await _roleService
+            .AssignPermissionsAsync(id, request, GetIpAddress(), cancellationToken);
+
+        return ToActionResult(result);
+    }
+
+    /// <summary>
+    /// Removes a specific permission from a role.
+    /// </summary>
+    [HttpDelete("{id:int}/permissions/{permissionId:int}")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RemovePermissionAsync(
+        int id,
+        int permissionId,
+        CancellationToken cancellationToken)
+    {
+        Result result = await _roleService.RemovePermissionAsync(id, permissionId, GetIpAddress(), cancellationToken);
+        return ToActionResult(result);
+    }
+}
