@@ -69,7 +69,7 @@ Test classes reference spec IDs: `{TestClassName}_SDD_{DOMAIN}_{NNN}_{Descriptio
 
 | ID | Category | Title | Status |
 |---|---|---|---|
-| — | — | No specs yet — project is in scaffolding phase | — |
+| SDD-AUTH-001 | Infrastructure | Authentication and Authorization | Draft |
 
 ## Change Spec Registry
 
@@ -94,7 +94,7 @@ Test classes reference spec IDs: `{TestClassName}_SDD_{DOMAIN}_{NNN}_{Descriptio
 | `SDD-INV` | 001 |
 | `SDD-WH` | 001 |
 | `SDD-SHIP` | 001 |
-| `SDD-AUTH` | 001 |
+| `SDD-AUTH` | 002 |
 | `SDD-FILT` | 001 |
 | `SDD-OBS` | 001 |
 | `CHG-FEAT` | 001 |
