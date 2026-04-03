@@ -1,5 +1,7 @@
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Warehouse.Auth.API.Authorization;
 using Warehouse.Common.Models;
 
 namespace Warehouse.Auth.API.Controllers;
@@ -60,6 +62,16 @@ public abstract class BaseAuthController : ControllerBase
             ?? User.FindFirstValue("sub");
 
         return int.Parse(sub!);
+    }
+
+    /// <summary>
+    /// Checks whether the current user has the specified permission.
+    /// </summary>
+    protected async Task<bool> HasPermissionAsync(string permission, CancellationToken cancellationToken)
+    {
+        IAuthorizationService authService = HttpContext.RequestServices.GetRequiredService<IAuthorizationService>();
+        AuthorizationResult result = await authService.AuthorizeAsync(User, null, new PermissionRequirement(permission));
+        return result.Succeeded;
     }
 
     private ObjectResult ToProblemResult(string errorCode, string errorMessage, int statusCode)

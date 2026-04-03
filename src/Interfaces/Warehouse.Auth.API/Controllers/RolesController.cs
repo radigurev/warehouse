@@ -1,6 +1,6 @@
 using Asp.Versioning;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Warehouse.Auth.API.Authorization;
 using Warehouse.Auth.API.Interfaces;
 using Warehouse.Common.Models;
 using Warehouse.ServiceModel.DTOs.Auth;
@@ -14,7 +14,6 @@ namespace Warehouse.Auth.API.Controllers;
 /// </summary>
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/roles")]
-[Authorize]
 public sealed class RolesController : BaseAuthController
 {
     private readonly IRoleService _roleService;
@@ -31,7 +30,7 @@ public sealed class RolesController : BaseAuthController
     /// Gets all roles.
     /// </summary>
     [HttpGet]
-    [Authorize(Roles = "Admin")]
+    [RequirePermission("roles:read")]
     [ProducesResponseType(typeof(IReadOnlyList<RoleDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAllRolesAsync(CancellationToken cancellationToken)
     {
@@ -43,7 +42,7 @@ public sealed class RolesController : BaseAuthController
     /// Gets a role by ID with its permissions.
     /// </summary>
     [HttpGet("{id:int}", Name = "GetRoleById")]
-    [Authorize(Roles = "Admin")]
+    [RequirePermission("roles:read")]
     [ProducesResponseType(typeof(RoleDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetRoleByIdAsync(int id, CancellationToken cancellationToken)
@@ -56,7 +55,7 @@ public sealed class RolesController : BaseAuthController
     /// Creates a new role.
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [RequirePermission("roles:write")]
     [ProducesResponseType(typeof(RoleDetailDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
@@ -74,7 +73,7 @@ public sealed class RolesController : BaseAuthController
     /// Updates an existing role.
     /// </summary>
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [RequirePermission("roles:update")]
     [ProducesResponseType(typeof(RoleDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
@@ -93,7 +92,7 @@ public sealed class RolesController : BaseAuthController
     /// Deletes a role if it is not system-protected and not assigned to users.
     /// </summary>
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [RequirePermission("roles:delete")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -108,7 +107,7 @@ public sealed class RolesController : BaseAuthController
     /// Gets the permissions assigned to a role.
     /// </summary>
     [HttpGet("{id:int}/permissions")]
-    [Authorize(Roles = "Admin")]
+    [RequirePermission("roles:read")]
     [ProducesResponseType(typeof(IReadOnlyList<PermissionDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetPermissionsAsync(int id, CancellationToken cancellationToken)
@@ -121,7 +120,7 @@ public sealed class RolesController : BaseAuthController
     /// Assigns permissions to a role.
     /// </summary>
     [HttpPost("{id:int}/permissions")]
-    [Authorize(Roles = "Admin")]
+    [RequirePermission("roles:update")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> AssignPermissionsAsync(
@@ -139,7 +138,7 @@ public sealed class RolesController : BaseAuthController
     /// Removes a specific permission from a role.
     /// </summary>
     [HttpDelete("{id:int}/permissions/{permissionId:int}")]
-    [Authorize(Roles = "Admin")]
+    [RequirePermission("roles:update")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RemovePermissionAsync(

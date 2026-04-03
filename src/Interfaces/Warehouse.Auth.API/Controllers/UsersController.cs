@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Warehouse.Auth.API.Authorization;
 using Warehouse.Auth.API.Interfaces;
 using Warehouse.Common.Models;
 using Warehouse.ServiceModel.DTOs.Auth;
@@ -32,7 +33,7 @@ public sealed class UsersController : BaseAuthController
     /// Gets a paginated list of active users.
     /// </summary>
     [HttpGet]
-    [Authorize(Roles = "Admin")]
+    [RequirePermission("users:read")]
     [ProducesResponseType(typeof(PaginatedResponse<UserDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
@@ -52,7 +53,7 @@ public sealed class UsersController : BaseAuthController
     /// Gets a user by ID.
     /// </summary>
     [HttpGet("{id:int}", Name = "GetUserById")]
-    [Authorize(Roles = "Admin")]
+    [RequirePermission("users:read")]
     [ProducesResponseType(typeof(UserDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetUserByIdAsync(int id, CancellationToken cancellationToken)
@@ -65,7 +66,7 @@ public sealed class UsersController : BaseAuthController
     /// Creates a new user.
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [RequirePermission("users:write")]
     [ProducesResponseType(typeof(UserDetailDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
@@ -83,7 +84,7 @@ public sealed class UsersController : BaseAuthController
     /// Updates a user's profile fields.
     /// </summary>
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [RequirePermission("users:update")]
     [ProducesResponseType(typeof(UserDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
@@ -102,7 +103,7 @@ public sealed class UsersController : BaseAuthController
     /// Deactivates (soft-deletes) a user.
     /// </summary>
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [RequirePermission("users:delete")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeactivateUserAsync(int id, CancellationToken cancellationToken)
@@ -112,18 +113,27 @@ public sealed class UsersController : BaseAuthController
     }
 
     /// <summary>
-    /// Changes a user's password after verifying the current one.
+    /// Changes a user's password. Allowed for own user or users with users:update permission.
     /// </summary>
     [HttpPut("{id:int}/password")]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ChangePasswordAsync(
         int id,
         [FromBody] ChangePasswordRequest request,
         CancellationToken cancellationToken)
     {
+        int currentUserId = GetCurrentUserId();
+        if (currentUserId != id)
+        {
+            bool hasPermission = await HasPermissionAsync("users:update", cancellationToken);
+            if (!hasPermission)
+                return Forbid();
+        }
+
         Result result = await _userService
             .ChangePasswordAsync(id, request, GetIpAddress(), cancellationToken);
 
@@ -134,7 +144,7 @@ public sealed class UsersController : BaseAuthController
     /// Gets the roles assigned to a user.
     /// </summary>
     [HttpGet("{id:int}/roles")]
-    [Authorize(Roles = "Admin")]
+    [RequirePermission("users:read")]
     [ProducesResponseType(typeof(IReadOnlyList<RoleDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetUserRolesAsync(int id, CancellationToken cancellationToken)
@@ -147,7 +157,7 @@ public sealed class UsersController : BaseAuthController
     /// Assigns roles to a user.
     /// </summary>
     [HttpPost("{id:int}/roles")]
-    [Authorize(Roles = "Admin")]
+    [RequirePermission("users:update")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> AssignRolesAsync(
@@ -165,7 +175,7 @@ public sealed class UsersController : BaseAuthController
     /// Removes a specific role from a user.
     /// </summary>
     [HttpDelete("{id:int}/roles/{roleId:int}")]
-    [Authorize(Roles = "Admin")]
+    [RequirePermission("users:update")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RemoveRoleAsync(int id, int roleId, CancellationToken cancellationToken)

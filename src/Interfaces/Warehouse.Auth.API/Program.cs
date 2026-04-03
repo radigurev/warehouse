@@ -8,6 +8,8 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using NLog;
 using NLog.Web;
+using Microsoft.AspNetCore.Authorization;
+using Warehouse.Auth.API.Authorization;
 using Warehouse.Auth.API.Configuration;
 using Warehouse.Auth.API.Interfaces;
 using Warehouse.Auth.API.Middleware;
@@ -107,6 +109,9 @@ static void ConfigureAuthentication(IServiceCollection services, IConfiguration 
     });
 
     services.AddAuthorization();
+
+    services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+    services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 }
 
 static void ConfigureApiVersioning(IServiceCollection services)

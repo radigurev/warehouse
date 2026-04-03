@@ -14,6 +14,13 @@ public sealed class DatabaseSeeder
     private readonly IPasswordHasher _passwordHasher;
     private readonly ILogger<DatabaseSeeder> _logger;
 
+    private static readonly string[][] DefaultPermissions =
+    [
+        ["users", "read"], ["users", "write"], ["users", "update"], ["users", "delete"],
+        ["roles", "read"], ["roles", "write"], ["roles", "update"], ["roles", "delete"],
+        ["audit", "read"]
+    ];
+
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
@@ -25,11 +32,12 @@ public sealed class DatabaseSeeder
     }
 
     /// <summary>
-    /// Ensures the Admin role and default admin user exist in the database.
+    /// Ensures the Admin role, default permissions, and admin user exist in the database.
     /// </summary>
     public async Task SeedAsync(CancellationToken cancellationToken)
     {
         Role adminRole = await SeedAdminRoleAsync(cancellationToken).ConfigureAwait(false);
+        await SeedPermissionsAsync(adminRole, cancellationToken).ConfigureAwait(false);
         await SeedAdminUserAsync(adminRole, cancellationToken).ConfigureAwait(false);
     }
 
@@ -54,6 +62,36 @@ public sealed class DatabaseSeeder
         _logger.LogInformation("Seeded Admin role with ID {RoleId}", adminRole.Id);
 
         return adminRole;
+    }
+
+    private async Task SeedPermissionsAsync(Role adminRole, CancellationToken cancellationToken)
+    {
+        foreach (string[] pair in DefaultPermissions)
+        {
+            string resource = pair[0];
+            string action = pair[1];
+
+            bool exists = await _context.Permissions
+                .AnyAsync(p => p.Resource == resource && p.Action == action, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (exists)
+                continue;
+
+            Permission permission = new() { Resource = resource, Action = action };
+            _context.Permissions.Add(permission);
+            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+            bool alreadyAssigned = await _context.RolePermissions
+                .AnyAsync(rp => rp.RoleId == adminRole.Id && rp.PermissionId == permission.Id, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (!alreadyAssigned)
+                _context.RolePermissions.Add(new RolePermission { RoleId = adminRole.Id, PermissionId = permission.Id });
+        }
+
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        _logger.LogInformation("Seeded {Count} default permissions for Admin role", DefaultPermissions.Length);
     }
 
     private async Task SeedAdminUserAsync(Role adminRole, CancellationToken cancellationToken)

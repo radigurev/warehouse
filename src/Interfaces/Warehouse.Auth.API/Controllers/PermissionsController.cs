@@ -1,6 +1,6 @@
 using Asp.Versioning;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Warehouse.Auth.API.Authorization;
 using Warehouse.Auth.API.Interfaces;
 using Warehouse.Common.Models;
 using Warehouse.ServiceModel.DTOs.Auth;
@@ -14,7 +14,7 @@ namespace Warehouse.Auth.API.Controllers;
 /// </summary>
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/permissions")]
-[Authorize]
+[RequirePermission("roles:read")]
 public sealed class PermissionsController : BaseAuthController
 {
     private readonly IPermissionService _permissionService;
@@ -31,7 +31,6 @@ public sealed class PermissionsController : BaseAuthController
     /// Gets all permissions.
     /// </summary>
     [HttpGet]
-    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(IReadOnlyList<PermissionDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAllPermissionsAsync(CancellationToken cancellationToken)
     {
@@ -43,7 +42,7 @@ public sealed class PermissionsController : BaseAuthController
     /// Creates a new permission.
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [RequirePermission("roles:write")]
     [ProducesResponseType(typeof(PermissionDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]

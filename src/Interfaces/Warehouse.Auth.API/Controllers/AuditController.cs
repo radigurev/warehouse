@@ -1,6 +1,6 @@
 using Asp.Versioning;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Warehouse.Auth.API.Authorization;
 using Warehouse.Auth.API.Interfaces;
 using Warehouse.Common.Models;
 using Warehouse.ServiceModel.DTOs.Auth;
@@ -14,7 +14,7 @@ namespace Warehouse.Auth.API.Controllers;
 /// </summary>
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/audit")]
-[Authorize]
+[RequirePermission("audit:read")]
 public sealed class AuditController : BaseAuthController
 {
     private readonly IAuditService _auditService;
@@ -31,8 +31,7 @@ public sealed class AuditController : BaseAuthController
     /// Queries audit logs with optional filters.
     /// </summary>
     [HttpGet]
-    [Authorize(Roles = "Admin")]
-    [ProducesResponseType(typeof(PaginatedResponse<AuditLogDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(PaginatedResponse<AuditLogDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAuditLogsAsync(
         [FromQuery] string? action = null,
         [FromQuery] DateTime? fromDate = null,
@@ -51,8 +50,7 @@ public sealed class AuditController : BaseAuthController
     /// Queries audit logs for a specific user.
     /// </summary>
     [HttpGet("users/{userId:int}")]
-    [Authorize(Roles = "Admin")]
-    [ProducesResponseType(typeof(PaginatedResponse<AuditLogDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(PaginatedResponse<AuditLogDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUserAuditLogsAsync(
         int userId,
         [FromQuery] string? action = null,
