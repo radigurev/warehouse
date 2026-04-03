@@ -158,6 +158,14 @@ export default {
     },
     viewDetails: 'View Details',
   },
+  settings: {
+    title: 'Settings',
+    profile: 'Profile',
+    editProfile: 'Edit Profile',
+    security: 'Security',
+    passwordHint: 'Change your password. You will need to enter your current password for verification.',
+    profileUpdated: 'Profile updated successfully.',
+  },
   pageTitle: {
     createUser: 'Create User',
     editUser: 'Edit User',

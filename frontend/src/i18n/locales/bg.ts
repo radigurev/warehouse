@@ -158,6 +158,14 @@ export default {
     },
     viewDetails: 'Покажи детайли',
   },
+  settings: {
+    title: 'Настройки',
+    profile: 'Профил',
+    editProfile: 'Редактиране на профил',
+    security: 'Сигурност',
+    passwordHint: 'Променете паролата си. Ще трябва да въведете текущата си парола за потвърждение.',
+    profileUpdated: 'Профилът е обновен успешно.',
+  },
   pageTitle: {
     createUser: 'Създаване на потребител',
     editUser: 'Редактиране на потребител',

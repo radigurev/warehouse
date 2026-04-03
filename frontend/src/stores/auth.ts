@@ -3,14 +3,25 @@ import { ref, computed } from 'vue';
 import * as authApi from '@/api/auth';
 import type { LoginRequest } from '@/types/auth';
 
-function parseJwtRoles(token: string): string[] {
+function parseJwtPayload(token: string): Record<string, unknown> {
   try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const roles = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || payload['roles'] || [];
-    return Array.isArray(roles) ? roles : [roles];
+    return JSON.parse(atob(token.split('.')[1]));
   } catch {
-    return [];
+    return {};
   }
+}
+
+function parseJwtRoles(token: string): string[] {
+  const payload = parseJwtPayload(token);
+  const roles = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || payload['roles'] || [];
+  return Array.isArray(roles) ? (roles as string[]) : [roles as string];
+}
+
+function parseJwtUserId(token: string): number | null {
+  const payload = parseJwtPayload(token);
+  const sub = payload['sub'];
+  const id = Number(sub);
+  return id > 0 ? id : null;
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -18,6 +29,7 @@ export const useAuthStore = defineStore('auth', () => {
   const refreshTokenValue = ref<string | null>(localStorage.getItem('refreshToken'));
   const expiresAt = ref<string | null>(localStorage.getItem('expiresAt'));
   const username = ref<string | null>(localStorage.getItem('username'));
+  const userId = ref<number | null>(Number(localStorage.getItem('userId')) || null);
   const roles = ref<string[]>(JSON.parse(localStorage.getItem('roles') || '[]'));
 
   const isAuthenticated = computed(() => {
@@ -36,12 +48,14 @@ export const useAuthStore = defineStore('auth', () => {
     refreshTokenValue.value = response.refreshToken;
     expiresAt.value = response.expiresAt;
     username.value = request.username;
+    userId.value = parseJwtUserId(response.accessToken);
     roles.value = parseJwtRoles(response.accessToken);
 
     localStorage.setItem('accessToken', response.accessToken);
     localStorage.setItem('refreshToken', response.refreshToken);
     localStorage.setItem('expiresAt', response.expiresAt);
     localStorage.setItem('username', request.username);
+    localStorage.setItem('userId', String(userId.value ?? ''));
     localStorage.setItem('roles', JSON.stringify(roles.value));
   }
 
@@ -61,12 +75,14 @@ export const useAuthStore = defineStore('auth', () => {
     refreshTokenValue.value = null;
     expiresAt.value = null;
     username.value = null;
+    userId.value = null;
     roles.value = [];
 
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('expiresAt');
     localStorage.removeItem('username');
+    localStorage.removeItem('userId');
     localStorage.removeItem('roles');
   }
 
@@ -75,6 +91,7 @@ export const useAuthStore = defineStore('auth', () => {
     refreshToken: refreshTokenValue,
     expiresAt,
     username,
+    userId,
     roles,
     isAuthenticated,
     hasRefreshToken,

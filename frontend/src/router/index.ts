@@ -91,6 +91,24 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/audit/AuditView.vue'),
         meta: { titleKey: 'nav.audit', icon: 'mdi-clipboard-text-clock' },
       },
+      {
+        path: 'settings',
+        name: 'settings',
+        component: () => import('@/views/settings/SettingsView.vue'),
+        meta: { titleKey: 'settings.title', icon: 'mdi-cog' },
+      },
+      {
+        path: 'settings/edit-profile',
+        name: 'settings-edit-profile',
+        component: () => import('@/views/settings/SettingsEditProfilePage.vue'),
+        meta: { titleKey: 'settings.editProfile', icon: 'mdi-account-edit' },
+      },
+      {
+        path: 'settings/change-password',
+        name: 'settings-change-password',
+        component: () => import('@/views/settings/SettingsChangePasswordPage.vue'),
+        meta: { titleKey: 'pageTitle.changePassword', icon: 'mdi-lock-reset' },
+      },
     ],
   },
 ];

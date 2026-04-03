@@ -205,6 +205,14 @@
             <v-divider class="my-1" />
 
             <v-list-item
+              :title="t('settings.title')"
+              prepend-icon="mdi-cog"
+              @click="router.push({ name: 'settings' })"
+            />
+
+            <v-divider class="my-1" />
+
+            <v-list-item
               :title="t('app.logout')"
               prepend-icon="mdi-logout"
               base-color="error"
@@ -244,7 +252,7 @@ const adminRailExpanded = ref(true);
 
 const currentLocale = computed(() => locale.value);
 
-const formPageRoutes = ['user-create', 'user-edit', 'user-password', 'user-roles', 'role-create', 'role-edit', 'role-permissions', 'permission-create'];
+const formPageRoutes = ['user-create', 'user-edit', 'user-password', 'user-roles', 'role-create', 'role-edit', 'role-permissions', 'permission-create', 'settings-edit-profile', 'settings-change-password'];
 const isFormPage = computed(() => formPageRoutes.includes(route.name as string));
 
 const pageTitle = computed(() => {
