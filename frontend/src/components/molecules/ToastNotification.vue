@@ -2,7 +2,7 @@
   <v-snackbar
     v-model="notification.visible"
     :timeout="notification.timeout"
-    :color="isCritical ? notification.type : undefined"
+    :color="toastColor"
     :location="isCritical ? 'bottom' : 'top right'"
     :variant="isCritical ? 'flat' : 'tonal'"
     :rounded="isCritical ? undefined : 'pill'"
@@ -30,6 +30,12 @@ const { t } = useI18n();
 const notification = useNotificationStore();
 
 const isCritical = computed(() => notification.type === 'error');
+
+const toastColor = computed(() => {
+  if (isCritical.value) return 'error';
+  if (notification.type === 'warning') return 'warning';
+  return undefined;
+});
 
 const iconForType = computed(() => {
   switch (notification.type) {
