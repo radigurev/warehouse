@@ -1,5 +1,5 @@
 <template>
-  <FormWrapper v-model="visible" :mode="mode" max-width="500" @back="cancel">
+  <FormWrapper v-model="visible" :mode="mode" max-width="500" :title="t('permissions.create')" icon="mdi-key-plus" @back="cancel">
     <v-card-title class="text-h6">{{ t('permissions.create') }}</v-card-title>
 
     <v-card-text>

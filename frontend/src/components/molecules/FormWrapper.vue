@@ -1,7 +1,13 @@
 <template>
   <v-dialog v-if="mode !== 'page'" v-model="model" :max-width="maxWidth" persistent scrollable>
     <v-card class="d-flex flex-column" style="max-height: 85vh">
-      <div class="flex-grow-1 overflow-y-auto">
+      <div class="modal-header">
+        <v-icon v-if="icon" :icon="icon" class="mr-2" />
+        <span class="text-h6">{{ title }}</span>
+        <v-spacer />
+        <v-btn icon="mdi-close" variant="text" size="small" @click="model = false" />
+      </div>
+      <div class="flex-grow-1 overflow-y-auto hide-card-title">
         <slot />
       </div>
     </v-card>
@@ -28,6 +34,8 @@ const model = defineModel<boolean>({ required: true });
 const props = defineProps<{
   mode?: 'dialog' | 'page';
   maxWidth?: string | number;
+  title?: string;
+  icon?: string;
 }>();
 
 defineEmits<{
@@ -38,6 +46,19 @@ const backLabel = t('pageTitle.back');
 </script>
 
 <style scoped>
+.modal-header {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  background: #334155;
+  color: white;
+  font-size: 0.95rem;
+}
+
+.modal-header :deep(.v-btn) {
+  color: white;
+}
+
 .page-form {
   display: flex;
   flex-direction: column;
@@ -69,6 +90,15 @@ const backLabel = t('pageTitle.back');
 
 .hide-card-title :deep(.v-card-title) {
   display: none;
+}
+
+.hide-card-title :deep(.v-card-text) {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+.hide-card-title :deep(.v-card-text .v-input) {
+  margin-bottom: 6px;
 }
 
 :deep(.v-card-actions) {

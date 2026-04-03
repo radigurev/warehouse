@@ -1,5 +1,5 @@
 <template>
-  <FormWrapper v-model="visible" :mode="mode" max-width="500" @back="cancel">
+  <FormWrapper v-model="visible" :mode="mode" max-width="500" :title="isEdit ? t('roles.edit') : t('roles.create')" :icon="isEdit ? 'mdi-shield-edit' : 'mdi-shield-plus'" @back="cancel">
     <v-card-title class="text-h6">
       {{ isEdit ? t('roles.edit') : t('roles.create') }}
     </v-card-title>

@@ -1,5 +1,5 @@
 <template>
-  <FormWrapper v-model="visible" :mode="mode" max-width="450" @back="cancel">
+  <FormWrapper v-model="visible" :mode="mode" max-width="450" :title="t('users.changePassword')" icon="mdi-lock-reset" @back="cancel">
     <v-card-title class="text-h6">{{ t('users.changePassword') }}</v-card-title>
 
     <v-card-text>

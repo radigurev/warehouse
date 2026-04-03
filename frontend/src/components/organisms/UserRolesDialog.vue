@@ -1,5 +1,5 @@
 <template>
-  <FormWrapper v-model="visible" :mode="mode" max-width="600" @back="cancel">
+  <FormWrapper v-model="visible" :mode="mode" max-width="600" :title="t('users.rolesDialog.title', { name: userName })" icon="mdi-shield-account" @back="cancel">
     <v-card-title class="text-h6">
       {{ t('users.rolesDialog.title', { name: userName }) }}
     </v-card-title>
@@ -81,7 +81,7 @@ watch(visible, async (val) => {
   if (val) {
     await loadRoles();
   }
-});
+}, { immediate: true });
 
 async function loadRoles(): Promise<void> {
   loading.value = true;

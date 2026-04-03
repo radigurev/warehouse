@@ -1,5 +1,5 @@
 <template>
-  <FormWrapper v-model="visible" :mode="mode" max-width="700" @back="cancel">
+  <FormWrapper v-model="visible" :mode="mode" max-width="700" :title="t('roles.permissionsDialog.title', { name: roleName })" icon="mdi-key" @back="cancel">
     <v-card-title class="text-h6">
       {{ t('roles.permissionsDialog.title', { name: roleName }) }}
     </v-card-title>
@@ -94,7 +94,7 @@ watch(visible, async (val) => {
   if (val) {
     await loadPermissions();
   }
-});
+}, { immediate: true });
 
 async function loadPermissions(): Promise<void> {
   loading.value = true;
