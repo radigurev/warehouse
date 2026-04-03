@@ -1,6 +1,6 @@
 # SDD-AUTH-001 — Authentication and Authorization
 
-> Status: Draft
+> Status: Implemented
 > Last updated: 2026-04-03
 > Owner: TBD
 > Category: Infrastructure
@@ -68,8 +68,9 @@ This spec defines the authentication and authorization system for all Warehouse 
 - The system MUST support defining permissions as resource + action pairs (e.g., `users:read`, `inventory:write`, `orders:delete`).
 - The system MUST support assigning multiple roles to a user (M:N relationship).
 - The system MUST support assigning multiple permissions to a role (M:N relationship).
-- The system MUST enforce role-based authorization on all protected endpoints using the `roles` claim from the JWT.
-- The system SHOULD provide a middleware component that other services can reuse for authorization.
+- The system MUST enforce permission-based authorization on all protected endpoints. Permissions are checked by resolving the user's roles → role permissions from the database.
+- The system MUST provide a `[RequirePermission("resource:action")]` attribute that controllers use to declare required permissions.
+- The system MUST provide a reusable `PermissionAuthorizationHandler` middleware that other services can adopt.
 - The system MUST include a built-in `Admin` role with full permissions. This role MUST NOT be deletable.
 
 **Edge cases:**
@@ -78,12 +79,18 @@ This spec defines the authentication and authorization system for all Warehouse 
 
 ### 2.4 User Action Audit
 
-- The system MUST log all authentication events (login success, login failure, token refresh, logout).
-- The system MUST log all user management events (create, update, deactivate, password change, role assignment).
-- Each audit entry MUST record: user ID, action, resource, details (JSON), IP address, and timestamp.
+- Authentication events (login, logout, token refresh) MUST be logged via structured NLog logging (routed to Loki/Grafana). They are NOT written to the audit database table.
+- The system MUST log all user management events (create, update, deactivate, password change, role assignment) to the `auth.UserActionLogs` database table via `AuditService`.
+- Each database audit entry MUST record: user ID, action, resource, details (JSON), IP address, and timestamp.
 - Audit logs MUST be immutable — no update or delete operations.
 - The system SHOULD support querying audit logs by user ID with pagination.
 - The system MAY support filtering audit logs by action type and date range.
+
+### 2.5 Database Seeding
+
+- On startup, the system MUST create the `Admin` role (with `IsSystem = true`) if it does not exist.
+- On startup, the system MUST create a default `admin` user (username: `admin`, password: `Admin123!`) with the Admin role if no admin user exists.
+- The seed user is intended for initial setup only. The password SHOULD be changed after first login in production.
 
 ---
 
@@ -297,56 +304,87 @@ All error responses MUST use ProblemDetails (RFC 7807) format:
   - RBAC with users, roles, permissions
   - User action audit logging
   - ProblemDetails error responses
+- **v2 — Post-validation alignment (2026-04-03)** (non-breaking)
+  - Auth events moved from AuditService to NLog (Loki/Grafana)
+  - Added database seeding behavior (admin user + role)
+  - Permission-based authorization via `[RequirePermission]` attribute
+  - Updated test plan to match implemented tests
+  - Updated Key Files to reflect Data Annotations approach
+  - Status changed from Draft to Implemented
 
 ---
 
 ## 8. Test Plan
 
-### Unit Tests
+### Unit Tests — PasswordHasherTests
 
-- `Login_ValidCredentials_ReturnsTokenPair` [Unit]
-- `Login_InvalidPassword_ReturnsUnauthorized` [Unit]
-- `Login_DeactivatedUser_ReturnsUnauthorized` [Unit]
-- `Login_NonExistentUser_ReturnsUnauthorized` [Unit]
-- `RefreshToken_ValidToken_ReturnsNewTokenPair` [Unit]
-- `RefreshToken_ExpiredToken_ReturnsUnauthorized` [Unit]
-- `RefreshToken_RevokedToken_ReturnsUnauthorizedAndRevokesAll` [Unit]
-- `Logout_ValidToken_RevokesRefreshToken` [Unit]
-- `CreateUser_ValidRequest_ReturnsCreatedUser` [Unit]
-- `CreateUser_DuplicateUsername_ReturnsConflict` [Unit]
-- `CreateUser_DuplicateEmail_ReturnsConflict` [Unit]
-- `CreateUser_InvalidPassword_ReturnsValidationError` [Unit]
-- `UpdateUser_ValidRequest_ReturnsUpdatedUser` [Unit]
-- `UpdateUser_DeactivatedUser_ReturnsNotFound` [Unit]
-- `DeactivateUser_ExistingUser_SetsIsActiveFalse` [Unit]
-- `ChangePassword_ValidCurrentPassword_UpdatesHash` [Unit]
-- `ChangePassword_WrongCurrentPassword_ReturnsBadRequest` [Unit]
-- `CreateRole_ValidRequest_ReturnsCreatedRole` [Unit]
-- `CreateRole_DuplicateName_ReturnsConflict` [Unit]
-- `DeleteRole_RoleWithUsers_ReturnsConflict` [Unit]
-- `DeleteRole_AdminRole_ReturnsBadRequest` [Unit]
-- `AssignRoleToUser_ValidRole_AddsUserRole` [Unit]
-- `AssignRoleToUser_NonExistentRole_ReturnsNotFound` [Unit]
-- `CreatePermission_ValidRequest_ReturnsCreatedPermission` [Unit]
-- `CreatePermission_DuplicateResourceAction_ReturnsConflict` [Unit]
-- `AssignPermissionToRole_ValidPermission_AddsRolePermission` [Unit]
+- `Hash_ReturnsNonEmptyString` [Unit]
+- `Hash_ReturnsBCryptFormat` [Unit]
+- `Hash_SamePasswordProducesDifferentHashes` [Unit]
+- `Hash_DifferentPasswordsProduceDifferentHashes` [Unit]
+- `Verify_CorrectPassword_ReturnsTrue` [Unit]
+- `Verify_WrongPassword_ReturnsFalse` [Unit]
+- `Verify_EmptyPassword_ReturnsFalse` [Unit]
+- `Verify_CaseSensitive` [Unit]
 
-### Integration Tests
+### Unit Tests — JwtTokenServiceTests
+
+- `GenerateAccessToken_ReturnsNonEmptyToken` [Unit]
+- `GenerateAccessToken_ReturnsValidJwt` [Unit]
+- `GenerateAccessToken_ContainsSubClaim` [Unit]
+- `GenerateAccessToken_ContainsUsernameClaim` [Unit]
+- `GenerateAccessToken_ContainsEmailClaim` [Unit]
+- `GenerateAccessToken_ContainsRoleClaims` [Unit]
+- `GenerateAccessToken_ContainsJtiClaim` [Unit]
+- `GenerateAccessToken_JtiIsUniquePerCall` [Unit]
+- `GenerateAccessToken_ExpiresAtIsInFuture` [Unit]
+- `GenerateAccessToken_HasCorrectIssuer` [Unit]
+- `GenerateAccessToken_HasCorrectAudience` [Unit]
+- `GenerateAccessToken_SignatureIsValid` [Unit]
+- `GenerateAccessToken_UserWithNoRoles_HasNoRoleClaims` [Unit]
+- `GenerateRefreshToken_ReturnsNonEmptyString` [Unit]
+- `GenerateRefreshToken_IsBase64` [Unit]
+- `GenerateRefreshToken_IsUniquePerCall` [Unit]
+
+### Integration Tests — AuthControllerTests
 
 - `Login_ValidCredentials_Returns200WithTokens` [Integration]
-- `Login_InvalidCredentials_Returns401ProblemDetails` [Integration]
-- `RefreshToken_ValidToken_Returns200WithNewTokens` [Integration]
-- `CreateUser_ValidPayload_Returns201` [Integration]
-- `CreateUser_DuplicateUsername_Returns409ProblemDetails` [Integration]
-- `CreateUser_InvalidPayload_Returns400ProblemDetails` [Integration]
-- `GetUsers_Authenticated_Returns200WithPaginatedList` [Integration]
+- `Login_WrongPassword_Returns401` [Integration]
+- `Login_NonExistentUser_Returns401` [Integration]
+- `Login_EmptyBody_Returns400` [Integration]
+- `Login_DeactivatedUser_Returns401` [Integration]
+- `Refresh_ValidToken_Returns200WithNewTokens` [Integration]
+- `Refresh_OldTokenAfterRotation_Returns401` [Integration]
+- `Refresh_InvalidToken_Returns401` [Integration]
+- `Logout_ValidToken_Returns204` [Integration]
+- `Logout_RefreshTokenRevokedAfterLogout` [Integration]
+
+### Integration Tests — UsersControllerTests
+
+- `GetUsers_Authenticated_Returns200` [Integration]
 - `GetUsers_Unauthenticated_Returns401` [Integration]
-- `GetUsers_InsufficientPermissions_Returns403` [Integration]
-- `CreateRole_ValidPayload_Returns201` [Integration]
-- `DeleteRole_InUse_Returns409ProblemDetails` [Integration]
-- `AuditLog_AfterLogin_ContainsLoginEntry` [Integration]
-- `PasswordChange_ValidRequest_Returns200` [Integration]
+- `CreateUser_ValidPayload_Returns201` [Integration]
+- `CreateUser_DuplicateUsername_Returns409` [Integration]
+- `CreateUser_DuplicateEmail_Returns409` [Integration]
+- `CreateUser_InvalidPassword_Returns400` [Integration]
+- `GetUserById_ExistingUser_Returns200` [Integration]
+- `UpdateUser_ValidPayload_Returns200` [Integration]
 - `DeactivateUser_ThenLogin_Returns401` [Integration]
+- `GetUsers_InsufficientPermissions_Returns403` [Integration]
+
+### Integration Tests — RolesControllerTests
+
+- `GetRoles_Returns200` [Integration]
+- `CreateRole_ValidPayload_Returns201` [Integration]
+- `CreateRole_DuplicateName_Returns409` [Integration]
+- `DeleteRole_AdminRole_Returns400` [Integration]
+- `DeleteRole_RoleWithUsers_Returns409` [Integration]
+
+### Integration Tests — PermissionsControllerTests
+
+- `GetPermissions_Returns200` [Integration]
+- `CreatePermission_Returns201` [Integration]
+- `CreatePermission_Duplicate_Returns409` [Integration]
 
 ---
 
@@ -359,7 +397,7 @@ All error responses MUST use ProblemDetails (RFC 7807) format:
 - [ ] Passwords are hashed with BCrypt — never stored in plaintext
 - [ ] RBAC enforced: users without required permissions receive 403
 - [ ] Admin role exists by default and cannot be deleted
-- [ ] All auth and user management events are audit logged
+- [ ] Auth events logged via NLog (Loki); user management events logged to audit table
 - [ ] All error responses use ProblemDetails format
 - [ ] All validation rules enforced with appropriate error codes
 - [ ] Deactivated users cannot authenticate or be managed
@@ -380,5 +418,6 @@ All error responses MUST use ProblemDetails (RFC 7807) format:
 - `src/Databases/Warehouse.DBModel/Models/Auth/RolePermission.cs`
 - `src/Databases/Warehouse.DBModel/Models/Auth/RefreshToken.cs`
 - `src/Databases/Warehouse.DBModel/Models/Auth/UserActionLog.cs`
-- `src/Databases/Warehouse.DBModel/Configuration/Auth/UserConfiguration.cs`
+- `src/Databases/Warehouse.DBModel/WarehouseDbContext.cs`
+- `src/Interfaces/Warehouse.Auth.API/Middleware/PermissionAuthorizationHandler.cs`
 - `src/Interfaces/Warehouse.Auth.API.Tests/`

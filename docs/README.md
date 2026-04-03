@@ -69,7 +69,7 @@ Test classes reference spec IDs: `{TestClassName}_SDD_{DOMAIN}_{NNN}_{Descriptio
 
 | ID | Category | Title | Status |
 |---|---|---|---|
-| SDD-AUTH-001 | Infrastructure | Authentication and Authorization | Draft |
+| SDD-AUTH-001 | Infrastructure | Authentication and Authorization | Implemented |
 
 ## Change Spec Registry
 
