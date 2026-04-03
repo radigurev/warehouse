@@ -143,6 +143,23 @@ public sealed class UsersController : BaseAuthController
     }
 
     /// <summary>
+    /// Resets a user's password to an auto-generated value.
+    /// </summary>
+    [HttpPost("{id:int}/reset-password")]
+    [RequirePermission("users:update")]
+    [ProducesResponseType(typeof(CreateUserResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ResetPasswordAsync(
+        int id,
+        CancellationToken cancellationToken)
+    {
+        Result<CreateUserResponse> result = await _userService
+            .ResetPasswordAsync(id, GetIpAddress(), cancellationToken);
+
+        return ToActionResult(result);
+    }
+
+    /// <summary>
     /// Gets the roles assigned to a user.
     /// </summary>
     [HttpGet("{id:int}/roles")]

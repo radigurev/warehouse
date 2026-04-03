@@ -58,6 +58,7 @@ export default {
     edit: 'Edit User',
     deactivate: 'Deactivate User',
     changePassword: 'Change Password',
+    resetPassword: 'Reset Password',
     manageRoles: 'Manage Roles',
     columns: {
       username: 'Username',

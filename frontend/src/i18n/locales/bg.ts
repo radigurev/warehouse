@@ -58,6 +58,7 @@ export default {
     edit: 'Редактирай потребител',
     deactivate: 'Деактивирай потребител',
     changePassword: 'Смяна на парола',
+    resetPassword: 'Нулиране на парола',
     manageRoles: 'Управление на роли',
     columns: {
       username: 'Потребителско име',

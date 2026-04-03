@@ -215,6 +215,34 @@ public sealed class UserService : IUserService
     }
 
     /// <inheritdoc />
+    public async Task<Result<CreateUserResponse>> ResetPasswordAsync(
+        int id,
+        string? ipAddress,
+        CancellationToken cancellationToken)
+    {
+        User? user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id && u.IsActive, cancellationToken).ConfigureAwait(false);
+        if (user is null)
+            return Result<CreateUserResponse>.Failure("USER_NOT_FOUND", "User not found.", 404);
+
+        string newPassword = GeneratePassword();
+        user.PasswordHash = _passwordHasher.Hash(newPassword);
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        await _auditService.LogAsync(id, "PasswordReset", "users", null, ipAddress, cancellationToken).ConfigureAwait(false);
+
+        // TODO: Send new password to user via email when email service is available.
+        CreateUserResponse response = new()
+        {
+            Id = user.Id,
+            Username = user.Username,
+            GeneratedPassword = newPassword
+        };
+
+        return Result<CreateUserResponse>.Success(response);
+    }
+
+    /// <inheritdoc />
     public async Task<Result<IReadOnlyList<RoleDto>>> GetRolesAsync(int userId, CancellationToken cancellationToken)
     {
         User? user = await GetUserWithRolesAsync(userId, cancellationToken).ConfigureAwait(false);

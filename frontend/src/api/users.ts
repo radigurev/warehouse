@@ -27,6 +27,10 @@ export function changePassword(id: number, request: ChangePasswordRequest): Prom
   return apiClient.put(`/users/${id}/password`, request);
 }
 
+export function resetPassword(id: number): Promise<CreateUserResponse> {
+  return apiClient.post<CreateUserResponse>(`/users/${id}/reset-password`).then((r) => r.data);
+}
+
 export function getUserRoles(id: number): Promise<RoleDto[]> {
   return apiClient.get<RoleDto[]>(`/users/${id}/roles`).then((r) => r.data);
 }

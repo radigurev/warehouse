@@ -42,6 +42,11 @@ public interface IUserService
     Task<Result> ChangePasswordAsync(int id, ChangePasswordRequest request, string? ipAddress, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Resets a user's password to an auto-generated value.
+    /// </summary>
+    Task<Result<CreateUserResponse>> ResetPasswordAsync(int id, string? ipAddress, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Gets the roles assigned to a user.
     /// </summary>
     Task<Result<IReadOnlyList<RoleDto>>> GetRolesAsync(int userId, CancellationToken cancellationToken);
