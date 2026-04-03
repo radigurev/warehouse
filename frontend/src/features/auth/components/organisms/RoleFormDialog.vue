@@ -71,18 +71,21 @@ const form = reactive({
   description: '',
 });
 
-watch(visible, (val) => {
-  if (val && props.role) {
+function populateForm(): void {
+  if (visible.value && props.role) {
     isEdit.value = true;
     form.name = props.role.name;
     form.description = props.role.description || '';
-  } else if (val) {
+  } else if (visible.value) {
     isEdit.value = false;
     form.name = '';
     form.description = '';
   }
   fieldErrors.name = [];
-});
+}
+
+watch(visible, populateForm);
+watch(() => props.role, populateForm);
 
 const rules = {
   required: (v: string) => !!v || t('common.required'),

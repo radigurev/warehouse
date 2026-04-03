@@ -121,14 +121,14 @@ const form = reactive({
   lastName: '',
 });
 
-watch(visible, (val) => {
-  if (val && props.user) {
+function populateForm(): void {
+  if (visible.value && props.user) {
     isEdit.value = true;
     form.username = props.user.username;
     form.email = props.user.email;
     form.firstName = props.user.firstName;
     form.lastName = props.user.lastName;
-  } else if (val) {
+  } else if (visible.value) {
     isEdit.value = false;
     form.username = '';
     form.email = '';
@@ -137,7 +137,10 @@ watch(visible, (val) => {
   }
   fieldErrors.username = [];
   fieldErrors.email = [];
-});
+}
+
+watch(visible, populateForm);
+watch(() => props.user, populateForm);
 
 const rules = {
   required: (v: string) => !!v || t('common.required'),

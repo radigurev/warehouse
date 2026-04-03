@@ -75,14 +75,17 @@ const form = reactive({
   lastName: '',
 });
 
-watch(visible, (val) => {
-  if (val && props.user) {
+function populateForm(): void {
+  if (visible.value && props.user) {
     form.email = props.user.email;
     form.firstName = props.user.firstName;
     form.lastName = props.user.lastName;
   }
   fieldErrors.email = [];
-}, { immediate: true });
+}
+
+watch(visible, populateForm);
+watch(() => props.user, populateForm);
 
 const rules = {
   required: (v: string) => !!v || t('common.required'),
