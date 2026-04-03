@@ -2,6 +2,7 @@ using Warehouse.Common.Models;
 using Warehouse.ServiceModel.DTOs.Auth;
 using Warehouse.ServiceModel.Requests.Auth;
 using Warehouse.ServiceModel.Responses;
+using Warehouse.ServiceModel.Responses.Auth;
 
 namespace Warehouse.Auth.API.Interfaces;
 
@@ -21,9 +22,9 @@ public interface IUserService
     Task<Result<PaginatedResponse<UserDto>>> GetPaginatedAsync(int page, int pageSize, string? searchTerm, bool includeInactive, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Creates a new user.
+    /// Creates a new user. Auto-generates a password if not provided.
     /// </summary>
-    Task<Result<UserDetailDto>> CreateAsync(CreateUserRequest request, string? ipAddress, CancellationToken cancellationToken);
+    Task<Result<CreateUserResponse>> CreateAsync(CreateUserRequest request, string? ipAddress, CancellationToken cancellationToken);
 
     /// <summary>
     /// Updates an existing user's profile fields.

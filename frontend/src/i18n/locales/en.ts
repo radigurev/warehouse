@@ -75,6 +75,9 @@ export default {
       firstName: 'First Name',
       lastName: 'Last Name',
     },
+    generatedPassword: 'Generated Password',
+    generatedPasswordHint: 'Save this password now. It will not be shown again. TODO: Email notification will be sent when email service is configured.',
+    passwordCopied: 'Password copied to clipboard.',
     deactivateConfirm: 'Are you sure you want to deactivate user "{name}"? This action cannot be undone.',
     deactivateSelfWarning: 'You cannot deactivate your own account.',
     passwordForm: {

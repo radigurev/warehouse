@@ -7,6 +7,7 @@ using Warehouse.Common.Models;
 using Warehouse.ServiceModel.DTOs.Auth;
 using Warehouse.ServiceModel.Requests.Auth;
 using Warehouse.ServiceModel.Responses;
+using Warehouse.ServiceModel.Responses.Auth;
 
 namespace Warehouse.Auth.API.Controllers;
 
@@ -68,14 +69,14 @@ public sealed class UsersController : BaseAuthController
     /// </summary>
     [HttpPost]
     [RequirePermission("users:write")]
-    [ProducesResponseType(typeof(UserDetailDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(CreateUserResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CreateUserAsync(
         [FromBody] CreateUserRequest request,
         CancellationToken cancellationToken)
     {
-        Result<UserDetailDto> result = await _userService
+        Result<CreateUserResponse> result = await _userService
             .CreateAsync(request, GetIpAddress(), cancellationToken);
 
         return ToCreatedResult(result, "GetUserById", dto => new { id = dto.Id });

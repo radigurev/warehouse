@@ -1,5 +1,5 @@
 import apiClient from './client';
-import type { UserDto, UserDetailDto, CreateUserRequest, UpdateUserRequest, ChangePasswordRequest, AssignRolesRequest } from '@/types/user';
+import type { UserDto, UserDetailDto, CreateUserRequest, CreateUserResponse, UpdateUserRequest, ChangePasswordRequest, AssignRolesRequest } from '@/types/user';
 import type { RoleDto } from '@/types/role';
 import type { PaginatedResponse } from '@/types/api';
 
@@ -11,8 +11,8 @@ export function getUserById(id: number): Promise<UserDetailDto> {
   return apiClient.get<UserDetailDto>(`/users/${id}`).then((r) => r.data);
 }
 
-export function createUser(request: CreateUserRequest): Promise<UserDetailDto> {
-  return apiClient.post<UserDetailDto>('/users', request).then((r) => r.data);
+export function createUser(request: CreateUserRequest): Promise<CreateUserResponse> {
+  return apiClient.post<CreateUserResponse>('/users', request).then((r) => r.data);
 }
 
 export function updateUser(id: number, request: UpdateUserRequest): Promise<UserDetailDto> {

@@ -7,6 +7,7 @@ using Warehouse.DBModel.Models.Auth;
 using Warehouse.ServiceModel.DTOs.Auth;
 using Warehouse.ServiceModel.Requests.Auth;
 using Warehouse.ServiceModel.Responses;
+using Warehouse.ServiceModel.Responses.Auth;
 
 namespace Warehouse.Auth.API.Services;
 
@@ -86,22 +87,26 @@ public sealed class UserService : IUserService
     }
 
     /// <inheritdoc />
-    public async Task<Result<UserDetailDto>> CreateAsync(
+    public async Task<Result<CreateUserResponse>> CreateAsync(
         CreateUserRequest request,
         string? ipAddress,
         CancellationToken cancellationToken)
     {
         if (await _context.Users.AnyAsync(u => u.Username == request.Username && u.IsActive, cancellationToken).ConfigureAwait(false))
-            return Result<UserDetailDto>.Failure("DUPLICATE_USERNAME", "A user with this username already exists.", 409);
+            return Result<CreateUserResponse>.Failure("DUPLICATE_USERNAME", "A user with this username already exists.", 409);
 
         if (await _context.Users.AnyAsync(u => u.Email == request.Email && u.IsActive, cancellationToken).ConfigureAwait(false))
-            return Result<UserDetailDto>.Failure("DUPLICATE_EMAIL", "A user with this email already exists.", 409);
+            return Result<CreateUserResponse>.Failure("DUPLICATE_EMAIL", "A user with this email already exists.", 409);
+
+        string plainPassword = string.IsNullOrWhiteSpace(request.Password)
+            ? GeneratePassword()
+            : request.Password;
 
         User user = new()
         {
             Username = request.Username,
             Email = request.Email,
-            PasswordHash = _passwordHasher.Hash(request.Password),
+            PasswordHash = _passwordHasher.Hash(plainPassword),
             FirstName = request.FirstName,
             LastName = request.LastName
         };
@@ -110,9 +115,39 @@ public sealed class UserService : IUserService
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         await _auditService.LogAsync(user.Id, "CreateUser", "users", null, ipAddress, cancellationToken).ConfigureAwait(false);
 
-        User? loaded = await GetUserWithRolesAsync(user.Id, cancellationToken).ConfigureAwait(false);
-        UserDetailDto dto = _mapper.Map<UserDetailDto>(loaded!);
-        return Result<UserDetailDto>.Success(dto);
+        // TODO: Send generated password to user via email when email service is available.
+        CreateUserResponse response = new()
+        {
+            Id = user.Id,
+            Username = user.Username,
+            GeneratedPassword = plainPassword
+        };
+
+        return Result<CreateUserResponse>.Success(response);
+    }
+
+    private static string GeneratePassword()
+    {
+        const string upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const string lower = "abcdefghijklmnopqrstuvwxyz";
+        const string digits = "0123456789";
+        const string special = "!@#$%&*";
+        const string all = upper + lower + digits + special;
+
+        byte[] randomBytes = new byte[12];
+        System.Security.Cryptography.RandomNumberGenerator.Fill(randomBytes);
+
+        char[] password = new char[12];
+        password[0] = upper[randomBytes[0] % upper.Length];
+        password[1] = lower[randomBytes[1] % lower.Length];
+        password[2] = digits[randomBytes[2] % digits.Length];
+        password[3] = special[randomBytes[3] % special.Length];
+
+        for (int i = 4; i < 12; i++)
+            password[i] = all[randomBytes[i] % all.Length];
+
+        System.Random.Shared.Shuffle(password);
+        return new string(password);
     }
 
     /// <inheritdoc />

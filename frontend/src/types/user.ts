@@ -25,9 +25,14 @@ export interface UserDetailDto {
 export interface CreateUserRequest {
   username: string;
   email: string;
-  password: string;
   firstName: string;
   lastName: string;
+}
+
+export interface CreateUserResponse {
+  id: number;
+  username: string;
+  generatedPassword: string;
 }
 
 export interface UpdateUserRequest {

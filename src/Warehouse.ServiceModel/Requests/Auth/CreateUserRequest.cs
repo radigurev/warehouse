@@ -16,9 +16,9 @@ public sealed record CreateUserRequest
     public required string Email { get; init; }
 
     /// <summary>
-    /// Gets the password.
+    /// Gets the password. If null or empty, a password is auto-generated.
     /// </summary>
-    public required string Password { get; init; }
+    public string? Password { get; init; }
 
     /// <summary>
     /// Gets the first name.

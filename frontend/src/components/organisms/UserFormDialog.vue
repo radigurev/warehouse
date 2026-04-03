@@ -26,17 +26,6 @@
         />
 
         <v-text-field
-          v-if="!isEdit"
-          v-model="form.password"
-          :label="t('users.form.password')"
-          prepend-inner-icon="mdi-lock"
-          :type="showPassword ? 'text' : 'password'"
-          :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
-          :rules="[rules.required, rules.passwordLength, rules.passwordComplexity]"
-          @click:append-inner="showPassword = !showPassword"
-        />
-
-        <v-text-field
           v-model="form.firstName"
           :label="t('users.form.firstName')"
           prepend-inner-icon="mdi-badge-account-horizontal"
@@ -60,6 +49,32 @@
       </v-btn>
     </v-card-actions>
   </FormWrapper>
+
+  <v-dialog v-model="showPasswordDialog" max-width="450" persistent>
+    <v-card>
+      <v-card-title class="text-h6">
+        <v-icon icon="mdi-shield-key" class="mr-2" />
+        {{ t('users.generatedPassword') }}
+      </v-card-title>
+      <v-card-text>
+        <v-alert type="warning" variant="tonal" density="compact" class="mb-4">
+          {{ t('users.generatedPasswordHint') }}
+        </v-alert>
+        <v-text-field
+          :model-value="generatedPassword"
+          :label="t('users.form.password')"
+          prepend-inner-icon="mdi-lock"
+          append-inner-icon="mdi-content-copy"
+          readonly
+          @click:append-inner="copyPassword"
+        />
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer />
+        <v-btn color="primary" variant="flat" @click="closePasswordDialog">{{ t('common.close') }}</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup lang="ts">
@@ -90,7 +105,8 @@ const emit = defineEmits<{
 const isEdit = ref(false);
 const formRef = ref();
 const loading = ref(false);
-const showPassword = ref(false);
+const showPasswordDialog = ref(false);
+const generatedPassword = ref('');
 const fieldErrors = reactive<Record<string, string[]>>({
   username: [],
   email: [],
@@ -99,7 +115,6 @@ const fieldErrors = reactive<Record<string, string[]>>({
 const form = reactive({
   username: '',
   email: '',
-  password: '',
   firstName: '',
   lastName: '',
 });
@@ -111,12 +126,10 @@ watch(visible, (val) => {
     form.email = props.user.email;
     form.firstName = props.user.firstName;
     form.lastName = props.user.lastName;
-    form.password = '';
   } else if (val) {
     isEdit.value = false;
     form.username = '';
     form.email = '';
-    form.password = '';
     form.firstName = '';
     form.lastName = '';
   }
@@ -130,9 +143,6 @@ const rules = {
   usernameFormat: (v: string) => /^[a-zA-Z0-9_]+$/.test(v) || t('validation.usernameFormat'),
   emailFormat: (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || t('validation.emailInvalid'),
   emailLength: (v: string) => v.length <= 256 || t('validation.emailLength'),
-  passwordLength: (v: string) => v.length >= 8 || t('validation.passwordLength'),
-  passwordComplexity: (v: string) =>
-    (/[a-z]/.test(v) && /[A-Z]/.test(v) && /\d/.test(v)) || t('validation.passwordComplexity'),
   firstNameLength: (v: string) => v.length <= 100 || t('validation.firstNameLength'),
   lastNameLength: (v: string) => v.length <= 100 || t('validation.lastNameLength'),
 };
@@ -150,18 +160,19 @@ async function handleSubmit(): Promise<void> {
         lastName: form.lastName,
       });
       notification.success(t('users.edit') + ' ✓');
+      visible.value = false;
+      emit('saved');
     } else {
-      await createUser({
+      const response = await createUser({
         username: form.username,
         email: form.email,
-        password: form.password,
         firstName: form.firstName,
         lastName: form.lastName,
       });
-      notification.success(t('users.create') + ' ✓');
+      generatedPassword.value = response.generatedPassword;
+      visible.value = false;
+      showPasswordDialog.value = true;
     }
-    visible.value = false;
-    emit('saved');
   } catch (err) {
     handleApiError(err as AxiosError<ProblemDetails>);
   } finally {
@@ -182,6 +193,17 @@ function handleApiError(err: AxiosError<ProblemDetails>): void {
   } else {
     notification.error(t('errors.UNEXPECTED_ERROR'));
   }
+}
+
+function copyPassword(): void {
+  navigator.clipboard.writeText(generatedPassword.value);
+  notification.success(t('users.passwordCopied'));
+}
+
+function closePasswordDialog(): void {
+  showPasswordDialog.value = false;
+  generatedPassword.value = '';
+  emit('saved');
 }
 
 function cancel(): void {
