@@ -1,5 +1,5 @@
 <template>
-  <FormWrapper v-model="visible" :mode="mode" max-width="700">
+  <FormWrapper v-model="visible" :mode="mode" max-width="700" @back="cancel">
     <v-card-title class="text-h6">
       {{ t('roles.permissionsDialog.title', { name: roleName }) }}
     </v-card-title>

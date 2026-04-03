@@ -1,19 +1,14 @@
 <template>
-  <div>
-    <v-btn variant="text" prepend-icon="mdi-arrow-left" class="mb-4" @click="goBack">
-      {{ t('pageTitle.back') }}
-    </v-btn>
-    <PermissionFormDialog v-model="visible" mode="page" @saved="goBack" @cancelled="goBack" />
+  <div class="d-flex flex-column" style="flex: 1; overflow: hidden">
+    <PermissionFormDialog v-model="visible" mode="page" @saved="goBack" @cancelled="goBack" @back="goBack" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
 import PermissionFormDialog from '@/components/organisms/PermissionFormDialog.vue';
 
-const { t } = useI18n();
 const router = useRouter();
 const visible = ref(true);
 

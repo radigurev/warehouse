@@ -1,9 +1,6 @@
 <template>
-  <div>
-    <v-btn variant="text" prepend-icon="mdi-arrow-left" class="mb-4" @click="goBack">
-      {{ t('pageTitle.back') }}
-    </v-btn>
-    <UserFormDialog v-model="visible" mode="page" @saved="goBack" @cancelled="goBack" />
+  <div class="d-flex flex-column" style="flex: 1; overflow: hidden">
+    <UserFormDialog v-model="visible" mode="page" @saved="goBack" @cancelled="goBack" @back="goBack" />
   </div>
 </template>
 

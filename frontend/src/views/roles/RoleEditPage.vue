@@ -1,15 +1,12 @@
 <template>
-  <div>
-    <v-btn variant="text" prepend-icon="mdi-arrow-left" class="mb-4" @click="goBack">
-      {{ t('pageTitle.back') }}
-    </v-btn>
-    <v-alert v-if="notFound" type="warning" variant="tonal" class="mb-4">
+  <div class="d-flex flex-column" style="flex: 1; overflow: hidden">
+    <v-alert v-if="notFound" type="warning" variant="tonal" class="ma-4">
       {{ t('pageTitle.notFoundMessage') }}
       <template #append>
         <v-btn variant="text" @click="goBack">{{ t('pageTitle.back') }}</v-btn>
       </template>
     </v-alert>
-    <RoleFormDialog v-else v-model="visible" :role="role" mode="page" @saved="goBack" @cancelled="goBack" />
+    <RoleFormDialog v-else v-model="visible" :role="role" mode="page" @saved="goBack" @cancelled="goBack" @back="goBack" />
   </div>
 </template>
 

@@ -1,19 +1,14 @@
 <template>
-  <div>
-    <v-btn variant="text" prepend-icon="mdi-arrow-left" class="mb-4" @click="goBack">
-      {{ t('pageTitle.back') }}
-    </v-btn>
-    <ChangePasswordDialog v-model="visible" :user-id="userId" mode="page" @saved="goBack" @cancelled="goBack" />
+  <div class="d-flex flex-column" style="flex: 1; overflow: hidden">
+    <ChangePasswordDialog v-model="visible" :user-id="userId" mode="page" @saved="goBack" @cancelled="goBack" @back="goBack" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { useI18n } from 'vue-i18n';
 import ChangePasswordDialog from '@/components/organisms/ChangePasswordDialog.vue';
 
-const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 const visible = ref(true);

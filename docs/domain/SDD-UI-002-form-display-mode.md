@@ -61,15 +61,24 @@ The modal mode preserves the existing behavior defined in `SDD-UI-001` and imple
 
 - When `formDisplayMode` is `'modal'`, all form interactions MUST open as Vuetify `v-dialog` overlays on the current list page.
 - This MUST preserve the exact behavior defined in `SDD-UI-001` Sections 2.3, 2.4, and 2.5: action chips on list rows open the corresponding dialog component.
+- Modal dialogs MUST be scrollable (`scrollable` prop) with a max height of `85vh` to prevent overflow on small screens.
+- The modal footer MUST have a dark background matching the sidebar color (`#334155`) with white button text, consistent with page mode.
 - Closing a dialog (via cancel, save, or backdrop click) MUST return focus to the list page without navigation.
 - The URL MUST NOT change when a modal dialog opens or closes.
 
 ### 2.4 Page Mode Behavior
 
 - When `formDisplayMode` is `'page'`, all form interactions MUST navigate to a dedicated route page instead of opening a dialog.
-- Each page-mode form MUST display inside a `v-card` centered on the page (not inside a `v-dialog`).
-- Each page-mode form MUST include a back button that navigates the user back to the originating list page.
-- The back button MUST use `router.back()` if navigation history exists, or fall back to the parent list route (e.g., `/users`, `/roles`, `/permissions`) if the user navigated directly to the form URL.
+- Each page-mode form MUST display inside a flat, full-width `v-card` with no border-radius that fills the available viewport (not centered with a max-width like the modal).
+- The page form card title MUST be hidden — the app bar already shows the page title dynamically via route meta.
+- The `v-container` padding MUST be removed for form page routes so the form stretches edge-to-edge.
+- The form page MUST use flexbox layout to fill `v-main` without causing vertical overflow or inactive scrollbars.
+- Each page-mode form MUST include a back button bar at the top of the form (above the form fields, below the app bar) with an arrow-left icon and translated "Back" label.
+- The back button MUST navigate to the parent list route (e.g., `/users`, `/roles`, `/permissions`).
+- The form footer (card-actions) MUST be pinned to the bottom of the viewport using `margin-top: auto` within the flex layout.
+- The form footer MUST have a dark background matching the sidebar color (`#334155`) with white button text.
+- The form footer MUST NOT have rounded corners in page mode.
+- The form content area (`v-card-text`) MUST have top padding (`24px`) to prevent the first input's outline from being clipped by the back bar.
 - On successful form submission (create or edit), the SPA MUST navigate back to the originating list page.
 - On cancel, the SPA MUST navigate back to the originating list page without submitting changes.
 - The app bar page title (per `CHG-ENH-001` Section 2.2) MUST update to reflect the form action (e.g., "Create User", "Edit Role", "Change Password").
@@ -176,6 +185,14 @@ All error rules from `SDD-UI-001` Section 4 (E1 through E17) remain in effect an
 
 ## 5. Versioning Notes
 
+- **v2 -- Page mode layout refinements (2026-04-03)** (non-breaking)
+  - Page mode: full-width flat card, no border-radius, hidden card title
+  - Back button moved to top bar above form fields (not in footer)
+  - Footer pinned to bottom with dark sidebar-colored background
+  - Container padding removed for form page routes
+  - Modal mode: scrollable with 85vh max, dark footer
+  - Form content top padding to prevent input clipping
+  - FormWrapper molecule handles all dialog/page rendering logic
 - **v1 -- Initial specification (2026-04-03)**
   - Defines form display mode feature: modal vs page rendering for all CRUD forms
   - Adds `formDisplayMode` to Pinia layout store with `localStorage` persistence

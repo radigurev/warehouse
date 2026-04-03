@@ -1,20 +1,15 @@
 <template>
-  <div>
-    <v-btn variant="text" prepend-icon="mdi-arrow-left" class="mb-4" @click="goBack">
-      {{ t('pageTitle.back') }}
-    </v-btn>
-    <UserRolesDialog v-model="visible" :user-id="userId" :user-name="userName" mode="page" @cancelled="goBack" />
+  <div class="d-flex flex-column" style="flex: 1; overflow: hidden">
+    <UserRolesDialog v-model="visible" :user-id="userId" :user-name="userName" mode="page" @cancelled="goBack" @back="goBack" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { useI18n } from 'vue-i18n';
 import { getUserById } from '@/api/users';
 import UserRolesDialog from '@/components/organisms/UserRolesDialog.vue';
 
-const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 const visible = ref(true);

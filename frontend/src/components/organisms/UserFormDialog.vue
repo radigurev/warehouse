@@ -1,5 +1,5 @@
 <template>
-  <FormWrapper v-model="visible" :mode="mode" max-width="550">
+  <FormWrapper v-model="visible" :mode="mode" max-width="550" @back="cancel">
     <v-card-title class="text-h6">
       {{ isEdit ? t('users.edit') : t('users.create') }}
     </v-card-title>

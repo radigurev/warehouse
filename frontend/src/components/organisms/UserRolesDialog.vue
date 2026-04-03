@@ -1,5 +1,5 @@
 <template>
-  <FormWrapper v-model="visible" :mode="mode" max-width="600">
+  <FormWrapper v-model="visible" :mode="mode" max-width="600" @back="cancel">
     <v-card-title class="text-h6">
       {{ t('users.rolesDialog.title', { name: userName }) }}
     </v-card-title>

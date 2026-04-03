@@ -1,20 +1,15 @@
 <template>
-  <div>
-    <v-btn variant="text" prepend-icon="mdi-arrow-left" class="mb-4" @click="goBack">
-      {{ t('pageTitle.back') }}
-    </v-btn>
-    <RolePermissionsDialog v-model="visible" :role-id="roleId" :role-name="roleName" mode="page" @cancelled="goBack" />
+  <div class="d-flex flex-column" style="flex: 1; overflow: hidden">
+    <RolePermissionsDialog v-model="visible" :role-id="roleId" :role-name="roleName" mode="page" @cancelled="goBack" @back="goBack" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { useI18n } from 'vue-i18n';
 import { getRoleById } from '@/api/roles';
 import RolePermissionsDialog from '@/components/organisms/RolePermissionsDialog.vue';
 
-const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 const visible = ref(true);

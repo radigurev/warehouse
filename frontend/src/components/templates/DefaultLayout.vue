@@ -215,10 +215,11 @@
       </v-menu>
     </v-app-bar>
 
-    <v-main :class="layout.isCompact ? 'main-compact' : 'main-comfortable'">
-      <v-container :fluid="layout.isCompact">
+    <v-main :class="isFormPage ? 'main-form-page' : (layout.isCompact ? 'main-compact' : 'main-comfortable')">
+      <v-container v-if="!isFormPage" :fluid="layout.isCompact">
         <router-view />
       </v-container>
+      <router-view v-else />
     </v-main>
 
     <ToastNotification />
@@ -242,6 +243,9 @@ const drawerOpen = ref(true);
 const adminRailExpanded = ref(true);
 
 const currentLocale = computed(() => locale.value);
+
+const formPageRoutes = ['user-create', 'user-edit', 'user-password', 'user-roles', 'role-create', 'role-edit', 'role-permissions', 'permission-create'];
+const isFormPage = computed(() => formPageRoutes.includes(route.name as string));
 
 const pageTitle = computed(() => {
   const titleKey = route.meta.titleKey as string | undefined;
@@ -271,6 +275,18 @@ async function handleLogout(): Promise<void> {
 
 .main-comfortable {
   overflow-y: auto;
+}
+
+.main-form-page {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden !important;
+}
+
+.main-form-page :deep(.v-main__wrap) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .sidebar-nav :deep(.v-list-item--active) {
