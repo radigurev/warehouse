@@ -1,6 +1,6 @@
 # Warehouse — Project Instructions
 
-> Last updated: 2026-04-02
+> Last updated: 2026-04-03
 
 ---
 
@@ -56,7 +56,8 @@ CLAUDE.md > persona-database > persona-dotnet8-microservices > csharp-persona > 
 - **Validation:** FluentValidation (to be added)
 - **PK strategy:** INT IDENTITY (or GUID with `NEWSEQUENTIALID()` if GUID is chosen)
 - **API versioning:** URL-based (`/api/v1/`)
-- **Authentication:** TBD (to be decided during first feature implementation)
+- **Authentication:** JWT-based with RBAC (implemented in Warehouse.Auth.API)
+- **Frontend:** Vue.js 3 SPA (Single Page Application) with Composition API, TypeScript, Vue Router, Pinia state management
 
 ### Configuration File Policy
 
@@ -104,9 +105,9 @@ If a request is outside scope, contradicts a spec, or is ambiguous — **STOP an
 
 ## 1. Project Purpose
 
-Warehouse Management System (WMS) — a monorepo containing .NET 8 backend microservices and a Vue.js frontend (frontend to be added later). The system will manage warehouse operations including inventory, storage locations, inbound/outbound shipments, and related workflows.
+Warehouse Management System (WMS) — a monorepo containing .NET 8 backend microservices and a Vue.js Single Page Application (SPA) frontend. The system will manage warehouse operations including inventory, storage locations, inbound/outbound shipments, and related workflows.
 
-**Architecture:** Monorepo with multiple backend microservices sharing common libraries, and a single Vue.js frontend application.
+**Architecture:** Monorepo with multiple backend microservices sharing common libraries, and a single Vue.js SPA frontend that consumes the backend REST APIs.
 
 ---
 
@@ -124,7 +125,7 @@ Warehouse/
 │   ├── infrastructure/                            ← Cross-cutting concern specs
 │   └── changes/
 │       └── _TEMPLATE.md
-├── frontend/                                      ← Vue.js app (to be added)
+├── frontend/                                      ← Vue.js 3 SPA (Single Page Application)
 ├── src/
 │   ├── Warehouse.slnx                             ← .NET 8 solution
 │   ├── Databases/
@@ -187,7 +188,14 @@ No endpoints defined yet. The default template endpoints exist but will be repla
 
 ## 5. Authentication & Authorization
 
-TBD — to be decided during first feature implementation.
+JWT-based authentication with RBAC (Role-Based Access Control). Implemented in `Warehouse.Auth.API`.
+
+- **Access tokens:** JWT signed with HMAC-SHA256, 30-minute expiration
+- **Refresh tokens:** Opaque random strings stored in DB, 7-day expiration, rotation on use
+- **Authorization:** Permission-based via `[RequirePermission("resource:action")]` attribute
+- **Password hashing:** BCrypt
+- **Audit:** Immutable `UserActionLogs` table for all user management events
+- **Spec:** `docs/infrastructure/SDD-AUTH-001-authentication-and-authorization.md`
 
 ---
 
@@ -202,7 +210,7 @@ None yet. Will be added as needed (e.g., Hosted Services for async processing).
 None yet. Planned integrations:
 
 - ERP system (details TBD)
-- Vue.js frontend (planned, not yet created)
+- Vue.js 3 SPA frontend (consuming backend REST APIs)
 
 ---
 
