@@ -354,7 +354,7 @@ All error responses MUST use ProblemDetails (RFC 7807) format:
 - `Login_EmptyBody_Returns400` [Integration]
 - `Login_DeactivatedUser_Returns401` [Integration]
 - `Refresh_ValidToken_Returns200WithNewTokens` [Integration]
-- `Refresh_OldTokenAfterRotation_Returns401` [Integration]
+- `Refresh_OldTokenAfterRotation_RejectsRequest` [Integration]
 - `Refresh_InvalidToken_Returns401` [Integration]
 - `Logout_ValidToken_Returns204` [Integration]
 - `Logout_RefreshTokenRevokedAfterLogout` [Integration]
@@ -369,8 +369,8 @@ All error responses MUST use ProblemDetails (RFC 7807) format:
 - `CreateUser_InvalidPassword_Returns400` [Integration]
 - `GetUserById_ExistingUser_Returns200` [Integration]
 - `UpdateUser_ValidPayload_Returns200` [Integration]
-- `DeactivateUser_ThenLogin_Returns401` [Integration]
-- `GetUsers_InsufficientPermissions_Returns403` [Integration]
+- `DeactivateUser_Returns204` [Integration]
+- `DeactivatedUser_CannotLogin` [Integration]
 
 ### Integration Tests — RolesControllerTests
 
@@ -419,5 +419,5 @@ All error responses MUST use ProblemDetails (RFC 7807) format:
 - `src/Databases/Warehouse.DBModel/Models/Auth/RefreshToken.cs`
 - `src/Databases/Warehouse.DBModel/Models/Auth/UserActionLog.cs`
 - `src/Databases/Warehouse.DBModel/WarehouseDbContext.cs`
-- `src/Interfaces/Warehouse.Auth.API/Middleware/PermissionAuthorizationHandler.cs`
+- `src/Interfaces/Warehouse.Auth.API/Authorization/PermissionAuthorizationHandler.cs`
 - `src/Interfaces/Warehouse.Auth.API.Tests/`
