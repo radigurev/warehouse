@@ -6,13 +6,31 @@ export default {
       compact: 'Компактен изглед',
       comfortable: 'Удобен изглед',
     },
+    userMenu: {
+      language: 'Език',
+      display: 'Изглед',
+    },
   },
   nav: {
     dashboard: 'Табло',
+    admin: 'Администрация',
     users: 'Потребители',
     roles: 'Роли',
     permissions: 'Права',
     audit: 'Одит',
+  },
+  filter: {
+    operator: 'Тип филтър',
+    value: 'Стойност',
+    apply: 'Приложи',
+    clear: 'Изчисти',
+    operators: {
+      contains: 'Съдържа',
+      startsWith: 'Започва с',
+      endsWith: 'Завършва с',
+      equals: 'Равно на',
+      notEquals: 'Различно от',
+    },
   },
   login: {
     title: 'Вход',

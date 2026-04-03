@@ -1,7 +1,6 @@
 <template>
   <div>
     <div class="d-flex align-center mb-4">
-      <h1 class="text-h4">{{ t('users.title') }}</h1>
       <v-spacer />
       <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreateDialog">
         {{ t('users.create') }}
@@ -11,16 +10,42 @@
     <v-card>
       <v-data-table
         :headers="headers"
-        :items="users"
+        :items="filteredItems"
         :loading="loading"
         :density="layout.vuetifyDensity"
         :items-per-page="25"
         hover
       >
+        <template #header.username="{ column }">
+          <div class="d-inline-flex align-center">
+            {{ column.title }}
+            <ColumnFilter v-model="columnFilters.username" column-key="username" />
+          </div>
+        </template>
+
+        <template #header.email="{ column }">
+          <div class="d-inline-flex align-center">
+            {{ column.title }}
+            <ColumnFilter v-model="columnFilters.email" column-key="email" />
+          </div>
+        </template>
+
+        <template #header.firstName="{ column }">
+          <div class="d-inline-flex align-center">
+            {{ column.title }}
+            <ColumnFilter v-model="columnFilters.firstName" column-key="firstName" />
+          </div>
+        </template>
+
+        <template #header.lastName="{ column }">
+          <div class="d-inline-flex align-center">
+            {{ column.title }}
+            <ColumnFilter v-model="columnFilters.lastName" column-key="lastName" />
+          </div>
+        </template>
+
         <template #item.isActive="{ item }">
-          <v-chip :color="item.isActive ? 'success' : 'grey'" size="small" variant="flat">
-            {{ item.isActive ? t('common.active') : t('common.inactive') }}
-          </v-chip>
+          <StatusChip :active="item.isActive" />
         </template>
 
         <template #item.createdAt="{ item }">
@@ -28,39 +53,17 @@
         </template>
 
         <template #item.actions="{ item }">
-          <v-btn icon="mdi-pencil" size="small" variant="text" @click="openEditDialog(item)" :title="t('common.edit')" />
-          <v-btn icon="mdi-lock-reset" size="small" variant="text" @click="openPasswordDialog(item)" :title="t('users.changePassword')" />
-          <v-btn icon="mdi-shield-account" size="small" variant="text" @click="openRolesDialog(item)" :title="t('users.manageRoles')" />
-          <v-btn
-            v-if="item.isActive"
-            icon="mdi-account-off"
-            size="small"
-            variant="text"
-            color="error"
-            @click="openDeactivateDialog(item)"
-            :title="t('users.deactivate')"
-          />
+          <ActionChip :label="t('common.edit')" icon="mdi-pencil" color="primary" :compact="layout.isCompact" @click="openEditDialog(item)" />
+          <ActionChip :label="t('users.changePassword')" icon="mdi-lock-reset" color="info" :compact="layout.isCompact" @click="openPasswordDialog(item)" />
+          <ActionChip :label="t('users.manageRoles')" icon="mdi-shield-account" color="accent" :compact="layout.isCompact" @click="openRolesDialog(item)" />
+          <ActionChip v-if="item.isActive" :label="t('users.deactivate')" icon="mdi-account-off" color="error" :compact="layout.isCompact" @click="openDeactivateDialog(item)" />
         </template>
       </v-data-table>
     </v-card>
 
-    <UserFormDialog
-      v-model="showFormDialog"
-      :user="selectedUser"
-      @saved="loadUsers"
-    />
-
-    <ChangePasswordDialog
-      v-model="showPasswordDialog"
-      :user-id="selectedUser?.id ?? 0"
-    />
-
-    <UserRolesDialog
-      v-model="showRolesDialog"
-      :user-id="selectedUser?.id ?? 0"
-      :user-name="selectedUser?.username ?? ''"
-    />
-
+    <UserFormDialog v-model="showFormDialog" :user="selectedUser" @saved="loadUsers" />
+    <ChangePasswordDialog v-model="showPasswordDialog" :user-id="selectedUser?.id ?? 0" />
+    <UserRolesDialog v-model="showRolesDialog" :user-id="selectedUser?.id ?? 0" :user-name="selectedUser?.username ?? ''" />
     <ConfirmDialog
       v-model="showDeactivateDialog"
       :title="t('users.deactivate')"
@@ -80,12 +83,16 @@ import { useI18n } from 'vue-i18n';
 import { useLayoutStore } from '@/stores/layout';
 import { useAuthStore } from '@/stores/auth';
 import { useNotificationStore } from '@/stores/notification';
+import { useColumnFilters } from '@/composables/useColumnFilters';
 import { getUsers, deactivateUser } from '@/api/users';
 import type { UserDto } from '@/types/user';
-import UserFormDialog from '@/components/users/UserFormDialog.vue';
-import ChangePasswordDialog from '@/components/users/ChangePasswordDialog.vue';
-import UserRolesDialog from '@/components/users/UserRolesDialog.vue';
-import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
+import StatusChip from '@/components/atoms/StatusChip.vue';
+import ActionChip from '@/components/atoms/ActionChip.vue';
+import ColumnFilter from '@/components/molecules/ColumnFilter.vue';
+import UserFormDialog from '@/components/organisms/UserFormDialog.vue';
+import ChangePasswordDialog from '@/components/organisms/ChangePasswordDialog.vue';
+import UserRolesDialog from '@/components/organisms/UserRolesDialog.vue';
+import ConfirmDialog from '@/components/molecules/ConfirmDialog.vue';
 
 const { t, locale } = useI18n();
 const layout = useLayoutStore();
@@ -101,6 +108,8 @@ const showRolesDialog = ref(false);
 const showDeactivateDialog = ref(false);
 const deactivating = ref(false);
 
+const { columnFilters, filteredItems } = useColumnFilters(users, ['username', 'email', 'firstName', 'lastName']);
+
 const headers = computed(() => [
   { title: t('users.columns.username'), key: 'username', sortable: true },
   { title: t('users.columns.email'), key: 'email', sortable: true },
@@ -108,7 +117,7 @@ const headers = computed(() => [
   { title: t('users.columns.lastName'), key: 'lastName', sortable: true },
   { title: t('users.columns.isActive'), key: 'isActive', sortable: true },
   { title: t('users.columns.createdAt'), key: 'createdAt', sortable: true },
-  { title: t('users.columns.actions'), key: 'actions', sortable: false, align: 'end' as const },
+  { title: t('users.columns.actions'), key: 'actions', sortable: false, align: 'end' as const, minWidth: '340px' },
 ]);
 
 onMounted(() => loadUsers());
@@ -116,7 +125,8 @@ onMounted(() => loadUsers());
 async function loadUsers(): Promise<void> {
   loading.value = true;
   try {
-    users.value = await getUsers();
+    const response = await getUsers();
+    users.value = response.items;
   } catch {
     notification.error(t('errors.UNEXPECTED_ERROR'));
   } finally {

@@ -8,6 +8,7 @@
           <v-text-field
             v-model="form.resource"
             :label="t('permissions.form.resource')"
+            prepend-inner-icon="mdi-cube-outline"
             :rules="[rules.required, rules.resourceFormat, rules.resourceLength]"
             :error-messages="fieldErrors.resource"
             @update:model-value="fieldErrors.resource = []"
@@ -18,6 +19,7 @@
           <v-select
             v-model="form.action"
             :label="t('permissions.form.action')"
+            prepend-inner-icon="mdi-cog"
             :items="actionItems"
             :rules="[rules.required]"
           />
@@ -25,6 +27,7 @@
           <v-textarea
             v-model="form.description"
             :label="t('permissions.form.description')"
+            prepend-inner-icon="mdi-text"
             :rules="[rules.descriptionLength]"
             rows="2"
             variant="outlined"

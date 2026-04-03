@@ -11,6 +11,7 @@
             v-if="!isEdit"
             v-model="form.username"
             :label="t('users.form.username')"
+            prepend-inner-icon="mdi-account"
             :rules="[rules.required, rules.usernameLength, rules.usernameFormat]"
             :error-messages="fieldErrors.username"
             @update:model-value="fieldErrors.username = []"
@@ -19,6 +20,7 @@
           <v-text-field
             v-model="form.email"
             :label="t('users.form.email')"
+            prepend-inner-icon="mdi-email"
             :rules="[rules.required, rules.emailFormat, rules.emailLength]"
             :error-messages="fieldErrors.email"
             @update:model-value="fieldErrors.email = []"
@@ -28,6 +30,7 @@
             v-if="!isEdit"
             v-model="form.password"
             :label="t('users.form.password')"
+            prepend-inner-icon="mdi-lock"
             :type="showPassword ? 'text' : 'password'"
             :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
             :rules="[rules.required, rules.passwordLength, rules.passwordComplexity]"
@@ -37,12 +40,14 @@
           <v-text-field
             v-model="form.firstName"
             :label="t('users.form.firstName')"
+            prepend-inner-icon="mdi-badge-account-horizontal"
             :rules="[rules.required, rules.firstNameLength]"
           />
 
           <v-text-field
             v-model="form.lastName"
             :label="t('users.form.lastName')"
+            prepend-inner-icon="mdi-badge-account"
             :rules="[rules.required, rules.lastNameLength]"
           />
         </v-form>

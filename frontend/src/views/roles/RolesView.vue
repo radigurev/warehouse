@@ -1,7 +1,6 @@
 <template>
   <div>
     <div class="d-flex align-center mb-4">
-      <h1 class="text-h4">{{ t('roles.title') }}</h1>
       <v-spacer />
       <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreateDialog">
         {{ t('roles.create') }}
@@ -11,12 +10,19 @@
     <v-card>
       <v-data-table
         :headers="headers"
-        :items="roles"
+        :items="filteredItems"
         :loading="loading"
         :density="layout.vuetifyDensity"
         :items-per-page="25"
         hover
       >
+        <template #header.name="{ column }">
+          <div class="d-inline-flex align-center">
+            {{ column.title }}
+            <ColumnFilter v-model="columnFilters.name" column-key="name" />
+          </div>
+        </template>
+
         <template #item.isSystem="{ item }">
           <v-chip v-if="item.isSystem" color="warning" size="small" variant="flat">
             {{ t('roles.system') }}
@@ -24,33 +30,15 @@
         </template>
 
         <template #item.actions="{ item }">
-          <v-btn icon="mdi-pencil" size="small" variant="text" @click="openEditDialog(item)" :title="t('common.edit')" />
-          <v-btn icon="mdi-key" size="small" variant="text" @click="openPermissionsDialog(item)" :title="t('roles.managePermissions')" />
-          <v-btn
-            v-if="!item.isSystem"
-            icon="mdi-delete"
-            size="small"
-            variant="text"
-            color="error"
-            @click="openDeleteDialog(item)"
-            :title="t('roles.delete')"
-          />
+          <ActionChip :label="t('common.edit')" icon="mdi-pencil" color="primary" :compact="layout.isCompact" @click="openEditDialog(item)" />
+          <ActionChip :label="t('roles.managePermissions')" icon="mdi-key" color="accent" :compact="layout.isCompact" @click="openPermissionsDialog(item)" />
+          <ActionChip v-if="!item.isSystem" :label="t('common.delete')" icon="mdi-delete" color="error" :compact="layout.isCompact" @click="openDeleteDialog(item)" />
         </template>
       </v-data-table>
     </v-card>
 
-    <RoleFormDialog
-      v-model="showFormDialog"
-      :role="selectedRole"
-      @saved="loadRoles"
-    />
-
-    <RolePermissionsDialog
-      v-model="showPermissionsDialog"
-      :role-id="selectedRole?.id ?? 0"
-      :role-name="selectedRole?.name ?? ''"
-    />
-
+    <RoleFormDialog v-model="showFormDialog" :role="selectedRole" @saved="loadRoles" />
+    <RolePermissionsDialog v-model="showPermissionsDialog" :role-id="selectedRole?.id ?? 0" :role-name="selectedRole?.name ?? ''" />
     <ConfirmDialog
       v-model="showDeleteDialog"
       :title="t('roles.delete')"
@@ -69,13 +57,16 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useLayoutStore } from '@/stores/layout';
 import { useNotificationStore } from '@/stores/notification';
+import { useColumnFilters } from '@/composables/useColumnFilters';
 import { getRoles, deleteRole } from '@/api/roles';
 import type { RoleDto } from '@/types/role';
 import type { AxiosError } from 'axios';
 import type { ProblemDetails } from '@/types/api';
-import RoleFormDialog from '@/components/roles/RoleFormDialog.vue';
-import RolePermissionsDialog from '@/components/roles/RolePermissionsDialog.vue';
-import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
+import ActionChip from '@/components/atoms/ActionChip.vue';
+import ColumnFilter from '@/components/molecules/ColumnFilter.vue';
+import RoleFormDialog from '@/components/organisms/RoleFormDialog.vue';
+import RolePermissionsDialog from '@/components/organisms/RolePermissionsDialog.vue';
+import ConfirmDialog from '@/components/molecules/ConfirmDialog.vue';
 
 const { t } = useI18n();
 const layout = useLayoutStore();
@@ -89,11 +80,13 @@ const showPermissionsDialog = ref(false);
 const showDeleteDialog = ref(false);
 const deleting = ref(false);
 
+const { columnFilters, filteredItems } = useColumnFilters(roles, ['name']);
+
 const headers = computed(() => [
   { title: t('roles.columns.name'), key: 'name', sortable: true },
   { title: t('roles.columns.description'), key: 'description', sortable: false },
   { title: t('roles.columns.isSystem'), key: 'isSystem', sortable: true },
-  { title: t('roles.columns.actions'), key: 'actions', sortable: false, align: 'end' as const },
+  { title: t('roles.columns.actions'), key: 'actions', sortable: false, align: 'end' as const, minWidth: '280px' },
 ]);
 
 onMounted(() => loadRoles());

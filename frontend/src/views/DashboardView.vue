@@ -1,7 +1,5 @@
 <template>
   <div>
-    <h1 class="text-h4 mb-6">{{ t('dashboard.title') }}</h1>
-
     <v-alert type="info" variant="tonal" class="mb-6" icon="mdi-hand-wave">
       {{ t('dashboard.welcome', { name: auth.username }) }}
     </v-alert>
@@ -61,13 +59,13 @@ const stats = ref({ users: 0, roles: 0, permissions: 0 });
 
 onMounted(async () => {
   try {
-    const [users, roles, permissions] = await Promise.all([
+    const [usersResponse, roles, permissions] = await Promise.all([
       getUsers(),
       getRoles(),
       getPermissions(),
     ]);
     stats.value = {
-      users: users.length,
+      users: usersResponse.totalCount,
       roles: roles.length,
       permissions: permissions.length,
     };

@@ -18,26 +18,43 @@ const vuetify = createVuetify({
     themes: {
       light: {
         colors: {
-          primary: '#1565C0',
-          secondary: '#455A64',
-          accent: '#0288D1',
-          error: '#D32F2F',
-          warning: '#F57C00',
-          info: '#0288D1',
-          success: '#388E3C',
+          primary: '#6366F1',
+          secondary: '#94A3B8',
+          accent: '#A78BFA',
+          error: '#EF4444',
+          warning: '#FBBF24',
+          info: '#60A5FA',
+          success: '#34D399',
+          surface: '#F8FAFC',
         },
       },
     },
   },
   defaults: {
+    VBtn: {
+      rounded: 'pill',
+    },
     VTextField: {
       variant: 'outlined',
+      rounded: 'lg',
     },
     VSelect: {
       variant: 'outlined',
+      rounded: 'lg',
     },
     VAutocomplete: {
       variant: 'outlined',
+      rounded: 'lg',
+    },
+    VTextarea: {
+      variant: 'outlined',
+      rounded: 'lg',
+    },
+    VCard: {
+      rounded: 'lg',
+    },
+    VChip: {
+      rounded: 'pill',
     },
   },
 });

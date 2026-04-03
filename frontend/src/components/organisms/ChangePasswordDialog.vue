@@ -8,6 +8,7 @@
           <v-text-field
             v-model="form.currentPassword"
             :label="t('users.passwordForm.currentPassword')"
+            prepend-inner-icon="mdi-lock"
             type="password"
             :rules="[rules.required]"
             :error-messages="fieldErrors.currentPassword"
@@ -17,6 +18,7 @@
           <v-text-field
             v-model="form.newPassword"
             :label="t('users.passwordForm.newPassword')"
+            prepend-inner-icon="mdi-lock-reset"
             :type="showNew ? 'text' : 'password'"
             :append-inner-icon="showNew ? 'mdi-eye-off' : 'mdi-eye'"
             :rules="[rules.required, rules.passwordLength, rules.passwordComplexity]"

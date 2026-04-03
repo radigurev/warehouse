@@ -6,13 +6,31 @@ export default {
       compact: 'Compact View',
       comfortable: 'Comfortable View',
     },
+    userMenu: {
+      language: 'Language',
+      display: 'Display',
+    },
   },
   nav: {
     dashboard: 'Dashboard',
+    admin: 'Administration',
     users: 'Users',
     roles: 'Roles',
     permissions: 'Permissions',
     audit: 'Audit Logs',
+  },
+  filter: {
+    operator: 'Filter type',
+    value: 'Filter value',
+    apply: 'Apply',
+    clear: 'Clear',
+    operators: {
+      contains: 'Contains',
+      startsWith: 'Starts with',
+      endsWith: 'Ends with',
+      equals: 'Equals',
+      notEquals: 'Not equals',
+    },
   },
   login: {
     title: 'Sign In',

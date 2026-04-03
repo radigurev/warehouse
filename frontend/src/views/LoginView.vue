@@ -1,9 +1,9 @@
 <template>
   <v-app>
     <v-main class="d-flex align-center justify-center" style="min-height: 100vh; background: #f5f5f5">
-      <v-card width="420" class="pa-6" elevation="8" rounded="lg">
+      <v-card width="420" class="pa-6" elevation="8">
         <div class="text-center mb-6">
-          <v-icon icon="mdi-warehouse" size="64" color="blue-darken-3" />
+          <v-icon icon="mdi-warehouse" size="64" color="primary" />
           <h1 class="text-h5 mt-3">{{ t('login.title') }}</h1>
           <p class="text-body-2 text-grey mt-1">{{ t('login.subtitle') }}</p>
         </div>
@@ -41,7 +41,7 @@
 
           <v-btn
             type="submit"
-            color="blue-darken-3"
+            color="primary"
             block
             size="large"
             :loading="loading"

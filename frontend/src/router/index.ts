@@ -10,33 +10,38 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/',
-    component: () => import('@/layouts/DefaultLayout.vue'),
+    component: () => import('@/components/templates/DefaultLayout.vue'),
     meta: { requiresAuth: true },
     children: [
       {
         path: '',
         name: 'dashboard',
         component: () => import('@/views/DashboardView.vue'),
+        meta: { titleKey: 'nav.dashboard', icon: 'mdi-view-dashboard' },
       },
       {
         path: 'users',
         name: 'users',
         component: () => import('@/views/users/UsersView.vue'),
+        meta: { titleKey: 'nav.users', icon: 'mdi-account-group' },
       },
       {
         path: 'roles',
         name: 'roles',
         component: () => import('@/views/roles/RolesView.vue'),
+        meta: { titleKey: 'nav.roles', icon: 'mdi-shield-account' },
       },
       {
         path: 'permissions',
         name: 'permissions',
         component: () => import('@/views/permissions/PermissionsView.vue'),
+        meta: { titleKey: 'nav.permissions', icon: 'mdi-key' },
       },
       {
         path: 'audit',
         name: 'audit',
         component: () => import('@/views/audit/AuditView.vue'),
+        meta: { titleKey: 'nav.audit', icon: 'mdi-clipboard-text-clock' },
       },
     ],
   },

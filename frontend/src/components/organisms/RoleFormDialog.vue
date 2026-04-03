@@ -10,6 +10,7 @@
           <v-text-field
             v-model="form.name"
             :label="t('roles.form.name')"
+            prepend-inner-icon="mdi-shield-account"
             :rules="[rules.required, rules.nameLength]"
             :error-messages="fieldErrors.name"
             @update:model-value="fieldErrors.name = []"
@@ -18,6 +19,7 @@
           <v-textarea
             v-model="form.description"
             :label="t('roles.form.description')"
+            prepend-inner-icon="mdi-text"
             :rules="[rules.descriptionLength]"
             rows="3"
             variant="outlined"
