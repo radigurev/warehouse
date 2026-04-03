@@ -149,10 +149,15 @@ public sealed class AuthService : IAuthService
         string? ipAddress,
         CancellationToken cancellationToken)
     {
-        await _context.RefreshTokens
+        List<RefreshToken> activeTokens = await _context.RefreshTokens
             .Where(rt => rt.UserId == storedToken.UserId && !rt.RevokedAt.HasValue)
-            .ExecuteUpdateAsync(s => s.SetProperty(rt => rt.RevokedAt, DateTime.UtcNow), cancellationToken)
+            .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
+
+        foreach (RefreshToken token in activeTokens)
+            token.RevokedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         _logger.LogWarning("Token theft detected for user {UserId} from {IpAddress} — all tokens revoked",
             storedToken.UserId, ipAddress);
