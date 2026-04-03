@@ -77,6 +77,7 @@ Test classes reference spec IDs: `{TestClassName}_SDD_{DOMAIN}_{NNN}_{Descriptio
 | ID | Title | Affected System Specs | Status |
 |---|---|---|---|
 | CHG-ENH-001 | Auth SPA UI Redesign | SDD-UI-001 | Implemented |
+| CHG-ENH-002 | Audit UX and Navigation Improvements | SDD-UI-001, SDD-AUTH-001 | Implemented |
 
 ## Status Legend
 
@@ -100,7 +101,7 @@ Test classes reference spec IDs: `{TestClassName}_SDD_{DOMAIN}_{NNN}_{Descriptio
 | `SDD-FILT` | 001 |
 | `SDD-OBS` | 001 |
 | `CHG-FEAT` | 001 |
-| `CHG-ENH` | 001 |
+| `CHG-ENH` | 003 |
 | `CHG-FIX` | 001 |
 | `CHG-REFAC` | 001 |
 | `CHG-DEBT` | 001 |
