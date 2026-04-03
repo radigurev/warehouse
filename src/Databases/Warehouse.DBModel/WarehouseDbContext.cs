@@ -70,6 +70,9 @@ public sealed class WarehouseDbContext : DbContext
             u.Property(e => e.IsActive).HasDefaultValue(true);
             u.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
             u.Property(e => e.UpdatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+            u.HasIndex(e => e.IsActive)
+                .HasDatabaseName("IX_Users_IsActive")
+                .HasFilter("[IsActive] = 1");
         });
 
         modelBuilder.Entity<Role>(r =>
