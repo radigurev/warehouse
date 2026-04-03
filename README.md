@@ -13,7 +13,7 @@ Warehouse Management System — .NET 8 microservices backend with Vue.js fronten
 
 | # | Service | Schema | Status |
 |---|---|---|---|
-| 1 | Auth | `auth` | In progress |
+| 1 | Auth | `auth` | Implemented |
 | 2 | Customers | `customers` | Planned |
 | 3 | Inventory | `inventory` | Planned |
 | 4 | Orders | `orders` | Planned |
@@ -49,7 +49,7 @@ Warehouse/
 2. Copy `appsettings.json.template` to `appsettings.json` and fill in your connection string and JWT secret
 3. Run migrations or create the database
 4. `dotnet run --project src/Interfaces/Warehouse.Auth.API`
-5. Swagger UI at `http://localhost:5122/swagger`
+5. Swagger UI at `http://localhost:5206/swagger`
 
 ## Configuration
 
