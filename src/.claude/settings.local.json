@@ -6,7 +6,17 @@
       "Bash(npm --version)",
       "Bash(npm install:*)",
       "Bash(npx vue-tsc:*)",
-      "Bash(npx vite:*)"
+      "Bash(npx vite:*)",
+      "Bash(dotnet run:*)",
+      "Bash(npm run:*)",
+      "Bash(curl:*)",
+      "Bash(mkdir -p src/components/organisms src/components/templates)",
+      "Bash(cp src/components/common/ConfirmDialog.vue src/components/molecules/ConfirmDialog.vue)",
+      "Bash(cp src/components/users/UserFormDialog.vue src/components/organisms/UserFormDialog.vue)",
+      "Bash(cp src/components/users/ChangePasswordDialog.vue src/components/organisms/ChangePasswordDialog.vue)",
+      "Bash(cp src/components/users/UserRolesDialog.vue src/components/organisms/UserRolesDialog.vue)",
+      "Bash(rm:*)",
+      "Bash(dotnet build:*)"
     ]
   }
 }

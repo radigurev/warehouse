@@ -33,6 +33,7 @@ public sealed class AuditController : BaseAuthController
     [HttpGet]
         [ProducesResponseType(typeof(PaginatedResponse<AuditLogDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAuditLogsAsync(
+        [FromQuery] int? userId = null,
         [FromQuery] string? action = null,
         [FromQuery] DateTime? fromDate = null,
         [FromQuery] DateTime? toDate = null,
@@ -41,7 +42,7 @@ public sealed class AuditController : BaseAuthController
         CancellationToken cancellationToken = default)
     {
         Result<PaginatedResponse<AuditLogDto>> result = await _auditService
-            .GetLogsAsync(null, action, fromDate, toDate, page, pageSize, cancellationToken);
+            .GetLogsAsync(userId, action, fromDate, toDate, page, pageSize, cancellationToken);
 
         return ToActionResult(result);
     }

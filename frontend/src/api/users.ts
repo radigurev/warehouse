@@ -1,9 +1,10 @@
 import apiClient from './client';
 import type { UserDto, UserDetailDto, CreateUserRequest, UpdateUserRequest, ChangePasswordRequest, AssignRolesRequest } from '@/types/user';
 import type { RoleDto } from '@/types/role';
+import type { PaginatedResponse } from '@/types/api';
 
-export function getUsers(page: number = 1, pageSize: number = 25): Promise<UserDto[]> {
-  return apiClient.get<UserDto[]>('/users', { params: { page, pageSize } }).then((r) => r.data);
+export function getUsers(page: number = 1, pageSize: number = 25, includeInactive: boolean = false): Promise<PaginatedResponse<UserDto>> {
+  return apiClient.get<PaginatedResponse<UserDto>>('/users', { params: { page, pageSize, includeInactive } }).then((r) => r.data);
 }
 
 export function getUserById(id: number): Promise<UserDetailDto> {

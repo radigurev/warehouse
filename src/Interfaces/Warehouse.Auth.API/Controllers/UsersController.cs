@@ -30,7 +30,7 @@ public sealed class UsersController : BaseAuthController
     }
 
     /// <summary>
-    /// Gets a paginated list of active users.
+    /// Gets a paginated list of users. Set includeInactive to true to include deactivated users.
     /// </summary>
     [HttpGet]
     [RequirePermission("users:read")]
@@ -41,10 +41,11 @@ public sealed class UsersController : BaseAuthController
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string? search = null,
+        [FromQuery] bool includeInactive = false,
         CancellationToken cancellationToken = default)
     {
         Result<PaginatedResponse<UserDto>> result = await _userService
-            .GetPaginatedAsync(page, pageSize, search, cancellationToken);
+            .GetPaginatedAsync(page, pageSize, search, includeInactive, cancellationToken);
 
         return ToActionResult(result);
     }

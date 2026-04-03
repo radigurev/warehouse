@@ -16,9 +16,9 @@ public interface IUserService
     Task<Result<UserDetailDto>> GetByIdAsync(int id, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Gets a paginated list of active users.
+    /// Gets a paginated list of users. When <paramref name="includeInactive"/> is false, only active users are returned.
     /// </summary>
-    Task<Result<PaginatedResponse<UserDto>>> GetPaginatedAsync(int page, int pageSize, string? searchTerm, CancellationToken cancellationToken);
+    Task<Result<PaginatedResponse<UserDto>>> GetPaginatedAsync(int page, int pageSize, string? searchTerm, bool includeInactive, CancellationToken cancellationToken);
 
     /// <summary>
     /// Creates a new user.

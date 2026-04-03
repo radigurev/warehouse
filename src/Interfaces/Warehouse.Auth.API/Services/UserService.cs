@@ -52,9 +52,13 @@ public sealed class UserService : IUserService
         int page,
         int pageSize,
         string? searchTerm,
+        bool includeInactive,
         CancellationToken cancellationToken)
     {
-        IQueryable<User> query = _context.Users.AsNoTracking().Where(u => u.IsActive);
+        IQueryable<User> query = _context.Users.AsNoTracking();
+
+        if (!includeInactive)
+            query = query.Where(u => u.IsActive);
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
             query = query.Where(u => u.Username.Contains(searchTerm) || u.Email.Contains(searchTerm));
