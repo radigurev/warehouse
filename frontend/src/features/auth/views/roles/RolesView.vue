@@ -2,57 +2,58 @@
   <div>
     <div class="d-flex align-center mb-4">
       <v-spacer />
-      <v-btn color="primary" prepend-icon="mdi-plus" @click="handleCreate">
-        {{ t('roles.create') }}
+      <v-btn color="primary" prepend-icon="mdi-plus" @click="vm.handleCreate">
+        {{ vm.t('roles.create') }}
       </v-btn>
     </div>
 
     <v-card>
       <v-data-table
-        :headers="headers"
-        :items="filteredItems"
-        :loading="loading"
-        :density="layout.vuetifyDensity"
+        :headers="vm.headers"
+        :items="vm.filteredItems"
+        :loading="vm.loading"
+        :density="vm.layout.vuetifyDensity"
         :items-per-page="25"
         hover
       >
         <template #header.name="{ column }">
           <div class="d-inline-flex align-center">
             {{ column.title }}
-            <ColumnFilter v-model="columnFilters.name" column-key="name" />
+            <ColumnFilter v-model="vm.columnFilters.name" column-key="name" />
           </div>
         </template>
 
         <template #item.isSystem="{ item }">
           <v-chip v-if="item.isSystem" color="warning" size="small" variant="flat">
-            {{ t('roles.system') }}
+            {{ vm.t('roles.system') }}
           </v-chip>
         </template>
 
         <template #item.actions="{ item }">
-          <ActionChip :label="t('common.edit')" icon="mdi-pencil" color="primary" :compact="layout.isCompact" @click="handleEdit(item)" />
-          <ActionChip :label="t('roles.managePermissions')" icon="mdi-key" color="accent" :compact="layout.isCompact" @click="handlePermissions(item)" />
-          <ActionChip v-if="!item.isSystem" :label="t('common.delete')" icon="mdi-delete" color="error" :compact="layout.isCompact" @click="openDeleteDialog(item)" />
+          <ActionChip :label="vm.t('common.edit')" icon="mdi-pencil" color="primary" :compact="vm.layout.isCompact" @click="vm.handleEdit(item)" />
+          <ActionChip :label="vm.t('roles.managePermissions')" icon="mdi-key" color="accent" :compact="vm.layout.isCompact" @click="vm.handlePermissions(item)" />
+          <ActionChip v-if="!item.isSystem" :label="vm.t('common.delete')" icon="mdi-delete" color="error" :compact="vm.layout.isCompact" @click="vm.openDeleteDialog(item)" />
         </template>
       </v-data-table>
     </v-card>
 
-    <RoleFormDialog v-model="showFormDialog" :role="selectedRole" @saved="loadRoles" />
-    <RolePermissionsDialog v-model="showPermissionsDialog" :role-id="selectedRole?.id ?? 0" :role-name="selectedRole?.name ?? ''" />
+    <RoleFormDialog v-model="vm.showFormDialog" :role="vm.selectedRole" @saved="vm.loadRoles" />
+    <RolePermissionsDialog v-model="vm.showPermissionsDialog" :role-id="vm.selectedRole?.id ?? 0" :role-name="vm.selectedRole?.name ?? ''" />
     <ConfirmDialog
-      v-model="showDeleteDialog"
-      :title="t('roles.delete')"
-      :message="t('roles.deleteConfirm', { name: selectedRole?.name })"
-      :confirm-text="t('common.delete')"
+      v-model="vm.showDeleteDialog"
+      :title="vm.t('roles.delete')"
+      :message="vm.t('roles.deleteConfirm', { name: vm.selectedRole?.name })"
+      :confirm-text="vm.t('common.delete')"
       color="error"
       icon="mdi-delete"
-      :loading="deleting"
-      @confirm="handleDelete"
+      :loading="vm.deleting"
+      @confirm="vm.handleDelete"
     />
   </div>
 </template>
 
 <script setup lang="ts">
+import { reactive } from 'vue';
 import { useRolesView } from '@features/auth/composables/useRolesView';
 import ActionChip from '@shared/components/atoms/ActionChip.vue';
 import ColumnFilter from '@shared/components/molecules/ColumnFilter.vue';
@@ -60,23 +61,5 @@ import RoleFormDialog from '@features/auth/components/organisms/RoleFormDialog.v
 import RolePermissionsDialog from '@features/auth/components/organisms/RolePermissionsDialog.vue';
 import ConfirmDialog from '@shared/components/molecules/ConfirmDialog.vue';
 
-const {
-  t,
-  layout,
-  loading,
-  selectedRole,
-  showFormDialog,
-  showPermissionsDialog,
-  showDeleteDialog,
-  deleting,
-  columnFilters,
-  filteredItems,
-  headers,
-  loadRoles,
-  handleCreate,
-  handleEdit,
-  handlePermissions,
-  openDeleteDialog,
-  handleDelete,
-} = useRolesView();
+const vm = reactive(useRolesView());
 </script>

@@ -4,38 +4,38 @@
       <v-card width="420" class="pa-6" elevation="8">
         <div class="text-center mb-6">
           <v-icon icon="mdi-warehouse" size="64" color="primary" />
-          <h1 class="text-h5 mt-3">{{ t('login.title') }}</h1>
-          <p class="text-body-2 text-grey mt-1">{{ t('login.subtitle') }}</p>
+          <h1 class="text-h5 mt-3">{{ vm.t('login.title') }}</h1>
+          <p class="text-body-2 text-grey mt-1">{{ vm.t('login.subtitle') }}</p>
         </div>
 
         <v-alert
-          v-if="errorMessage"
+          v-if="vm.errorMessage"
           type="error"
           variant="tonal"
           class="mb-4"
           density="compact"
         >
-          {{ errorMessage }}
+          {{ vm.errorMessage }}
         </v-alert>
 
-        <v-form ref="formRef" @submit.prevent="handleLogin" :disabled="loading">
+        <v-form :ref="(el: any) => vm.formRef = el" @submit.prevent="vm.handleLogin" :disabled="vm.loading">
           <v-text-field
-            v-model="form.username"
-            :label="t('login.username')"
+            v-model="vm.form.username"
+            :label="vm.t('login.username')"
             prepend-inner-icon="mdi-account"
-            :rules="[rules.required]"
+            :rules="[vm.rules.required]"
             autofocus
             class="mb-2"
           />
 
           <v-text-field
-            v-model="form.password"
-            :label="t('login.password')"
+            v-model="vm.form.password"
+            :label="vm.t('login.password')"
             prepend-inner-icon="mdi-lock"
-            :type="showPassword ? 'text' : 'password'"
-            :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
-            :rules="[rules.required]"
-            @click:append-inner="showPassword = !showPassword"
+            :type="vm.showPassword ? 'text' : 'password'"
+            :append-inner-icon="vm.showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+            :rules="[vm.rules.required]"
+            @click:append-inner="vm.showPassword = !vm.showPassword"
             class="mb-4"
           />
 
@@ -44,9 +44,9 @@
             color="primary"
             block
             size="large"
-            :loading="loading"
+            :loading="vm.loading"
           >
-            {{ loading ? t('login.loading') : t('login.submit') }}
+            {{ vm.loading ? vm.t('login.loading') : vm.t('login.submit') }}
           </v-btn>
         </v-form>
 
@@ -54,10 +54,10 @@
           <v-btn
             variant="text"
             size="small"
-            :prepend-icon="currentLocale === 'en' ? 'mdi-alpha-e-box' : 'mdi-alpha-b-box'"
-            @click="toggleLocale"
+            :prepend-icon="vm.currentLocale === 'en' ? 'mdi-alpha-e-box' : 'mdi-alpha-b-box'"
+            @click="vm.toggleLocale"
           >
-            {{ currentLocale === 'en' ? 'Български' : 'English' }}
+            {{ vm.currentLocale === 'en' ? 'Български' : 'English' }}
           </v-btn>
         </div>
       </v-card>
@@ -66,18 +66,8 @@
 </template>
 
 <script setup lang="ts">
+import { reactive } from 'vue';
 import { useLoginView } from '@features/auth/composables/useLoginView';
 
-const {
-  formRef,
-  loading,
-  showPassword,
-  errorMessage,
-  form,
-  currentLocale,
-  rules,
-  t,
-  toggleLocale,
-  handleLogin,
-} = useLoginView();
+const vm = reactive(useLoginView());
 </script>
