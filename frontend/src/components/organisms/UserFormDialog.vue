@@ -52,10 +52,12 @@
 
   <v-dialog v-model="showPasswordDialog" max-width="450" persistent>
     <v-card>
-      <v-card-title class="text-h6">
+      <div class="d-flex align-center pa-3" style="background: #334155; color: white">
         <v-icon icon="mdi-shield-key" class="mr-2" />
-        {{ t('users.generatedPassword') }}
-      </v-card-title>
+        <span class="text-subtitle-1 font-weight-medium">{{ t('users.generatedPassword') }}</span>
+        <v-spacer />
+        <v-btn icon="mdi-close" variant="text" size="small" color="white" @click="closePasswordDialog" />
+      </div>
       <v-card-text>
         <v-alert type="warning" variant="tonal" density="compact" class="mb-4">
           {{ t('users.generatedPasswordHint') }}
@@ -69,9 +71,9 @@
           @click:append-inner="copyPassword"
         />
       </v-card-text>
-      <v-card-actions>
+      <v-card-actions style="background: #334155">
         <v-spacer />
-        <v-btn color="primary" variant="flat" @click="closePasswordDialog">{{ t('common.close') }}</v-btn>
+        <v-btn color="white" variant="flat" @click="closePasswordDialog">{{ t('common.close') }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
