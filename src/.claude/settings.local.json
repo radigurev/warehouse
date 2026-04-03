@@ -17,7 +17,8 @@
       "Bash(cp src/components/users/UserRolesDialog.vue src/components/organisms/UserRolesDialog.vue)",
       "Bash(rm:*)",
       "Bash(dotnet build:*)",
-      "Bash(ls C:/Users/radig/source/repos/Warehouse/docs/domain/SDD-UI-002*)"
+      "Bash(ls C:/Users/radig/source/repos/Warehouse/docs/domain/SDD-UI-002*)",
+      "Bash(ls C:/Users/radig/source/repos/Warehouse/docs/domain/SDD-UI-003*)"
     ]
   }
 }
