@@ -126,6 +126,11 @@ Warehouse/
 │   └── changes/
 │       └── _TEMPLATE.md
 ├── frontend/                                      ← Vue.js 3 SPA (Single Page Application)
+│   └── src/
+│       ├── app/                                   ← App shell (main.ts, App.vue, router/)
+│       ├── features/                              ← Feature domains
+│       │   └── auth/                              ← Auth feature (api, types, views, composables, organisms)
+│       └── shared/                                ← Cross-feature (stores, atoms, molecules, templates, i18n)
 ├── src/
 │   ├── Warehouse.slnx                             ← .NET 8 solution
 │   ├── Databases/

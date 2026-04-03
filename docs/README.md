@@ -70,7 +70,9 @@ Test classes reference spec IDs: `{TestClassName}_SDD_{DOMAIN}_{NNN}_{Descriptio
 | ID | Category | Title | Status |
 |---|---|---|---|
 | SDD-AUTH-001 | Infrastructure | Authentication and Authorization | Implemented |
-| SDD-UI-001 | Core | Auth Administration SPA | Draft |
+| SDD-UI-001 | Core | Auth Administration SPA | Implemented |
+| SDD-UI-002 | Domain | Form Display Mode (Modal vs Page) | Implemented |
+| SDD-UI-003 | Domain | User Settings | Implemented |
 
 ## Change Spec Registry
 
@@ -96,7 +98,7 @@ Test classes reference spec IDs: `{TestClassName}_SDD_{DOMAIN}_{NNN}_{Descriptio
 | `SDD-INV` | 001 |
 | `SDD-WH` | 001 |
 | `SDD-SHIP` | 001 |
-| `SDD-UI` | 002 |
+| `SDD-UI` | 004 |
 | `SDD-AUTH` | 002 |
 | `SDD-FILT` | 001 |
 | `SDD-OBS` | 001 |

@@ -1,6 +1,6 @@
 # SDD-UI-001 — Auth Administration SPA
 
-> Status: Draft
+> Status: Implemented
 > Last updated: 2026-04-03
 > Owner: TBD
 > Category: Core
