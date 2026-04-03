@@ -76,7 +76,7 @@ Test classes reference spec IDs: `{TestClassName}_SDD_{DOMAIN}_{NNN}_{Descriptio
 
 | ID | Title | Affected System Specs | Status |
 |---|---|---|---|
-| — | — | — | — |
+| CHG-ENH-001 | Auth SPA UI Redesign | SDD-UI-001 | Implemented |
 
 ## Status Legend
 
