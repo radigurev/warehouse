@@ -2,7 +2,7 @@
   <div>
     <div class="d-flex align-center mb-4">
       <v-spacer />
-      <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreateDialog">
+      <v-btn color="primary" prepend-icon="mdi-plus" @click="handleCreate">
         {{ t('users.create') }}
       </v-btn>
     </div>
@@ -53,9 +53,9 @@
         </template>
 
         <template #item.actions="{ item }">
-          <ActionChip :label="t('common.edit')" icon="mdi-pencil" color="primary" :compact="layout.isCompact" @click="openEditDialog(item)" />
-          <ActionChip :label="t('users.changePassword')" icon="mdi-lock-reset" color="info" :compact="layout.isCompact" @click="openPasswordDialog(item)" />
-          <ActionChip :label="t('users.manageRoles')" icon="mdi-shield-account" color="accent" :compact="layout.isCompact" @click="openRolesDialog(item)" />
+          <ActionChip :label="t('common.edit')" icon="mdi-pencil" color="primary" :compact="layout.isCompact" @click="handleEdit(item)" />
+          <ActionChip :label="t('users.changePassword')" icon="mdi-lock-reset" color="info" :compact="layout.isCompact" @click="handlePassword(item)" />
+          <ActionChip :label="t('users.manageRoles')" icon="mdi-shield-account" color="accent" :compact="layout.isCompact" @click="handleRoles(item)" />
           <ActionChip v-if="item.isActive" :label="t('users.deactivate')" icon="mdi-account-off" color="error" :compact="layout.isCompact" @click="openDeactivateDialog(item)" />
         </template>
       </v-data-table>
@@ -80,6 +80,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { useLayoutStore } from '@/stores/layout';
 import { useAuthStore } from '@/stores/auth';
 import { useNotificationStore } from '@/stores/notification';
@@ -95,6 +96,7 @@ import UserRolesDialog from '@/components/organisms/UserRolesDialog.vue';
 import ConfirmDialog from '@/components/molecules/ConfirmDialog.vue';
 
 const { t, locale } = useI18n();
+const router = useRouter();
 const layout = useLayoutStore();
 const auth = useAuthStore();
 const notification = useNotificationStore();
@@ -142,24 +144,40 @@ function formatDate(dateStr: string): string {
   });
 }
 
-function openCreateDialog(): void {
-  selectedUser.value = null;
-  showFormDialog.value = true;
+function handleCreate(): void {
+  if (layout.isPageMode) {
+    router.push({ name: 'user-create' });
+  } else {
+    selectedUser.value = null;
+    showFormDialog.value = true;
+  }
 }
 
-function openEditDialog(user: UserDto): void {
-  selectedUser.value = user;
-  showFormDialog.value = true;
+function handleEdit(user: UserDto): void {
+  if (layout.isPageMode) {
+    router.push({ name: 'user-edit', params: { id: user.id } });
+  } else {
+    selectedUser.value = user;
+    showFormDialog.value = true;
+  }
 }
 
-function openPasswordDialog(user: UserDto): void {
-  selectedUser.value = user;
-  showPasswordDialog.value = true;
+function handlePassword(user: UserDto): void {
+  if (layout.isPageMode) {
+    router.push({ name: 'user-password', params: { id: user.id } });
+  } else {
+    selectedUser.value = user;
+    showPasswordDialog.value = true;
+  }
 }
 
-function openRolesDialog(user: UserDto): void {
-  selectedUser.value = user;
-  showRolesDialog.value = true;
+function handleRoles(user: UserDto): void {
+  if (layout.isPageMode) {
+    router.push({ name: 'user-roles', params: { id: user.id } });
+  } else {
+    selectedUser.value = user;
+    showRolesDialog.value = true;
+  }
 }
 
 function openDeactivateDialog(user: UserDto): void {

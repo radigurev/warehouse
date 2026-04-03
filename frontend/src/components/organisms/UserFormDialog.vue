@@ -1,67 +1,65 @@
 <template>
-  <v-dialog v-model="visible" max-width="550" persistent>
-    <v-card>
-      <v-card-title class="text-h6">
-        {{ isEdit ? t('users.edit') : t('users.create') }}
-      </v-card-title>
+  <FormWrapper v-model="visible" :mode="mode" max-width="550">
+    <v-card-title class="text-h6">
+      {{ isEdit ? t('users.edit') : t('users.create') }}
+    </v-card-title>
 
-      <v-card-text>
-        <v-form ref="formRef" @submit.prevent="handleSubmit">
-          <v-text-field
-            v-if="!isEdit"
-            v-model="form.username"
-            :label="t('users.form.username')"
-            prepend-inner-icon="mdi-account"
-            :rules="[rules.required, rules.usernameLength, rules.usernameFormat]"
-            :error-messages="fieldErrors.username"
-            @update:model-value="fieldErrors.username = []"
-          />
+    <v-card-text>
+      <v-form ref="formRef" @submit.prevent="handleSubmit">
+        <v-text-field
+          v-if="!isEdit"
+          v-model="form.username"
+          :label="t('users.form.username')"
+          prepend-inner-icon="mdi-account"
+          :rules="[rules.required, rules.usernameLength, rules.usernameFormat]"
+          :error-messages="fieldErrors.username"
+          @update:model-value="fieldErrors.username = []"
+        />
 
-          <v-text-field
-            v-model="form.email"
-            :label="t('users.form.email')"
-            prepend-inner-icon="mdi-email"
-            :rules="[rules.required, rules.emailFormat, rules.emailLength]"
-            :error-messages="fieldErrors.email"
-            @update:model-value="fieldErrors.email = []"
-          />
+        <v-text-field
+          v-model="form.email"
+          :label="t('users.form.email')"
+          prepend-inner-icon="mdi-email"
+          :rules="[rules.required, rules.emailFormat, rules.emailLength]"
+          :error-messages="fieldErrors.email"
+          @update:model-value="fieldErrors.email = []"
+        />
 
-          <v-text-field
-            v-if="!isEdit"
-            v-model="form.password"
-            :label="t('users.form.password')"
-            prepend-inner-icon="mdi-lock"
-            :type="showPassword ? 'text' : 'password'"
-            :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
-            :rules="[rules.required, rules.passwordLength, rules.passwordComplexity]"
-            @click:append-inner="showPassword = !showPassword"
-          />
+        <v-text-field
+          v-if="!isEdit"
+          v-model="form.password"
+          :label="t('users.form.password')"
+          prepend-inner-icon="mdi-lock"
+          :type="showPassword ? 'text' : 'password'"
+          :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+          :rules="[rules.required, rules.passwordLength, rules.passwordComplexity]"
+          @click:append-inner="showPassword = !showPassword"
+        />
 
-          <v-text-field
-            v-model="form.firstName"
-            :label="t('users.form.firstName')"
-            prepend-inner-icon="mdi-badge-account-horizontal"
-            :rules="[rules.required, rules.firstNameLength]"
-          />
+        <v-text-field
+          v-model="form.firstName"
+          :label="t('users.form.firstName')"
+          prepend-inner-icon="mdi-badge-account-horizontal"
+          :rules="[rules.required, rules.firstNameLength]"
+        />
 
-          <v-text-field
-            v-model="form.lastName"
-            :label="t('users.form.lastName')"
-            prepend-inner-icon="mdi-badge-account"
-            :rules="[rules.required, rules.lastNameLength]"
-          />
-        </v-form>
-      </v-card-text>
+        <v-text-field
+          v-model="form.lastName"
+          :label="t('users.form.lastName')"
+          prepend-inner-icon="mdi-badge-account"
+          :rules="[rules.required, rules.lastNameLength]"
+        />
+      </v-form>
+    </v-card-text>
 
-      <v-card-actions>
-        <v-spacer />
-        <v-btn variant="text" @click="close">{{ t('common.cancel') }}</v-btn>
-        <v-btn color="primary" variant="flat" @click="handleSubmit" :loading="loading">
-          {{ t('common.save') }}
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+    <v-card-actions>
+      <v-spacer />
+      <v-btn variant="text" @click="cancel">{{ t('common.cancel') }}</v-btn>
+      <v-btn color="primary" variant="flat" @click="handleSubmit" :loading="loading">
+        {{ t('common.save') }}
+      </v-btn>
+    </v-card-actions>
+  </FormWrapper>
 </template>
 
 <script setup lang="ts">
@@ -72,6 +70,7 @@ import { createUser, updateUser } from '@/api/users';
 import type { UserDto } from '@/types/user';
 import type { AxiosError } from 'axios';
 import type { ProblemDetails } from '@/types/api';
+import FormWrapper from '@/components/molecules/FormWrapper.vue';
 
 const { t } = useI18n();
 const notification = useNotificationStore();
@@ -80,10 +79,12 @@ const visible = defineModel<boolean>({ required: true });
 
 const props = defineProps<{
   user?: UserDto | null;
+  mode?: 'dialog' | 'page';
 }>();
 
 const emit = defineEmits<{
   saved: [];
+  cancelled: [];
 }>();
 
 const isEdit = ref(false);
@@ -183,7 +184,8 @@ function handleApiError(err: AxiosError<ProblemDetails>): void {
   }
 }
 
-function close(): void {
+function cancel(): void {
   visible.value = false;
+  emit('cancelled');
 }
 </script>

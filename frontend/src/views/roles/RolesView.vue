@@ -2,7 +2,7 @@
   <div>
     <div class="d-flex align-center mb-4">
       <v-spacer />
-      <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreateDialog">
+      <v-btn color="primary" prepend-icon="mdi-plus" @click="handleCreate">
         {{ t('roles.create') }}
       </v-btn>
     </div>
@@ -30,8 +30,8 @@
         </template>
 
         <template #item.actions="{ item }">
-          <ActionChip :label="t('common.edit')" icon="mdi-pencil" color="primary" :compact="layout.isCompact" @click="openEditDialog(item)" />
-          <ActionChip :label="t('roles.managePermissions')" icon="mdi-key" color="accent" :compact="layout.isCompact" @click="openPermissionsDialog(item)" />
+          <ActionChip :label="t('common.edit')" icon="mdi-pencil" color="primary" :compact="layout.isCompact" @click="handleEdit(item)" />
+          <ActionChip :label="t('roles.managePermissions')" icon="mdi-key" color="accent" :compact="layout.isCompact" @click="handlePermissions(item)" />
           <ActionChip v-if="!item.isSystem" :label="t('common.delete')" icon="mdi-delete" color="error" :compact="layout.isCompact" @click="openDeleteDialog(item)" />
         </template>
       </v-data-table>
@@ -55,6 +55,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { useLayoutStore } from '@/stores/layout';
 import { useNotificationStore } from '@/stores/notification';
 import { useColumnFilters } from '@/composables/useColumnFilters';
@@ -69,6 +70,7 @@ import RolePermissionsDialog from '@/components/organisms/RolePermissionsDialog.
 import ConfirmDialog from '@/components/molecules/ConfirmDialog.vue';
 
 const { t } = useI18n();
+const router = useRouter();
 const layout = useLayoutStore();
 const notification = useNotificationStore();
 
@@ -102,19 +104,31 @@ async function loadRoles(): Promise<void> {
   }
 }
 
-function openCreateDialog(): void {
-  selectedRole.value = null;
-  showFormDialog.value = true;
+function handleCreate(): void {
+  if (layout.isPageMode) {
+    router.push({ name: 'role-create' });
+  } else {
+    selectedRole.value = null;
+    showFormDialog.value = true;
+  }
 }
 
-function openEditDialog(role: RoleDto): void {
-  selectedRole.value = role;
-  showFormDialog.value = true;
+function handleEdit(role: RoleDto): void {
+  if (layout.isPageMode) {
+    router.push({ name: 'role-edit', params: { id: role.id } });
+  } else {
+    selectedRole.value = role;
+    showFormDialog.value = true;
+  }
 }
 
-function openPermissionsDialog(role: RoleDto): void {
-  selectedRole.value = role;
-  showPermissionsDialog.value = true;
+function handlePermissions(role: RoleDto): void {
+  if (layout.isPageMode) {
+    router.push({ name: 'role-permissions', params: { id: role.id } });
+  } else {
+    selectedRole.value = role;
+    showPermissionsDialog.value = true;
+  }
 }
 
 function openDeleteDialog(role: RoleDto): void {

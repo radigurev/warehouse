@@ -9,6 +9,9 @@ export default {
     userMenu: {
       language: 'Language',
       display: 'Display',
+      formDisplay: 'Form Display',
+      formModal: 'Modal',
+      formPage: 'Page',
     },
   },
   nav: {
@@ -150,6 +153,19 @@ export default {
       clear: 'Clear',
     },
     viewDetails: 'View Details',
+  },
+  pageTitle: {
+    createUser: 'Create User',
+    editUser: 'Edit User',
+    changePassword: 'Change Password',
+    manageUserRoles: 'Manage User Roles',
+    createRole: 'Create Role',
+    editRole: 'Edit Role',
+    manageRolePermissions: 'Manage Permissions',
+    createPermission: 'Create Permission',
+    back: 'Back',
+    notFound: 'Not Found',
+    notFoundMessage: 'The requested resource was not found.',
   },
   common: {
     save: 'Save',

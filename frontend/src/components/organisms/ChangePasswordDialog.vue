@@ -1,41 +1,39 @@
 <template>
-  <v-dialog v-model="visible" max-width="450" persistent>
-    <v-card>
-      <v-card-title class="text-h6">{{ t('users.changePassword') }}</v-card-title>
+  <FormWrapper v-model="visible" :mode="mode" max-width="450">
+    <v-card-title class="text-h6">{{ t('users.changePassword') }}</v-card-title>
 
-      <v-card-text>
-        <v-form ref="formRef" @submit.prevent="handleSubmit">
-          <v-text-field
-            v-model="form.currentPassword"
-            :label="t('users.passwordForm.currentPassword')"
-            prepend-inner-icon="mdi-lock"
-            type="password"
-            :rules="[rules.required]"
-            :error-messages="fieldErrors.currentPassword"
-            @update:model-value="fieldErrors.currentPassword = []"
-          />
+    <v-card-text>
+      <v-form ref="formRef" @submit.prevent="handleSubmit">
+        <v-text-field
+          v-model="form.currentPassword"
+          :label="t('users.passwordForm.currentPassword')"
+          prepend-inner-icon="mdi-lock"
+          type="password"
+          :rules="[rules.required]"
+          :error-messages="fieldErrors.currentPassword"
+          @update:model-value="fieldErrors.currentPassword = []"
+        />
 
-          <v-text-field
-            v-model="form.newPassword"
-            :label="t('users.passwordForm.newPassword')"
-            prepend-inner-icon="mdi-lock-reset"
-            :type="showNew ? 'text' : 'password'"
-            :append-inner-icon="showNew ? 'mdi-eye-off' : 'mdi-eye'"
-            :rules="[rules.required, rules.passwordLength, rules.passwordComplexity]"
-            @click:append-inner="showNew = !showNew"
-          />
-        </v-form>
-      </v-card-text>
+        <v-text-field
+          v-model="form.newPassword"
+          :label="t('users.passwordForm.newPassword')"
+          prepend-inner-icon="mdi-lock-reset"
+          :type="showNew ? 'text' : 'password'"
+          :append-inner-icon="showNew ? 'mdi-eye-off' : 'mdi-eye'"
+          :rules="[rules.required, rules.passwordLength, rules.passwordComplexity]"
+          @click:append-inner="showNew = !showNew"
+        />
+      </v-form>
+    </v-card-text>
 
-      <v-card-actions>
-        <v-spacer />
-        <v-btn variant="text" @click="visible = false">{{ t('common.cancel') }}</v-btn>
-        <v-btn color="primary" variant="flat" @click="handleSubmit" :loading="loading">
-          {{ t('common.save') }}
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+    <v-card-actions>
+      <v-spacer />
+      <v-btn variant="text" @click="cancel">{{ t('common.cancel') }}</v-btn>
+      <v-btn color="primary" variant="flat" @click="handleSubmit" :loading="loading">
+        {{ t('common.save') }}
+      </v-btn>
+    </v-card-actions>
+  </FormWrapper>
 </template>
 
 <script setup lang="ts">
@@ -45,6 +43,7 @@ import { useNotificationStore } from '@/stores/notification';
 import { changePassword } from '@/api/users';
 import type { AxiosError } from 'axios';
 import type { ProblemDetails } from '@/types/api';
+import FormWrapper from '@/components/molecules/FormWrapper.vue';
 
 const { t } = useI18n();
 const notification = useNotificationStore();
@@ -53,6 +52,12 @@ const visible = defineModel<boolean>({ required: true });
 
 const props = defineProps<{
   userId: number;
+  mode?: 'dialog' | 'page';
+}>();
+
+const emit = defineEmits<{
+  saved: [];
+  cancelled: [];
 }>();
 
 const formRef = ref();
@@ -94,6 +99,7 @@ async function handleSubmit(): Promise<void> {
     });
     notification.success(t('users.changePassword') + ' ✓');
     visible.value = false;
+    emit('saved');
   } catch (err) {
     const axiosError = err as AxiosError<ProblemDetails>;
     const errorCode = axiosError.response?.data?.title;
@@ -105,5 +111,10 @@ async function handleSubmit(): Promise<void> {
   } finally {
     loading.value = false;
   }
+}
+
+function cancel(): void {
+  visible.value = false;
+  emit('cancelled');
 }
 </script>

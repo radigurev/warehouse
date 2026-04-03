@@ -1,53 +1,51 @@
 <template>
-  <v-dialog v-model="visible" max-width="700" persistent>
-    <v-card>
-      <v-card-title class="text-h6">
-        {{ t('roles.permissionsDialog.title', { name: roleName }) }}
-      </v-card-title>
+  <FormWrapper v-model="visible" :mode="mode" max-width="700">
+    <v-card-title class="text-h6">
+      {{ t('roles.permissionsDialog.title', { name: roleName }) }}
+    </v-card-title>
 
-      <v-card-text>
-        <v-progress-linear v-if="loading" indeterminate class="mb-4" />
+    <v-card-text>
+      <v-progress-linear v-if="loading" indeterminate class="mb-4" />
 
-        <h3 class="text-subtitle-1 mb-2">{{ t('roles.permissionsDialog.assigned') }}</h3>
-        <v-chip-group v-if="assignedPermissions.length > 0" class="mb-4">
+      <h3 class="text-subtitle-1 mb-2">{{ t('roles.permissionsDialog.assigned') }}</h3>
+      <v-chip-group v-if="assignedPermissions.length > 0" class="mb-4">
+        <v-chip
+          v-for="perm in assignedPermissions"
+          :key="perm.id"
+          closable
+          color="primary"
+          @click:close="handleRemovePermission(perm.id)"
+        >
+          {{ perm.resource }}:{{ perm.action }}
+        </v-chip>
+      </v-chip-group>
+      <p v-else class="text-body-2 text-grey mb-4">{{ t('roles.permissionsDialog.noPermissionsAssigned') }}</p>
+
+      <v-divider class="mb-4" />
+
+      <h3 class="text-subtitle-1 mb-2">{{ t('roles.permissionsDialog.available') }}</h3>
+      <div v-for="[resource, perms] in groupedAvailable" :key="resource" class="mb-3">
+        <div class="text-caption text-grey-darken-1 mb-1">{{ resource }}</div>
+        <v-chip-group>
           <v-chip
-            v-for="perm in assignedPermissions"
+            v-for="perm in perms"
             :key="perm.id"
-            closable
+            variant="outlined"
             color="primary"
-            @click:close="handleRemovePermission(perm.id)"
+            append-icon="mdi-plus"
+            @click="handleAssignPermission(perm.id)"
           >
-            {{ perm.resource }}:{{ perm.action }}
+            {{ perm.action }}
           </v-chip>
         </v-chip-group>
-        <p v-else class="text-body-2 text-grey mb-4">{{ t('roles.permissionsDialog.noPermissionsAssigned') }}</p>
+      </div>
+    </v-card-text>
 
-        <v-divider class="mb-4" />
-
-        <h3 class="text-subtitle-1 mb-2">{{ t('roles.permissionsDialog.available') }}</h3>
-        <div v-for="[resource, perms] in groupedAvailable" :key="resource" class="mb-3">
-          <div class="text-caption text-grey-darken-1 mb-1">{{ resource }}</div>
-          <v-chip-group>
-            <v-chip
-              v-for="perm in perms"
-              :key="perm.id"
-              variant="outlined"
-              color="primary"
-              append-icon="mdi-plus"
-              @click="handleAssignPermission(perm.id)"
-            >
-              {{ perm.action }}
-            </v-chip>
-          </v-chip-group>
-        </div>
-      </v-card-text>
-
-      <v-card-actions>
-        <v-spacer />
-        <v-btn variant="text" @click="visible = false">{{ t('common.close') }}</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+    <v-card-actions>
+      <v-spacer />
+      <v-btn variant="text" @click="cancel">{{ t('common.close') }}</v-btn>
+    </v-card-actions>
+  </FormWrapper>
 </template>
 
 <script setup lang="ts">
@@ -57,6 +55,7 @@ import { useNotificationStore } from '@/stores/notification';
 import { getRolePermissions, assignPermissions, removePermission } from '@/api/roles';
 import { getPermissions } from '@/api/permissions';
 import type { PermissionDto } from '@/types/permission';
+import FormWrapper from '@/components/molecules/FormWrapper.vue';
 
 const { t } = useI18n();
 const notification = useNotificationStore();
@@ -66,6 +65,11 @@ const visible = defineModel<boolean>({ required: true });
 const props = defineProps<{
   roleId: number;
   roleName: string;
+  mode?: 'dialog' | 'page';
+}>();
+
+const emit = defineEmits<{
+  cancelled: [];
 }>();
 
 const loading = ref(false);
@@ -124,5 +128,10 @@ async function handleRemovePermission(permissionId: number): Promise<void> {
   } catch {
     notification.error(t('errors.UNEXPECTED_ERROR'));
   }
+}
+
+function cancel(): void {
+  visible.value = false;
+  emit('cancelled');
 }
 </script>

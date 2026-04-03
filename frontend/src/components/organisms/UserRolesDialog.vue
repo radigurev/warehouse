@@ -1,50 +1,48 @@
 <template>
-  <v-dialog v-model="visible" max-width="600" persistent>
-    <v-card>
-      <v-card-title class="text-h6">
-        {{ t('users.rolesDialog.title', { name: userName }) }}
-      </v-card-title>
+  <FormWrapper v-model="visible" :mode="mode" max-width="600">
+    <v-card-title class="text-h6">
+      {{ t('users.rolesDialog.title', { name: userName }) }}
+    </v-card-title>
 
-      <v-card-text>
-        <v-progress-linear v-if="loading" indeterminate class="mb-4" />
+    <v-card-text>
+      <v-progress-linear v-if="loading" indeterminate class="mb-4" />
 
-        <h3 class="text-subtitle-1 mb-2">{{ t('users.rolesDialog.assigned') }}</h3>
-        <v-chip-group v-if="assignedRoles.length > 0" class="mb-4">
-          <v-chip
-            v-for="role in assignedRoles"
-            :key="role.id"
-            closable
-            color="primary"
-            @click:close="handleRemoveRole(role.id)"
-          >
-            {{ role.name }}
-          </v-chip>
-        </v-chip-group>
-        <p v-else class="text-body-2 text-grey mb-4">{{ t('users.rolesDialog.noRolesAssigned') }}</p>
+      <h3 class="text-subtitle-1 mb-2">{{ t('users.rolesDialog.assigned') }}</h3>
+      <v-chip-group v-if="assignedRoles.length > 0" class="mb-4">
+        <v-chip
+          v-for="role in assignedRoles"
+          :key="role.id"
+          closable
+          color="primary"
+          @click:close="handleRemoveRole(role.id)"
+        >
+          {{ role.name }}
+        </v-chip>
+      </v-chip-group>
+      <p v-else class="text-body-2 text-grey mb-4">{{ t('users.rolesDialog.noRolesAssigned') }}</p>
 
-        <v-divider class="mb-4" />
+      <v-divider class="mb-4" />
 
-        <h3 class="text-subtitle-1 mb-2">{{ t('users.rolesDialog.available') }}</h3>
-        <v-chip-group class="mb-2">
-          <v-chip
-            v-for="role in availableRoles"
-            :key="role.id"
-            variant="outlined"
-            color="primary"
-            @click="handleAssignRole(role.id)"
-            append-icon="mdi-plus"
-          >
-            {{ role.name }}
-          </v-chip>
-        </v-chip-group>
-      </v-card-text>
+      <h3 class="text-subtitle-1 mb-2">{{ t('users.rolesDialog.available') }}</h3>
+      <v-chip-group class="mb-2">
+        <v-chip
+          v-for="role in availableRoles"
+          :key="role.id"
+          variant="outlined"
+          color="primary"
+          @click="handleAssignRole(role.id)"
+          append-icon="mdi-plus"
+        >
+          {{ role.name }}
+        </v-chip>
+      </v-chip-group>
+    </v-card-text>
 
-      <v-card-actions>
-        <v-spacer />
-        <v-btn variant="text" @click="visible = false">{{ t('common.close') }}</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+    <v-card-actions>
+      <v-spacer />
+      <v-btn variant="text" @click="cancel">{{ t('common.close') }}</v-btn>
+    </v-card-actions>
+  </FormWrapper>
 </template>
 
 <script setup lang="ts">
@@ -54,6 +52,7 @@ import { useNotificationStore } from '@/stores/notification';
 import { getUserRoles, assignRoles, removeRole } from '@/api/users';
 import { getRoles } from '@/api/roles';
 import type { RoleDto } from '@/types/role';
+import FormWrapper from '@/components/molecules/FormWrapper.vue';
 
 const { t } = useI18n();
 const notification = useNotificationStore();
@@ -63,6 +62,11 @@ const visible = defineModel<boolean>({ required: true });
 const props = defineProps<{
   userId: number;
   userName: string;
+  mode?: 'dialog' | 'page';
+}>();
+
+const emit = defineEmits<{
+  cancelled: [];
 }>();
 
 const loading = ref(false);
@@ -111,5 +115,10 @@ async function handleRemoveRole(roleId: number): Promise<void> {
   } catch {
     notification.error(t('errors.UNEXPECTED_ERROR'));
   }
+}
+
+function cancel(): void {
+  visible.value = false;
+  emit('cancelled');
 }
 </script>

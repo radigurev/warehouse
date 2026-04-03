@@ -188,6 +188,22 @@
 
             <v-divider class="my-1" />
 
+            <v-list-subheader>{{ t('app.userMenu.formDisplay') }}</v-list-subheader>
+            <v-list-item
+              :title="t('app.userMenu.formModal')"
+              prepend-icon="mdi-card-outline"
+              :active="layout.formDisplayMode === 'modal'"
+              @click="layout.setFormDisplayMode('modal')"
+            />
+            <v-list-item
+              :title="t('app.userMenu.formPage')"
+              prepend-icon="mdi-page-layout-body"
+              :active="layout.formDisplayMode === 'page'"
+              @click="layout.setFormDisplayMode('page')"
+            />
+
+            <v-divider class="my-1" />
+
             <v-list-item
               :title="t('app.logout')"
               prepend-icon="mdi-logout"

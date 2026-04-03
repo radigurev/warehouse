@@ -2,7 +2,7 @@
   <div>
     <div class="d-flex align-center mb-4">
       <v-spacer />
-      <v-btn color="primary" prepend-icon="mdi-plus" @click="showFormDialog = true">
+      <v-btn color="primary" prepend-icon="mdi-plus" @click="handleCreate">
         {{ t('permissions.create') }}
       </v-btn>
     </div>
@@ -39,6 +39,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { useLayoutStore } from '@/stores/layout';
 import { useNotificationStore } from '@/stores/notification';
 import { useColumnFilters } from '@/composables/useColumnFilters';
@@ -48,12 +49,21 @@ import ColumnFilter from '@/components/molecules/ColumnFilter.vue';
 import PermissionFormDialog from '@/components/organisms/PermissionFormDialog.vue';
 
 const { t } = useI18n();
+const router = useRouter();
 const layout = useLayoutStore();
 const notification = useNotificationStore();
 
 const permissions = ref<PermissionDto[]>([]);
 const loading = ref(false);
 const showFormDialog = ref(false);
+
+function handleCreate(): void {
+  if (layout.isPageMode) {
+    router.push({ name: 'permission-create' });
+  } else {
+    showFormDialog.value = true;
+  }
+}
 
 const { columnFilters, filteredItems } = useColumnFilters(permissions, ['resource', 'action']);
 

@@ -9,6 +9,9 @@ export default {
     userMenu: {
       language: 'Език',
       display: 'Изглед',
+      formDisplay: 'Показване на формуляри',
+      formModal: 'Модален прозорец',
+      formPage: 'Цяла страница',
     },
   },
   nav: {
@@ -150,6 +153,19 @@ export default {
       clear: 'Изчисти',
     },
     viewDetails: 'Покажи детайли',
+  },
+  pageTitle: {
+    createUser: 'Създаване на потребител',
+    editUser: 'Редактиране на потребител',
+    changePassword: 'Промяна на парола',
+    manageUserRoles: 'Управление на роли',
+    createRole: 'Създаване на роля',
+    editRole: 'Редактиране на роля',
+    manageRolePermissions: 'Управление на права',
+    createPermission: 'Създаване на право',
+    back: 'Назад',
+    notFound: 'Не е намерено',
+    notFoundMessage: 'Търсеният ресурс не беше намерен.',
   },
   common: {
     save: 'Запази',

@@ -1,49 +1,47 @@
 <template>
-  <v-dialog v-model="visible" max-width="500" persistent>
-    <v-card>
-      <v-card-title class="text-h6">{{ t('permissions.create') }}</v-card-title>
+  <FormWrapper v-model="visible" :mode="mode" max-width="500">
+    <v-card-title class="text-h6">{{ t('permissions.create') }}</v-card-title>
 
-      <v-card-text>
-        <v-form ref="formRef" @submit.prevent="handleSubmit">
-          <v-text-field
-            v-model="form.resource"
-            :label="t('permissions.form.resource')"
-            prepend-inner-icon="mdi-cube-outline"
-            :rules="[rules.required, rules.resourceFormat, rules.resourceLength]"
-            :error-messages="fieldErrors.resource"
-            @update:model-value="fieldErrors.resource = []"
-            hint="e.g. users, inventory.products"
-            persistent-hint
-          />
+    <v-card-text>
+      <v-form ref="formRef" @submit.prevent="handleSubmit">
+        <v-text-field
+          v-model="form.resource"
+          :label="t('permissions.form.resource')"
+          prepend-inner-icon="mdi-cube-outline"
+          :rules="[rules.required, rules.resourceFormat, rules.resourceLength]"
+          :error-messages="fieldErrors.resource"
+          @update:model-value="fieldErrors.resource = []"
+          hint="e.g. users, inventory.products"
+          persistent-hint
+        />
 
-          <v-select
-            v-model="form.action"
-            :label="t('permissions.form.action')"
-            prepend-inner-icon="mdi-cog"
-            :items="actionItems"
-            :rules="[rules.required]"
-          />
+        <v-select
+          v-model="form.action"
+          :label="t('permissions.form.action')"
+          prepend-inner-icon="mdi-cog"
+          :items="actionItems"
+          :rules="[rules.required]"
+        />
 
-          <v-textarea
-            v-model="form.description"
-            :label="t('permissions.form.description')"
-            prepend-inner-icon="mdi-text"
-            :rules="[rules.descriptionLength]"
-            rows="2"
-            variant="outlined"
-          />
-        </v-form>
-      </v-card-text>
+        <v-textarea
+          v-model="form.description"
+          :label="t('permissions.form.description')"
+          prepend-inner-icon="mdi-text"
+          :rules="[rules.descriptionLength]"
+          rows="2"
+          variant="outlined"
+        />
+      </v-form>
+    </v-card-text>
 
-      <v-card-actions>
-        <v-spacer />
-        <v-btn variant="text" @click="visible = false">{{ t('common.cancel') }}</v-btn>
-        <v-btn color="primary" variant="flat" @click="handleSubmit" :loading="loading">
-          {{ t('common.save') }}
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+    <v-card-actions>
+      <v-spacer />
+      <v-btn variant="text" @click="cancel">{{ t('common.cancel') }}</v-btn>
+      <v-btn color="primary" variant="flat" @click="handleSubmit" :loading="loading">
+        {{ t('common.save') }}
+      </v-btn>
+    </v-card-actions>
+  </FormWrapper>
 </template>
 
 <script setup lang="ts">
@@ -53,14 +51,20 @@ import { useNotificationStore } from '@/stores/notification';
 import { createPermission } from '@/api/permissions';
 import type { AxiosError } from 'axios';
 import type { ProblemDetails } from '@/types/api';
+import FormWrapper from '@/components/molecules/FormWrapper.vue';
 
 const { t } = useI18n();
 const notification = useNotificationStore();
 
 const visible = defineModel<boolean>({ required: true });
 
+defineProps<{
+  mode?: 'dialog' | 'page';
+}>();
+
 const emit = defineEmits<{
   saved: [];
+  cancelled: [];
 }>();
 
 const formRef = ref();
@@ -119,5 +123,10 @@ async function handleSubmit(): Promise<void> {
   } finally {
     loading.value = false;
   }
+}
+
+function cancel(): void {
+  visible.value = false;
+  emit('cancelled');
 }
 </script>
