@@ -1,9 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
-using Warehouse.DBModel.Models.Auth;
 
-namespace Warehouse.DBModel.Models.Customers;
+namespace Warehouse.Customers.DBModel.Models;
 
 /// <summary>
 /// Represents a customer entity with contact information, accounts, and category assignment.
@@ -84,7 +83,7 @@ public sealed class Customer
     public DateTime CreatedAtUtc { get; set; }
 
     /// <summary>
-    /// Gets or sets the foreign key to the user who created this customer.
+    /// Gets or sets the ID of the user who created this customer.
     /// </summary>
     [Required]
     public int CreatedByUserId { get; set; }
@@ -96,7 +95,7 @@ public sealed class Customer
     public DateTime? ModifiedAtUtc { get; set; }
 
     /// <summary>
-    /// Gets or sets the optional foreign key to the user who last modified this customer.
+    /// Gets or sets the optional ID of the user who last modified this customer.
     /// </summary>
     public int? ModifiedByUserId { get; set; }
 
@@ -104,16 +103,6 @@ public sealed class Customer
     /// Gets or sets the navigation property to the customer category.
     /// </summary>
     public CustomerCategory? Category { get; set; }
-
-    /// <summary>
-    /// Gets or sets the navigation property to the user who created this customer.
-    /// </summary>
-    public User CreatedByUser { get; set; } = null!;
-
-    /// <summary>
-    /// Gets or sets the navigation property to the user who last modified this customer.
-    /// </summary>
-    public User? ModifiedByUser { get; set; }
 
     /// <summary>
     /// Gets or sets the navigation collection of customer accounts.

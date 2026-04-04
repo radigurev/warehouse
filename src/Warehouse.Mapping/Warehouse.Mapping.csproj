@@ -12,7 +12,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Warehouse.ServiceModel\Warehouse.ServiceModel.csproj" />
-    <ProjectReference Include="..\Databases\Warehouse.DBModel\Warehouse.DBModel.csproj" />
+    <ProjectReference Include="..\Databases\Warehouse.Auth.DBModel\Warehouse.Auth.DBModel.csproj" />
+    <ProjectReference Include="..\Databases\Warehouse.Customers.DBModel\Warehouse.Customers.DBModel.csproj" />
   </ItemGroup>
 
 </Project>

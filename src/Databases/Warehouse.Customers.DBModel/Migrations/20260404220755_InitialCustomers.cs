@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Warehouse.DBModel.Migrations
+namespace Warehouse.Customers.DBModel.Migrations
 {
     /// <inheritdoc />
-    public partial class AddCustomerEntities : Migration
+    public partial class InitialCustomers : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -61,18 +61,6 @@ namespace Warehouse.DBModel.Migrations
                         principalTable: "CustomerCategories",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_Customers_Users_CreatedByUserId",
-                        column: x => x.CreatedByUserId,
-                        principalSchema: "auth",
-                        principalTable: "Users",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_Customers_Users_ModifiedByUserId",
-                        column: x => x.ModifiedByUserId,
-                        principalSchema: "auth",
-                        principalTable: "Users",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -188,13 +176,6 @@ namespace Warehouse.DBModel.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Users_IsActive",
-                schema: "auth",
-                table: "Users",
-                column: "IsActive",
-                filter: "[IsActive] = 1");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_CustomerAccounts_CustomerId",
                 schema: "customers",
                 table: "CustomerAccounts",
@@ -267,12 +248,6 @@ namespace Warehouse.DBModel.Migrations
                 filter: "[IsDeleted] = 0");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Customers_ModifiedByUserId",
-                schema: "customers",
-                table: "Customers",
-                column: "ModifiedByUserId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Customers_Name",
                 schema: "customers",
                 table: "Customers",
@@ -312,11 +287,6 @@ namespace Warehouse.DBModel.Migrations
             migrationBuilder.DropTable(
                 name: "CustomerCategories",
                 schema: "customers");
-
-            migrationBuilder.DropIndex(
-                name: "IX_Users_IsActive",
-                schema: "auth",
-                table: "Users");
         }
     }
 }

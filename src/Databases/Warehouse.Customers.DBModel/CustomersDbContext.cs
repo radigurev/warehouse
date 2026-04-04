@@ -1,55 +1,19 @@
 using Microsoft.EntityFrameworkCore;
-using Warehouse.DBModel.Models.Auth;
-using Warehouse.DBModel.Models.Customers;
+using Warehouse.Customers.DBModel.Models;
 
-namespace Warehouse.DBModel;
+namespace Warehouse.Customers.DBModel;
 
 /// <summary>
-/// EF Core database context for the Warehouse application.
+/// EF Core database context for the customers domain.
 /// </summary>
-public sealed class WarehouseDbContext : DbContext
+public sealed class CustomersDbContext : DbContext
 {
     /// <summary>
     /// Initializes a new instance using the specified options.
     /// </summary>
-    public WarehouseDbContext(DbContextOptions<WarehouseDbContext> options) : base(options)
+    public CustomersDbContext(DbContextOptions<CustomersDbContext> options) : base(options)
     {
     }
-
-    /// <summary>
-    /// Gets or sets the Users DbSet.
-    /// </summary>
-    public DbSet<User> Users { get; set; } = null!;
-
-    /// <summary>
-    /// Gets or sets the Roles DbSet.
-    /// </summary>
-    public DbSet<Role> Roles { get; set; } = null!;
-
-    /// <summary>
-    /// Gets or sets the Permissions DbSet.
-    /// </summary>
-    public DbSet<Permission> Permissions { get; set; } = null!;
-
-    /// <summary>
-    /// Gets or sets the UserRoles DbSet.
-    /// </summary>
-    public DbSet<UserRole> UserRoles { get; set; } = null!;
-
-    /// <summary>
-    /// Gets or sets the RolePermissions DbSet.
-    /// </summary>
-    public DbSet<RolePermission> RolePermissions { get; set; } = null!;
-
-    /// <summary>
-    /// Gets or sets the RefreshTokens DbSet.
-    /// </summary>
-    public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
-
-    /// <summary>
-    /// Gets or sets the UserActionLogs DbSet.
-    /// </summary>
-    public DbSet<UserActionLog> UserActionLogs { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the CustomerCategories DbSet.
@@ -82,60 +46,11 @@ public sealed class WarehouseDbContext : DbContext
     public DbSet<CustomerEmail> CustomerEmails { get; set; } = null!;
 
     /// <summary>
-    /// Configures composite keys and default values that cannot be expressed via Data Annotations.
+    /// Configures entity defaults, indexes, and relationships via Fluent API.
     /// </summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-
-        modelBuilder.Entity<UserRole>()
-            .HasKey(ur => new { ur.UserId, ur.RoleId })
-            .HasName("PK_UserRoles");
-
-        modelBuilder.Entity<RolePermission>()
-            .HasKey(rp => new { rp.RoleId, rp.PermissionId })
-            .HasName("PK_RolePermissions");
-
-        modelBuilder.Entity<User>(u =>
-        {
-            u.Property(e => e.IsActive).HasDefaultValue(true);
-            u.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
-            u.Property(e => e.UpdatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
-            u.HasIndex(e => e.IsActive)
-                .HasDatabaseName("IX_Users_IsActive")
-                .HasFilter("[IsActive] = 1");
-        });
-
-        modelBuilder.Entity<Role>(r =>
-        {
-            r.Property(e => e.IsSystem).HasDefaultValue(false);
-            r.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
-        });
-
-        modelBuilder.Entity<Permission>(p =>
-        {
-            p.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
-        });
-
-        modelBuilder.Entity<UserRole>(ur =>
-        {
-            ur.Property(e => e.AssignedAt).HasDefaultValueSql("SYSUTCDATETIME()");
-        });
-
-        modelBuilder.Entity<RolePermission>(rp =>
-        {
-            rp.Property(e => e.AssignedAt).HasDefaultValueSql("SYSUTCDATETIME()");
-        });
-
-        modelBuilder.Entity<RefreshToken>(rt =>
-        {
-            rt.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
-        });
-
-        modelBuilder.Entity<UserActionLog>(l =>
-        {
-            l.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
-        });
 
         ConfigureCustomerCategory(modelBuilder);
         ConfigureCustomer(modelBuilder);
@@ -157,7 +72,7 @@ public sealed class WarehouseDbContext : DbContext
     }
 
     /// <summary>
-    /// Configures the Customer entity defaults, filtered indexes, and cross-schema FKs.
+    /// Configures the Customer entity defaults, filtered indexes, and audit columns.
     /// </summary>
     private static void ConfigureCustomer(ModelBuilder modelBuilder)
     {
@@ -175,15 +90,8 @@ public sealed class WarehouseDbContext : DbContext
                 .HasDatabaseName("IX_Customers_IsDeleted")
                 .HasFilter("[IsDeleted] = 0");
 
-            c.HasOne(e => e.CreatedByUser)
-                .WithMany()
-                .HasForeignKey(e => e.CreatedByUserId)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            c.HasOne(e => e.ModifiedByUser)
-                .WithMany()
-                .HasForeignKey(e => e.ModifiedByUserId)
-                .OnDelete(DeleteBehavior.NoAction);
+            c.HasIndex(e => e.CreatedByUserId)
+                .HasDatabaseName("IX_Customers_CreatedByUserId");
 
             c.HasOne(e => e.Category)
                 .WithMany(e => e.Customers)

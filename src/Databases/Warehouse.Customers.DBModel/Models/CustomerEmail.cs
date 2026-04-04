@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace Warehouse.DBModel.Models.Customers;
+namespace Warehouse.Customers.DBModel.Models;
 
 /// <summary>
 /// Represents an email address belonging to a customer.

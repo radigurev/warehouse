@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Warehouse.DBModel.Migrations
+namespace Warehouse.Auth.DBModel.Migrations
 {
     /// <inheritdoc />
     public partial class InitialAuth : Migration
@@ -232,6 +232,13 @@ namespace Warehouse.DBModel.Migrations
                 table: "Users",
                 column: "Email",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_IsActive",
+                schema: "auth",
+                table: "Users",
+                column: "IsActive",
+                filter: "[IsActive] = 1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_Username",

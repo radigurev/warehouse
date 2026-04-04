@@ -1,5 +1,5 @@
 using AutoMapper;
-using Warehouse.DBModel.Models.Auth;
+using Warehouse.Auth.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Auth;
 
 namespace Warehouse.Mapping.Profiles.Auth;

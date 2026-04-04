@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Warehouse.DBModel.Models.Auth;
+namespace Warehouse.Auth.DBModel.Models;
 
 /// <summary>
 /// Represents the many-to-many join between roles and permissions.

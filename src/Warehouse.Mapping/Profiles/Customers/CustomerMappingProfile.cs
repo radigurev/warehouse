@@ -1,5 +1,5 @@
 using AutoMapper;
-using Warehouse.DBModel.Models.Customers;
+using Warehouse.Customers.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Customers;
 
 namespace Warehouse.Mapping.Profiles.Customers;

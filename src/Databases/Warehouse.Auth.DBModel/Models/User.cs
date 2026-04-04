@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace Warehouse.DBModel.Models.Auth;
+namespace Warehouse.Auth.DBModel.Models;
 
 /// <summary>
 /// Represents an application user in the auth schema.

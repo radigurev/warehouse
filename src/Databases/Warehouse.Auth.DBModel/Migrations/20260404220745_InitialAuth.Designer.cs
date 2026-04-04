@@ -5,14 +5,14 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Warehouse.DBModel;
+using Warehouse.Auth.DBModel;
 
 #nullable disable
 
-namespace Warehouse.DBModel.Migrations
+namespace Warehouse.Auth.DBModel.Migrations
 {
-    [DbContext(typeof(WarehouseDbContext))]
-    [Migration("20260402231246_InitialAuth")]
+    [DbContext(typeof(AuthDbContext))]
+    [Migration("20260404220745_InitialAuth")]
     partial class InitialAuth
     {
         /// <inheritdoc />
@@ -25,7 +25,7 @@ namespace Warehouse.DBModel.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Warehouse.DBModel.Models.Auth.Permission", b =>
+            modelBuilder.Entity("Warehouse.Auth.DBModel.Models.Permission", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -60,7 +60,7 @@ namespace Warehouse.DBModel.Migrations
                     b.ToTable("Permissions", "auth");
                 });
 
-            modelBuilder.Entity("Warehouse.DBModel.Models.Auth.RefreshToken", b =>
+            modelBuilder.Entity("Warehouse.Auth.DBModel.Models.RefreshToken", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -97,7 +97,7 @@ namespace Warehouse.DBModel.Migrations
                     b.ToTable("RefreshTokens", "auth");
                 });
 
-            modelBuilder.Entity("Warehouse.DBModel.Models.Auth.Role", b =>
+            modelBuilder.Entity("Warehouse.Auth.DBModel.Models.Role", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -132,7 +132,7 @@ namespace Warehouse.DBModel.Migrations
                     b.ToTable("Roles", "auth");
                 });
 
-            modelBuilder.Entity("Warehouse.DBModel.Models.Auth.RolePermission", b =>
+            modelBuilder.Entity("Warehouse.Auth.DBModel.Models.RolePermission", b =>
                 {
                     b.Property<int>("RoleId")
                         .HasColumnType("int");
@@ -153,7 +153,7 @@ namespace Warehouse.DBModel.Migrations
                     b.ToTable("RolePermissions", "auth");
                 });
 
-            modelBuilder.Entity("Warehouse.DBModel.Models.Auth.User", b =>
+            modelBuilder.Entity("Warehouse.Auth.DBModel.Models.User", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -203,6 +203,10 @@ namespace Warehouse.DBModel.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("IsActive")
+                        .HasDatabaseName("IX_Users_IsActive")
+                        .HasFilter("[IsActive] = 1");
+
                     b.HasIndex(new[] { "Email" }, "IX_Users_Email")
                         .IsUnique();
 
@@ -212,7 +216,7 @@ namespace Warehouse.DBModel.Migrations
                     b.ToTable("Users", "auth");
                 });
 
-            modelBuilder.Entity("Warehouse.DBModel.Models.Auth.UserActionLog", b =>
+            modelBuilder.Entity("Warehouse.Auth.DBModel.Models.UserActionLog", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -254,7 +258,7 @@ namespace Warehouse.DBModel.Migrations
                     b.ToTable("UserActionLogs", "auth");
                 });
 
-            modelBuilder.Entity("Warehouse.DBModel.Models.Auth.UserRole", b =>
+            modelBuilder.Entity("Warehouse.Auth.DBModel.Models.UserRole", b =>
                 {
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -275,9 +279,9 @@ namespace Warehouse.DBModel.Migrations
                     b.ToTable("UserRoles", "auth");
                 });
 
-            modelBuilder.Entity("Warehouse.DBModel.Models.Auth.RefreshToken", b =>
+            modelBuilder.Entity("Warehouse.Auth.DBModel.Models.RefreshToken", b =>
                 {
-                    b.HasOne("Warehouse.DBModel.Models.Auth.User", "User")
+                    b.HasOne("Warehouse.Auth.DBModel.Models.User", "User")
                         .WithMany("RefreshTokens")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -286,15 +290,15 @@ namespace Warehouse.DBModel.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Warehouse.DBModel.Models.Auth.RolePermission", b =>
+            modelBuilder.Entity("Warehouse.Auth.DBModel.Models.RolePermission", b =>
                 {
-                    b.HasOne("Warehouse.DBModel.Models.Auth.Permission", "Permission")
+                    b.HasOne("Warehouse.Auth.DBModel.Models.Permission", "Permission")
                         .WithMany("RolePermissions")
                         .HasForeignKey("PermissionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Warehouse.DBModel.Models.Auth.Role", "Role")
+                    b.HasOne("Warehouse.Auth.DBModel.Models.Role", "Role")
                         .WithMany("RolePermissions")
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -305,24 +309,24 @@ namespace Warehouse.DBModel.Migrations
                     b.Navigation("Role");
                 });
 
-            modelBuilder.Entity("Warehouse.DBModel.Models.Auth.UserActionLog", b =>
+            modelBuilder.Entity("Warehouse.Auth.DBModel.Models.UserActionLog", b =>
                 {
-                    b.HasOne("Warehouse.DBModel.Models.Auth.User", "User")
+                    b.HasOne("Warehouse.Auth.DBModel.Models.User", "User")
                         .WithMany("UserActionLogs")
                         .HasForeignKey("UserId");
 
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Warehouse.DBModel.Models.Auth.UserRole", b =>
+            modelBuilder.Entity("Warehouse.Auth.DBModel.Models.UserRole", b =>
                 {
-                    b.HasOne("Warehouse.DBModel.Models.Auth.Role", "Role")
+                    b.HasOne("Warehouse.Auth.DBModel.Models.Role", "Role")
                         .WithMany("UserRoles")
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Warehouse.DBModel.Models.Auth.User", "User")
+                    b.HasOne("Warehouse.Auth.DBModel.Models.User", "User")
                         .WithMany("UserRoles")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -333,19 +337,19 @@ namespace Warehouse.DBModel.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Warehouse.DBModel.Models.Auth.Permission", b =>
+            modelBuilder.Entity("Warehouse.Auth.DBModel.Models.Permission", b =>
                 {
                     b.Navigation("RolePermissions");
                 });
 
-            modelBuilder.Entity("Warehouse.DBModel.Models.Auth.Role", b =>
+            modelBuilder.Entity("Warehouse.Auth.DBModel.Models.Role", b =>
                 {
                     b.Navigation("RolePermissions");
 
                     b.Navigation("UserRoles");
                 });
 
-            modelBuilder.Entity("Warehouse.DBModel.Models.Auth.User", b =>
+            modelBuilder.Entity("Warehouse.Auth.DBModel.Models.User", b =>
                 {
                     b.Navigation("RefreshTokens");
 
