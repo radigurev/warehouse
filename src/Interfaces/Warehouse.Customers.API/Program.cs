@@ -11,7 +11,9 @@ using NLog;
 using NLog.Web;
 using Warehouse.Customers.API.Authorization;
 using Warehouse.Customers.API.Configuration;
+using Warehouse.Customers.API.Interfaces;
 using Warehouse.Customers.API.Middleware;
+using Warehouse.Customers.API.Services;
 using Warehouse.DBModel;
 using Warehouse.Mapping.Profiles.Customers;
 
@@ -56,6 +58,7 @@ static void ConfigureServices(WebApplicationBuilder builder)
     ConfigureFluentValidation(services);
     ConfigureAutoMapper(services);
     ConfigureHealthChecks(services, configuration);
+    ConfigureApplicationServices(services);
 
     services.AddControllers();
     services.AddEndpointsApiExplorer();
@@ -181,6 +184,14 @@ static void ConfigureHealthChecks(IServiceCollection services, IConfiguration co
             configuration.GetConnectionString("WarehouseDb")!,
             name: "database",
             tags: ["ready"]);
+}
+
+static void ConfigureApplicationServices(IServiceCollection services)
+{
+    services.AddScoped<ICustomerService, CustomerService>();
+    services.AddScoped<ICustomerAccountService, CustomerAccountService>();
+    services.AddScoped<ICustomerContactService, CustomerContactService>();
+    services.AddScoped<ICustomerCategoryService, CustomerCategoryService>();
 }
 
 static void ConfigurePipeline(WebApplication app)
