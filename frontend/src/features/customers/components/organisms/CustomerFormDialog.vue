@@ -10,6 +10,7 @@
           v-model="form.name"
           :label="t('customers.form.name')"
           prepend-inner-icon="mdi-domain"
+          :density="layout.vuetifyDensity"
           :rules="[rules.required, rules.nameLength]"
           :error-messages="fieldErrors.name"
           @update:model-value="fieldErrors.name = []"
@@ -20,6 +21,7 @@
           v-model="form.code"
           :label="t('customers.form.code')"
           prepend-inner-icon="mdi-identifier"
+          :density="layout.vuetifyDensity"
           :hint="t('customers.form.codeHint')"
           persistent-hint
           :rules="[rules.codeFormat, rules.codeLength]"
@@ -31,6 +33,7 @@
           v-model="form.taxId"
           :label="t('customers.form.taxId')"
           prepend-inner-icon="mdi-card-account-details"
+          :density="layout.vuetifyDensity"
           :rules="[rules.taxIdLength]"
           :error-messages="fieldErrors.taxId"
           @update:model-value="fieldErrors.taxId = []"
@@ -40,6 +43,7 @@
           v-model="form.categoryId"
           :label="t('customers.form.category')"
           prepend-inner-icon="mdi-tag"
+          :density="layout.vuetifyDensity"
           :items="categories"
           item-title="name"
           item-value="id"
@@ -51,6 +55,7 @@
           v-model="form.notes"
           :label="t('customers.form.notes')"
           prepend-inner-icon="mdi-note-text"
+          :density="layout.vuetifyDensity"
           :rules="[rules.notesLength]"
           rows="3"
           auto-grow
@@ -78,9 +83,11 @@ import type { CustomerDto, CustomerCategoryDto } from '@features/customers/types
 import type { AxiosError } from 'axios';
 import type { ProblemDetails } from '@shared/types/api';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
+import { useLayoutStore } from '@shared/stores/layout';
 
 const { t } = useI18n();
 const notification = useNotificationStore();
+const layout = useLayoutStore();
 
 const visible = defineModel<boolean>({ required: true });
 

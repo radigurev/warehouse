@@ -10,6 +10,7 @@
           v-model="form.name"
           :label="t('categories.form.name')"
           prepend-inner-icon="mdi-tag"
+          :density="layout.vuetifyDensity"
           :rules="[rules.required, rules.nameLength]"
           :error-messages="fieldErrors.name"
           @update:model-value="fieldErrors.name = []"
@@ -19,6 +20,7 @@
           v-model="form.description"
           :label="t('categories.form.description')"
           prepend-inner-icon="mdi-text"
+          :density="layout.vuetifyDensity"
           :rules="[rules.descriptionLength]"
           rows="3"
           auto-grow
@@ -45,9 +47,11 @@ import type { CustomerCategoryDto } from '@features/customers/types/customer';
 import type { AxiosError } from 'axios';
 import type { ProblemDetails } from '@shared/types/api';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
+import { useLayoutStore } from '@shared/stores/layout';
 
 const { t } = useI18n();
 const notification = useNotificationStore();
+const layout = useLayoutStore();
 
 const visible = defineModel<boolean>({ required: true });
 

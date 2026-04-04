@@ -2,6 +2,7 @@ import { ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useNotificationStore } from '@shared/stores/notification';
+import { useLayoutStore } from '@shared/stores/layout';
 import { getCustomerById, reactivateCustomer, deactivateCustomer } from '@features/customers/api/customers';
 import {
   createAddress, updateAddress, deleteAddress,
@@ -23,6 +24,7 @@ export function useCustomerDetailView() {
   const route = useRoute();
   const router = useRouter();
   const notification = useNotificationStore();
+  const layout = useLayoutStore();
 
   const customer = ref<CustomerDetailDto | null>(null);
   const loading = ref(false);
@@ -148,6 +150,7 @@ export function useCustomerDetailView() {
 
   return {
     t,
+    layout,
     customer,
     loading,
     notFound,

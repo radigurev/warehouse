@@ -24,7 +24,7 @@
       </div>
 
       <!-- Customer Info Card -->
-      <v-card class="mb-4">
+      <v-card :class="vm.layout.isCompact ? 'mb-2' : 'mb-4'">
         <v-card-title class="text-subtitle-1 font-weight-medium">
           <v-icon icon="mdi-information" class="mr-2" />
           {{ vm.t('customers.detail.info') }}
@@ -52,7 +52,7 @@
       </v-card>
 
       <!-- Addresses -->
-      <v-card class="mb-4">
+      <v-card :class="vm.layout.isCompact ? 'mb-2' : 'mb-4'">
         <v-card-title class="text-subtitle-1 font-weight-medium d-flex align-center">
           <v-icon icon="mdi-map-marker" class="mr-2" />
           {{ vm.t('customers.detail.addresses') }}
@@ -64,7 +64,7 @@
         <v-card-text v-if="vm.customer.addresses.length === 0" class="text-medium-emphasis">
           {{ vm.t('customers.detail.noAddresses') }}
         </v-card-text>
-        <v-list v-else density="compact">
+        <v-list v-else :density="vm.layout.vuetifyDensity">
           <v-list-item v-for="addr in vm.customer.addresses" :key="addr.id">
             <template #prepend>
               <v-chip size="small" :color="addr.isDefault ? 'primary' : 'default'" variant="tonal" class="mr-2">{{ addr.addressType }}</v-chip>
@@ -79,7 +79,7 @@
       </v-card>
 
       <!-- Phones -->
-      <v-card class="mb-4">
+      <v-card :class="vm.layout.isCompact ? 'mb-2' : 'mb-4'">
         <v-card-title class="text-subtitle-1 font-weight-medium d-flex align-center">
           <v-icon icon="mdi-phone" class="mr-2" />
           {{ vm.t('customers.detail.phones') }}
@@ -91,7 +91,7 @@
         <v-card-text v-if="vm.customer.phones.length === 0" class="text-medium-emphasis">
           {{ vm.t('customers.detail.noPhones') }}
         </v-card-text>
-        <v-list v-else density="compact">
+        <v-list v-else :density="vm.layout.vuetifyDensity">
           <v-list-item v-for="phone in vm.customer.phones" :key="phone.id">
             <template #prepend>
               <v-chip size="small" :color="phone.isPrimary ? 'primary' : 'default'" variant="tonal" class="mr-2">{{ phone.phoneType }}</v-chip>
@@ -105,7 +105,7 @@
       </v-card>
 
       <!-- Emails -->
-      <v-card class="mb-4">
+      <v-card :class="vm.layout.isCompact ? 'mb-2' : 'mb-4'">
         <v-card-title class="text-subtitle-1 font-weight-medium d-flex align-center">
           <v-icon icon="mdi-email" class="mr-2" />
           {{ vm.t('customers.detail.emails') }}
@@ -117,7 +117,7 @@
         <v-card-text v-if="vm.customer.emails.length === 0" class="text-medium-emphasis">
           {{ vm.t('customers.detail.noEmails') }}
         </v-card-text>
-        <v-list v-else density="compact">
+        <v-list v-else :density="vm.layout.vuetifyDensity">
           <v-list-item v-for="email in vm.customer.emails" :key="email.id">
             <template #prepend>
               <v-chip size="small" :color="email.isPrimary ? 'primary' : 'default'" variant="tonal" class="mr-2">{{ email.emailType }}</v-chip>
@@ -131,7 +131,7 @@
       </v-card>
 
       <!-- Accounts -->
-      <v-card class="mb-4">
+      <v-card :class="vm.layout.isCompact ? 'mb-2' : 'mb-4'">
         <v-card-title class="text-subtitle-1 font-weight-medium d-flex align-center">
           <v-icon icon="mdi-bank" class="mr-2" />
           {{ vm.t('customers.detail.accounts') }}
@@ -143,7 +143,7 @@
         <v-card-text v-if="vm.customer.accounts.length === 0" class="text-medium-emphasis">
           {{ vm.t('customers.detail.noAccounts') }}
         </v-card-text>
-        <v-list v-else density="compact">
+        <v-list v-else :density="vm.layout.vuetifyDensity">
           <v-list-item v-for="acc in vm.customer.accounts" :key="acc.id">
             <template #prepend>
               <v-chip size="small" :color="acc.isPrimary ? 'primary' : 'default'" variant="tonal" class="mr-2">{{ acc.currencyCode }}</v-chip>
@@ -164,13 +164,13 @@
         <v-card-title>{{ vm.t('customers.detail.addAddress') }}</v-card-title>
         <v-card-text>
           <v-form ref="addressFormRef" @submit.prevent="submitAddress">
-            <v-select v-model="addressForm.addressType" :label="vm.t('customers.detail.addressType')" :items="['Billing', 'Shipping', 'Both']" :rules="[requiredRule]" />
-            <v-text-field v-model="addressForm.streetLine1" :label="vm.t('customers.detail.street1')" :rules="[requiredRule]" />
-            <v-text-field v-model="addressForm.streetLine2" :label="vm.t('customers.detail.street2')" />
-            <v-text-field v-model="addressForm.city" :label="vm.t('customers.detail.city')" :rules="[requiredRule]" />
-            <v-text-field v-model="addressForm.stateProvince" :label="vm.t('customers.detail.state')" />
-            <v-text-field v-model="addressForm.postalCode" :label="vm.t('customers.detail.postalCode')" :rules="[requiredRule]" />
-            <v-text-field v-model="addressForm.countryCode" :label="vm.t('customers.detail.countryCode')" :rules="[requiredRule, countryCodeRule]" maxlength="2" />
+            <v-select v-model="addressForm.addressType" :label="vm.t('customers.detail.addressType')" :items="['Billing', 'Shipping', 'Both']" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
+            <v-text-field v-model="addressForm.streetLine1" :label="vm.t('customers.detail.street1')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
+            <v-text-field v-model="addressForm.streetLine2" :label="vm.t('customers.detail.street2')" :density="vm.layout.vuetifyDensity" />
+            <v-text-field v-model="addressForm.city" :label="vm.t('customers.detail.city')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
+            <v-text-field v-model="addressForm.stateProvince" :label="vm.t('customers.detail.state')" :density="vm.layout.vuetifyDensity" />
+            <v-text-field v-model="addressForm.postalCode" :label="vm.t('customers.detail.postalCode')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
+            <v-text-field v-model="addressForm.countryCode" :label="vm.t('customers.detail.countryCode')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule, countryCodeRule]" maxlength="2" />
           </v-form>
         </v-card-text>
         <v-card-actions>
@@ -187,9 +187,9 @@
         <v-card-title>{{ vm.t('customers.detail.addPhone') }}</v-card-title>
         <v-card-text>
           <v-form ref="phoneFormRef" @submit.prevent="submitPhone">
-            <v-select v-model="phoneForm.phoneType" :label="vm.t('customers.detail.phoneType')" :items="['Mobile', 'Landline', 'Fax']" :rules="[requiredRule]" />
-            <v-text-field v-model="phoneForm.phoneNumber" :label="vm.t('customers.detail.phoneNumber')" :rules="[requiredRule]" />
-            <v-text-field v-model="phoneForm.extension" :label="vm.t('customers.detail.extension')" />
+            <v-select v-model="phoneForm.phoneType" :label="vm.t('customers.detail.phoneType')" :items="['Mobile', 'Landline', 'Fax']" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
+            <v-text-field v-model="phoneForm.phoneNumber" :label="vm.t('customers.detail.phoneNumber')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
+            <v-text-field v-model="phoneForm.extension" :label="vm.t('customers.detail.extension')" :density="vm.layout.vuetifyDensity" />
           </v-form>
         </v-card-text>
         <v-card-actions>
@@ -206,8 +206,8 @@
         <v-card-title>{{ vm.t('customers.detail.addEmail') }}</v-card-title>
         <v-card-text>
           <v-form ref="emailFormRef" @submit.prevent="submitEmail">
-            <v-select v-model="emailForm.emailType" :label="vm.t('customers.detail.emailType')" :items="['General', 'Billing', 'Support']" :rules="[requiredRule]" />
-            <v-text-field v-model="emailForm.emailAddress" :label="vm.t('customers.detail.emailAddress')" type="email" :rules="[requiredRule, emailRule]" />
+            <v-select v-model="emailForm.emailType" :label="vm.t('customers.detail.emailType')" :items="['General', 'Billing', 'Support']" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
+            <v-text-field v-model="emailForm.emailAddress" :label="vm.t('customers.detail.emailAddress')" type="email" :density="vm.layout.vuetifyDensity" :rules="[requiredRule, emailRule]" />
           </v-form>
         </v-card-text>
         <v-card-actions>
@@ -224,8 +224,8 @@
         <v-card-title>{{ vm.t('customers.detail.addAccount') }}</v-card-title>
         <v-card-text>
           <v-form ref="accountFormRef" @submit.prevent="submitAccount">
-            <v-text-field v-model="accountForm.currencyCode" :label="vm.t('customers.detail.currencyCode')" :rules="[requiredRule, currencyCodeRule]" maxlength="3" />
-            <v-text-field v-model="accountForm.description" :label="vm.t('customers.detail.accountDescription')" />
+            <v-text-field v-model="accountForm.currencyCode" :label="vm.t('customers.detail.currencyCode')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule, currencyCodeRule]" maxlength="3" />
+            <v-text-field v-model="accountForm.description" :label="vm.t('customers.detail.accountDescription')" :density="vm.layout.vuetifyDensity" />
           </v-form>
         </v-card-text>
         <v-card-actions>
