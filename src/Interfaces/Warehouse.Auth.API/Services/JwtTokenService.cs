@@ -68,7 +68,12 @@ public sealed class JwtTokenService : IJwtTokenService
         ];
 
         foreach (UserRole userRole in user.UserRoles)
+        {
             claims.Add(new Claim(ClaimTypes.Role, userRole.Role.Name));
+
+            foreach (RolePermission rolePermission in userRole.Role.RolePermissions)
+                claims.Add(new Claim("permission", $"{rolePermission.Permission.Resource}:{rolePermission.Permission.Action}"));
+        }
 
         return claims;
     }

@@ -46,7 +46,7 @@ public sealed class AuthService : IAuthService
         CancellationToken cancellationToken)
     {
         User? user = await _context.Users
-            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role).ThenInclude(r => r.RolePermissions).ThenInclude(rp => rp.Permission)
             .FirstOrDefaultAsync(u => u.Username == request.Username && u.IsActive, cancellationToken)
             .ConfigureAwait(false);
 
@@ -69,7 +69,7 @@ public sealed class AuthService : IAuthService
         CancellationToken cancellationToken)
     {
         RefreshToken? storedToken = await _context.RefreshTokens
-            .Include(rt => rt.User).ThenInclude(u => u.UserRoles).ThenInclude(ur => ur.Role)
+            .Include(rt => rt.User).ThenInclude(u => u.UserRoles).ThenInclude(ur => ur.Role).ThenInclude(r => r.RolePermissions).ThenInclude(rp => rp.Permission)
             .FirstOrDefaultAsync(rt => rt.Token == request.RefreshToken, cancellationToken)
             .ConfigureAwait(false);
 
