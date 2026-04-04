@@ -33,7 +33,6 @@ spec-writer → implementator → tester → spec-validator
 | Concern | Persona File |
 |---|---|
 | Base (always-on) | `~/.claude/personas/tester/tester-base.md` |
-| BLL unit tests | `~/.claude/personas/tester/tester-bll.md` |
 | EF Core / ORM tests | `~/.claude/personas/tester/tester-ef-orm.md` |
 | API integration tests | `~/.claude/personas/tester/tester-integration.md` |
 
