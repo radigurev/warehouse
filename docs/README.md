@@ -1,6 +1,6 @@
 # Warehouse — Spec-Driven Development (SDD) Documentation
 
-> Last updated: 2026-04-03
+> Last updated: 2026-04-04
 
 ## Documentation Structure
 
@@ -73,6 +73,7 @@ Test classes reference spec IDs: `{TestClassName}_SDD_{DOMAIN}_{NNN}_{Descriptio
 | SDD-UI-001 | Core | Auth Administration SPA | Implemented |
 | SDD-UI-002 | Domain | Form Display Mode (Modal vs Page) | Implemented |
 | SDD-UI-003 | Domain | User Settings | Implemented |
+| SDD-CUST-001 | Domain | Customers and Accounts | Draft |
 
 ## Change Spec Registry
 
@@ -95,6 +96,7 @@ Test classes reference spec IDs: `{TestClassName}_SDD_{DOMAIN}_{NNN}_{Descriptio
 
 | Prefix | Next ID |
 |---|---|
+| `SDD-CUST` | 002 |
 | `SDD-INV` | 001 |
 | `SDD-WH` | 001 |
 | `SDD-SHIP` | 001 |

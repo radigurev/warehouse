@@ -1,6 +1,6 @@
 # Warehouse — Project Instructions
 
-> Last updated: 2026-04-03
+> Last updated: 2026-04-05
 
 ---
 
@@ -51,8 +51,8 @@ CLAUDE.md > persona-database > persona-dotnet8-microservices > csharp-persona > 
 - **Polly:** Required on all outbound HTTP clients (to be added when services are implemented)
 - **Mapping:** AutoMapper only
 - **Logging:** NLog with structured message templates
-- **ORM:** EF Core (to be added)
-- **Validation:** FluentValidation (to be added)
+- **ORM:** EF Core with separate DbContext per domain (AuthDbContext, CustomersDbContext)
+- **Validation:** FluentValidation
 - **PK strategy:** INT IDENTITY (or GUID with `NEWSEQUENTIALID()` if GUID is chosen)
 - **API versioning:** URL-based (`/api/v1/`)
 - **Authentication:** JWT-based with RBAC (implemented in Warehouse.Auth.API)
@@ -68,24 +68,23 @@ CLAUDE.md > persona-database > persona-dotnet8-microservices > csharp-persona > 
 
 ### Current Package Versions
 
-| Package | Version | Project |
+| Package | Version | Projects |
 |---|---|---|
-| Microsoft.AspNetCore.OpenApi | 8.0.25 | Warehouse.API |
-| Swashbuckle.AspNetCore | 6.6.2 | Warehouse.API |
-| NUnit | 3.13.3 | Warehouse.API.Tests |
-| Microsoft.NET.Test.Sdk | 17.6.0 | Warehouse.API.Tests |
-| coverlet.collector | 6.0.0 | Warehouse.API.Tests |
-
-### Packages to Add (when first feature is implemented)
-
-- AutoMapper.Extensions.Microsoft.DependencyInjection
-- FluentValidation.AspNetCore
-- Microsoft.EntityFrameworkCore.SqlServer
-- Microsoft.EntityFrameworkCore.Tools
-- NLog.Web.AspNetCore
-- Microsoft.Extensions.Http.Polly
-- Polly
-- Asp.Versioning.Mvc
+| Microsoft.EntityFrameworkCore.SqlServer | 8.0.12 | Auth.DBModel, Customers.DBModel |
+| Microsoft.EntityFrameworkCore.Design | 8.0.12 | Auth.API, Customers.API |
+| AutoMapper.Extensions.Microsoft.DependencyInjection | 12.0.1 | Auth.API, Customers.API, Mapping |
+| FluentValidation.AspNetCore | 11.3.0 | Auth.API, Customers.API |
+| Asp.Versioning.Mvc | 8.1.0 | Auth.API, Customers.API |
+| Swashbuckle.AspNetCore | 6.6.2 | Auth.API, Customers.API |
+| Microsoft.AspNetCore.Authentication.JwtBearer | 8.0.12 | Auth.API, Customers.API |
+| NLog.Web.AspNetCore | 5.4.0 | Auth.API, Customers.API |
+| AspNetCore.HealthChecks.SqlServer | 8.0.2 | Auth.API, Customers.API |
+| BCrypt.Net-Next | 4.0.3 | Auth.API |
+| Polly | 8.5.2 | Customers.API |
+| Microsoft.Extensions.Http.Polly | 8.0.12 | Customers.API |
+| NUnit | 3.13.3 | Auth.API.Tests, Customers.API.Tests |
+| FluentAssertions | 6.12.2 | Auth.API.Tests, Customers.API.Tests |
+| Moq | 4.20.72 | Customers.API.Tests |
 
 ---
 
@@ -133,15 +132,17 @@ Warehouse/
 ├── src/
 │   ├── Warehouse.slnx                             ← .NET 8 solution
 │   ├── Databases/
-│   │   └── Warehouse.DBModel/                     ← EF Core entities, DbContext, migrations
-│   │       ├── Interfaces/                        ← Repository interfaces
-│   │       ├── Models/                            ← Entity models
-│   │       └── Configuration/                     ← EF Core Fluent API config
+│   │   ├── Warehouse.Auth.DBModel/                ← Auth EF Core entities, AuthDbContext, migrations
+│   │   │   └── Models/                            ← Auth entity models (User, Role, Permission, etc.)
+│   │   └── Warehouse.Customers.DBModel/           ← Customers EF Core entities, CustomersDbContext, migrations
+│   │       └── Models/                            ← Customer entity models (Customer, Account, etc.)
 │   ├── Interfaces/
-│   │   ├── Warehouse.API/                         ← Controllers, middleware, DI root
-│   │   │   ├── Controllers/
-│   │   │   └── Middleware/
-│   │   └── Warehouse.API.Tests/                   ← NUnit tests
+│   │   ├── Auth/                                  ← Auth domain
+│   │   │   ├── Warehouse.Auth.API/                ← Controllers, middleware, DI root
+│   │   │   └── Warehouse.Auth.API.Tests/          ← NUnit tests
+│   │   └── Customers/                             ← Customers domain
+│   │       ├── Warehouse.Customers.API/           ← Controllers, middleware, DI root
+│   │       └── Warehouse.Customers.API.Tests/     ← NUnit tests
 │   ├── Warehouse.Common/                          ← Shared enums, helpers, extensions
 │   │   ├── Enums/
 │   │   ├── Extensions/
@@ -161,32 +162,75 @@ Warehouse/
 ### Project Reference Graph
 
 ```
-Warehouse.API
-  ├── Warehouse.DBModel
+Warehouse.Auth.API
+  ├── Warehouse.Auth.DBModel
   │   └── Warehouse.Common
   ├── Warehouse.Common
   ├── Warehouse.Mapping
   │   ├── Warehouse.ServiceModel
-  │   └── Warehouse.DBModel
+  │   ├── Warehouse.Auth.DBModel
+  │   └── Warehouse.Customers.DBModel
   ├── Warehouse.ServiceModel
   └── Warehouse.GenericFiltering
       └── Warehouse.Common
 
-Warehouse.API.Tests
-  └── Warehouse.API
+Warehouse.Customers.API
+  ├── Warehouse.Customers.DBModel
+  │   └── Warehouse.Common
+  ├── Warehouse.Common
+  ├── Warehouse.Mapping
+  ├── Warehouse.ServiceModel
+  └── Warehouse.GenericFiltering
+      └── Warehouse.Common
+
+Warehouse.Auth.API.Tests
+  └── Warehouse.Auth.API
+
+Warehouse.Customers.API.Tests
+  ├── Warehouse.Customers.API
+  └── Warehouse.Mapping
 ```
 
 ---
 
-## 3. Domain Entities (DBModel)
+## 3. Domain Entities
 
-No entities defined yet. This section will be populated as features are implemented.
+### Auth Domain (`Warehouse.Auth.DBModel` — `AuthDbContext`)
+
+| Entity | Schema | Table | Description |
+|---|---|---|---|
+| User | auth | Users | Application users |
+| Role | auth | Roles | Authorization roles |
+| Permission | auth | Permissions | Granular resource-action permissions |
+| UserRole | auth | UserRoles | User-to-role join table |
+| RolePermission | auth | RolePermissions | Role-to-permission join table |
+| RefreshToken | auth | RefreshTokens | JWT refresh token storage |
+| UserActionLog | auth | UserActionLogs | Immutable audit trail |
+
+### Customers Domain (`Warehouse.Customers.DBModel` — `CustomersDbContext`)
+
+| Entity | Schema | Table | Description |
+|---|---|---|---|
+| Customer | customers | Customers | Core customer entity |
+| CustomerCategory | customers | CustomerCategories | Customer classification |
+| CustomerAccount | customers | CustomerAccounts | Multi-currency accounts |
+| CustomerAddress | customers | CustomerAddresses | Physical addresses |
+| CustomerPhone | customers | CustomerPhones | Phone numbers |
+| CustomerEmail | customers | CustomerEmails | Email addresses |
+
+**Note:** `Customer.CreatedByUserId` and `Customer.ModifiedByUserId` are plain FK columns referencing `auth.Users` — no EF navigation property (cross-context boundary).
 
 ---
 
 ## 4. API Endpoints
 
-No endpoints defined yet. The default template endpoints exist but will be replaced.
+### Auth API (`Warehouse.Auth.API` — port 5001)
+
+See `docs/infrastructure/SDD-AUTH-001-authentication-and-authorization.md` for full endpoint documentation.
+
+### Customers API (`Warehouse.Customers.API` — port 5003)
+
+See `docs/domain/SDD-CUST-001-customers-and-accounts.md` for full endpoint documentation (27 endpoints).
 
 ---
 
@@ -222,14 +266,10 @@ None yet. Planned integrations:
 
 | # | Deviation | Reason | Plan |
 |---|---|---|---|
-| 1 | `Nullable` enabled in `.csproj` | Default template setting | Review during first feature — may disable if not desired |
-| 2 | `ImplicitUsings` enabled | Default template setting | Review during first feature — may disable for explicit control |
-| 3 | No NLog configured yet | Greenfield project | Add NLog when first service is implemented |
-| 4 | No FluentValidation yet | Greenfield project | Add when first endpoint with input is implemented |
-| 5 | No AutoMapper yet | Greenfield project | Add when first mapping is needed |
-| 6 | No Polly resilience yet | No outbound HTTP clients yet | Add with first typed HttpClient |
-| 7 | No health checks yet | No services to check | Add liveness/readiness with first feature |
-| 8 | No API versioning yet | No endpoints yet | Add with first controller |
+| 1 | `Nullable` enabled in `.csproj` | Default template setting | Review — may disable if not desired |
+| 2 | `ImplicitUsings` enabled | Default template setting | Review — may disable for explicit control |
+| 3 | Polly only on Customers.API | Auth.API has no outbound HTTP clients | Add Polly to Auth.API when it needs typed HttpClients |
+| 4 | Mapping project references both DBModel projects | Shared AutoMapper profiles | Split into per-domain mapping if isolation becomes critical |
 
 ---
 
@@ -297,11 +337,14 @@ Describe proposed changes. Live in `docs/changes/`.
 | Purpose | Path |
 |---|---|
 | Solution file | `src/Warehouse.slnx` |
-| API project | `src/Interfaces/Warehouse.API/` |
-| API tests | `src/Interfaces/Warehouse.API.Tests/` |
-| Database models | `src/Databases/Warehouse.DBModel/Models/` |
-| EF Core config | `src/Databases/Warehouse.DBModel/Configuration/` |
-| Repository interfaces | `src/Databases/Warehouse.DBModel/Interfaces/` |
+| Auth API | `src/Interfaces/Auth/Warehouse.Auth.API/` |
+| Auth API tests | `src/Interfaces/Auth/Warehouse.Auth.API.Tests/` |
+| Auth DB models | `src/Databases/Warehouse.Auth.DBModel/Models/` |
+| Auth DbContext | `src/Databases/Warehouse.Auth.DBModel/AuthDbContext.cs` |
+| Customers API | `src/Interfaces/Customers/Warehouse.Customers.API/` |
+| Customers API tests | `src/Interfaces/Customers/Warehouse.Customers.API.Tests/` |
+| Customers DB models | `src/Databases/Warehouse.Customers.DBModel/Models/` |
+| Customers DbContext | `src/Databases/Warehouse.Customers.DBModel/CustomersDbContext.cs` |
 | DTOs | `src/Warehouse.ServiceModel/DTOs/` |
 | Request models | `src/Warehouse.ServiceModel/Requests/` |
 | Response models | `src/Warehouse.ServiceModel/Responses/` |

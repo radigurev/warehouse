@@ -1,8 +1,8 @@
 # Cross-Reference Map
 
-> Last updated: 2026-04-03
+> Last updated: 2026-04-05
 >
-> Note: SDD-UI-003 added 2026-04-03
+> Note: Updated all paths for domain-split restructure (Auth.DBModel, Customers.DBModel, Interfaces/Auth/, Interfaces/Customers/)
 
 This document provides a bidirectional mapping between SDD specifications and source files.
 
@@ -12,14 +12,14 @@ This document provides a bidirectional mapping between SDD specifications and so
 
 | File | Type | Role |
 |---|---|---|
-| `src/Interfaces/Warehouse.Auth.API/Controllers/AuthController.cs` | Controller | Login, refresh, logout endpoints |
-| `src/Interfaces/Warehouse.Auth.API/Controllers/UsersController.cs` | Controller | User CRUD endpoints |
-| `src/Interfaces/Warehouse.Auth.API/Controllers/RolesController.cs` | Controller | Role CRUD endpoints |
-| `src/Interfaces/Warehouse.Auth.API/Controllers/PermissionsController.cs` | Controller | Permission endpoints |
-| `src/Interfaces/Warehouse.Auth.API/Controllers/AuditController.cs` | Controller | Audit log endpoints |
-| `src/Interfaces/Warehouse.Auth.API/Authorization/PermissionAuthorizationHandler.cs` | Middleware | RBAC permission checks |
-| `src/Databases/Warehouse.DBModel/Models/Auth/` | Entities | All auth database models |
-| `src/Databases/Warehouse.DBModel/WarehouseDbContext.cs` | DbContext | EF Core context |
+| `src/Interfaces/Auth/Warehouse.Auth.API/Controllers/AuthController.cs` | Controller | Login, refresh, logout endpoints |
+| `src/Interfaces/Auth/Warehouse.Auth.API/Controllers/UsersController.cs` | Controller | User CRUD endpoints |
+| `src/Interfaces/Auth/Warehouse.Auth.API/Controllers/RolesController.cs` | Controller | Role CRUD endpoints |
+| `src/Interfaces/Auth/Warehouse.Auth.API/Controllers/PermissionsController.cs` | Controller | Permission endpoints |
+| `src/Interfaces/Auth/Warehouse.Auth.API/Controllers/AuditController.cs` | Controller | Audit log endpoints |
+| `src/Interfaces/Auth/Warehouse.Auth.API/Authorization/PermissionAuthorizationHandler.cs` | Middleware | RBAC permission checks |
+| `src/Databases/Warehouse.Auth.DBModel/Models/` | Entities | All auth database models |
+| `src/Databases/Warehouse.Auth.DBModel/AuthDbContext.cs` | DbContext | Auth EF Core context |
 
 ### SDD-UI-001 — Auth Administration SPA
 
@@ -78,17 +78,39 @@ This document provides a bidirectional mapping between SDD specifications and so
 | `frontend/src/i18n/locales/en.ts` | i18n | English translations for settings labels |
 | `frontend/src/i18n/locales/bg.ts` | i18n | Bulgarian translations for settings labels |
 
+### SDD-CUST-001 — Customers and Accounts
+
+| File | Type | Role |
+|---|---|---|
+| `src/Interfaces/Customers/Warehouse.Customers.API/Controllers/CustomersController.cs` | Controller | Customer CRUD endpoints |
+| `src/Interfaces/Customers/Warehouse.Customers.API/Controllers/CustomerAccountsController.cs` | Controller | Account management endpoints |
+| `src/Interfaces/Customers/Warehouse.Customers.API/Controllers/CustomerContactsController.cs` | Controller | Address, phone, email endpoints |
+| `src/Interfaces/Customers/Warehouse.Customers.API/Controllers/CustomerCategoriesController.cs` | Controller | Category CRUD endpoints |
+| `src/Interfaces/Customers/Warehouse.Customers.API/Services/CustomerService.cs` | Service | Customer business logic |
+| `src/Interfaces/Customers/Warehouse.Customers.API/Services/CustomerAccountService.cs` | Service | Account business logic |
+| `src/Interfaces/Customers/Warehouse.Customers.API/Services/CustomerContactService.cs` | Service | Contact info business logic |
+| `src/Interfaces/Customers/Warehouse.Customers.API/Services/CustomerCategoryService.cs` | Service | Category business logic |
+| `src/Databases/Warehouse.Customers.DBModel/Models/` | Entities | All customer database models |
+| `src/Databases/Warehouse.Customers.DBModel/CustomersDbContext.cs` | DbContext | Customers EF Core context |
+| `src/Warehouse.ServiceModel/DTOs/Customers/` | DTOs | Customer domain DTOs |
+| `src/Warehouse.ServiceModel/Requests/Customers/` | Requests | Customer request models |
+| `src/Warehouse.Mapping/Profiles/Customers/CustomerMappingProfile.cs` | Mapping | AutoMapper profile |
+| `src/Interfaces/Customers/Warehouse.Customers.API.Tests/` | Tests | Unit and integration tests |
+
 ## Section 2 — Source File → Specs
 
 | Source File | Spec ID(s) |
 |---|---|
-| `src/Interfaces/Warehouse.Auth.API/Controllers/AuthController.cs` | SDD-AUTH-001 |
-| `src/Interfaces/Warehouse.Auth.API/Controllers/UsersController.cs` | SDD-AUTH-001 |
-| `src/Interfaces/Warehouse.Auth.API/Controllers/RolesController.cs` | SDD-AUTH-001 |
-| `src/Interfaces/Warehouse.Auth.API/Controllers/PermissionsController.cs` | SDD-AUTH-001 |
-| `src/Interfaces/Warehouse.Auth.API/Controllers/AuditController.cs` | SDD-AUTH-001 |
-| `src/Interfaces/Warehouse.Auth.API/Authorization/PermissionAuthorizationHandler.cs` | SDD-AUTH-001 |
-| `src/Databases/Warehouse.DBModel/Models/Auth/*` | SDD-AUTH-001 |
+| `src/Interfaces/Auth/Warehouse.Auth.API/Controllers/AuthController.cs` | SDD-AUTH-001 |
+| `src/Interfaces/Auth/Warehouse.Auth.API/Controllers/UsersController.cs` | SDD-AUTH-001 |
+| `src/Interfaces/Auth/Warehouse.Auth.API/Controllers/RolesController.cs` | SDD-AUTH-001 |
+| `src/Interfaces/Auth/Warehouse.Auth.API/Controllers/PermissionsController.cs` | SDD-AUTH-001 |
+| `src/Interfaces/Auth/Warehouse.Auth.API/Controllers/AuditController.cs` | SDD-AUTH-001 |
+| `src/Interfaces/Auth/Warehouse.Auth.API/Authorization/PermissionAuthorizationHandler.cs` | SDD-AUTH-001 |
+| `src/Databases/Warehouse.Auth.DBModel/Models/*` | SDD-AUTH-001 |
+| `src/Databases/Warehouse.Customers.DBModel/Models/*` | SDD-CUST-001 |
+| `src/Interfaces/Customers/Warehouse.Customers.API/Controllers/*` | SDD-CUST-001 |
+| `src/Interfaces/Customers/Warehouse.Customers.API/Services/*` | SDD-CUST-001 |
 | `frontend/src/router/index.ts` | SDD-UI-001, SDD-UI-002, SDD-UI-003 |
 | `frontend/src/stores/auth.ts` | SDD-UI-001, SDD-UI-003 |
 | `frontend/src/stores/layout.ts` | SDD-UI-001, SDD-UI-002 |
