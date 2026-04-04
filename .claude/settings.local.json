@@ -3,5 +3,17 @@
     "allow": [
       "Bash(find src:*)"
     ]
+  },
+  "mcpServers": {
+    "mssql": {
+      "command": "/opt/homebrew/opt/node@20/bin/npx",
+      "args": [
+        "-y",
+        "mssql-mcp-server"
+      ],
+      "env": {
+        "MSSQL_CONNECTION_STRING": "workstation id=rado_Warehouse.mssql.somee.com;packet size=4096;user id=radigurev_SQLLogin_3;pwd=dv8b9dz9ae;data source=rado_Warehouse.mssql.somee.com;persist security info=False;initial catalog=rado_Warehouse;TrustServerCertificate=True"
+      }
+    }
   }
 }

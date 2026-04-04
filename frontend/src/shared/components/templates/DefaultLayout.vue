@@ -121,6 +121,70 @@
             </v-expand-transition>
           </template>
         </template>
+
+        <!-- Customers section -->
+        <v-list-group v-if="!layout.sidebarCollapsed" value="customers">
+          <template #activator="{ props: groupProps }">
+            <v-list-item
+              v-bind="groupProps"
+              prepend-icon="mdi-account-multiple"
+              :title="t('nav.customers')"
+              rounded="xl"
+            />
+          </template>
+
+          <v-list-item
+            to="/customers"
+            prepend-icon="mdi-account-group"
+            :title="t('nav.customerList')"
+            :active="route.path === '/customers'"
+            rounded="xl"
+          />
+          <v-list-item
+            to="/customer-categories"
+            prepend-icon="mdi-tag-multiple"
+            :title="t('nav.categories')"
+            :active="route.path === '/customer-categories'"
+            rounded="xl"
+          />
+        </v-list-group>
+
+        <template v-else>
+          <v-list-item
+            prepend-icon="mdi-account-multiple"
+            density="compact"
+            rounded="xl"
+            :class="['mt-2', { 'rail-admin-parent': customerRailExpanded }]"
+            @click="customerRailExpanded = !customerRailExpanded"
+          >
+            <template #append>
+              <v-icon
+                icon="mdi-chevron-down"
+                size="x-small"
+                :class="['rail-arrow', { 'rail-arrow--open': customerRailExpanded }]"
+              />
+            </template>
+          </v-list-item>
+
+          <v-expand-transition>
+            <div v-show="customerRailExpanded" class="rail-admin-items">
+              <v-list-item
+                to="/customers"
+                prepend-icon="mdi-account-group"
+                :active="route.path === '/customers'"
+                rounded="xl"
+                class="rail-admin-item"
+              />
+              <v-list-item
+                to="/customer-categories"
+                prepend-icon="mdi-tag-multiple"
+                :active="route.path === '/customer-categories'"
+                rounded="xl"
+                class="rail-admin-item"
+              />
+            </div>
+          </v-expand-transition>
+        </template>
       </v-list>
     </v-navigation-drawer>
 
@@ -249,10 +313,11 @@ const auth = useAuthStore();
 const layout = useLayoutStore();
 const drawerOpen = ref(true);
 const adminRailExpanded = ref(true);
+const customerRailExpanded = ref(true);
 
 const currentLocale = computed(() => locale.value);
 
-const formPageRoutes = ['user-create', 'user-edit', 'user-password', 'user-roles', 'role-create', 'role-edit', 'role-permissions', 'permission-create', 'settings-edit-profile', 'settings-change-password'];
+const formPageRoutes = ['user-create', 'user-edit', 'user-password', 'user-roles', 'role-create', 'role-edit', 'role-permissions', 'permission-create', 'customer-create', 'customer-edit', 'category-create', 'category-edit', 'settings-edit-profile', 'settings-change-password'];
 const isFormPage = computed(() => formPageRoutes.includes(route.name as string));
 
 const pageTitle = computed(() => {
