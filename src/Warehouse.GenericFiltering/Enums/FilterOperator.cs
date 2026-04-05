@@ -43,5 +43,15 @@ public enum FilterOperator
     /// <summary>
     /// Negated substring containment comparison.
     /// </summary>
-    NotContains
+    NotContains,
+
+    /// <summary>
+    /// String prefix comparison (starts with).
+    /// </summary>
+    StartsWith,
+
+    /// <summary>
+    /// String suffix comparison (ends with).
+    /// </summary>
+    EndsWith
 }

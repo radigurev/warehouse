@@ -52,6 +52,12 @@ internal static class ComparisonBuilder
             return Expression.Not(containsExpr);
         }
 
+        if (op == FilterOperator.StartsWith)
+            return BuildStringMethodExpression(selectorBody, constantExpression, nameof(string.StartsWith));
+
+        if (op == FilterOperator.EndsWith)
+            return BuildStringMethodExpression(selectorBody, constantExpression, nameof(string.EndsWith));
+
         Type? seqInterface = PropertyPathResolver.FindGenericEnumerableInterface(selectorBody.Type);
         if (seqInterface != null && selectorBody.Type != typeof(string))
             return BuildCollectionAnyComparison(selectorBody, constantExpression, seqInterface, op);
@@ -86,6 +92,20 @@ internal static class ComparisonBuilder
             FilterOperator.LessOrEqual => Expression.LessThanOrEqual(left, right),
             _ => throw new FilterException($"Operator '{op}' is not supported for binary comparison.")
         };
+    }
+
+    /// <summary>
+    /// Builds a string method call expression (StartsWith, EndsWith) for string properties.
+    /// </summary>
+    private static Expression BuildStringMethodExpression(
+        Expression visitorResult,
+        Expression constant,
+        string methodName)
+    {
+        if (visitorResult.Type != typeof(string))
+            throw new FilterException($"Operator '{methodName}' is only supported for string properties.");
+
+        return Expression.Call(visitorResult, methodName, Type.EmptyTypes, constant);
     }
 
     /// <summary>

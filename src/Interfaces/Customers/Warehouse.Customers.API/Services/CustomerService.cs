@@ -4,6 +4,7 @@ using Warehouse.Common.Models;
 using Warehouse.Customers.API.Interfaces;
 using Warehouse.Customers.DBModel;
 using Warehouse.Customers.DBModel.Models;
+using Warehouse.GenericFiltering;
 using Warehouse.ServiceModel.DTOs.Customers;
 using Warehouse.ServiceModel.Requests.Customers;
 using Warehouse.ServiceModel.Responses;
@@ -237,6 +238,8 @@ public sealed class CustomerService : BaseCustomerEntityService, ICustomerServic
 
         if (request.CategoryId.HasValue)
             query = query.Where(c => c.CategoryId == request.CategoryId.Value);
+
+        query = query.ApplyFilter(request.Filter);
 
         return query;
     }

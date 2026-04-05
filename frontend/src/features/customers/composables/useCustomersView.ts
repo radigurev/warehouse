@@ -1,9 +1,10 @@
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useLayoutStore } from '@shared/stores/layout';
 import { useNotificationStore } from '@shared/stores/notification';
 import { useColumnFilters } from '@shared/composables/useColumnFilters';
+import { buildFilterString } from '@shared/utils/buildFilterString';
 import { searchCustomers, deactivateCustomer, reactivateCustomer } from '@features/customers/api/customers';
 import type { CustomerDto, SearchCustomersRequest } from '@features/customers/types/customer';
 
@@ -30,6 +31,21 @@ export function useCustomersView() {
   });
 
   const { columnFilters, filteredItems } = useColumnFilters(customers, ['name', 'code', 'categoryName']);
+
+  const filterPathMap: Record<string, string> = {
+    name: 'name',
+    code: 'code',
+    categoryName: 'category.name',
+  };
+
+  watch(columnFilters, () => {
+    searchParams.value = {
+      ...searchParams.value,
+      filter: buildFilterString(columnFilters, filterPathMap),
+      page: 1,
+    };
+    loadCustomers();
+  }, { deep: true });
 
   const headers = computed(() => [
     { title: t('customers.columns.code'), key: 'code', sortable: true },

@@ -49,4 +49,11 @@ public sealed record SearchCustomersRequest
     /// Gets the number of items per page. Defaults to 20.
     /// </summary>
     public int PageSize { get; init; } = 20;
+
+    /// <summary>
+    /// Gets the generic filter expression string. Optional.
+    /// <para>Format: <c>(propertyPath,operator,value)[and|or(...)]</c></para>
+    /// <para>Example: <c>(name,cn,'John')and(category.name,eq,'VIP')</c></para>
+    /// </summary>
+    public string? Filter { get; init; }
 }

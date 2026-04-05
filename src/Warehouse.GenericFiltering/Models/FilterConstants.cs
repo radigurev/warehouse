@@ -44,7 +44,7 @@ internal static class FilterConstants
     /// Regex pattern for a single filter clause: (path,operator,value).
     /// </summary>
     internal const string SINGLE_FILTER_REGEX =
-        $"\\((?<{PATH_GROUP}>[A-Za-z0-9_.]+),(?<{OPERATOR_GROUP}>eq|gt|ge|lt|nq|le|cn|ncn),(?<{VALUE_GROUP}>\\[[^\\]]*\\]|'[^']*'|\"[^\"]*\"|[^)]+)\\)";
+        $"\\((?<{PATH_GROUP}>[A-Za-z0-9_.]+),(?<{OPERATOR_GROUP}>eq|gt|ge|lt|nq|le|cn|ncn|sw|ew),(?<{VALUE_GROUP}>\\[[^\\]]*\\]|'[^']*'|\"[^\"]*\"|[^)]+)\\)";
 
     /// <summary>
     /// Regex pattern for multiple filter clauses joined by and/or.

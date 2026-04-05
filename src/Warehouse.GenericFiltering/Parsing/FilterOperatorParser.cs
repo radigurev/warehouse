@@ -18,6 +18,8 @@ public static class FilterOperatorParser
         "le" => FilterOperator.LessOrEqual,
         "cn" => FilterOperator.Contains,
         "ncn" => FilterOperator.NotContains,
+        "sw" => FilterOperator.StartsWith,
+        "ew" => FilterOperator.EndsWith,
         _ => throw new FilterException($"Unknown filter operator: '{token}'.")
     };
 }

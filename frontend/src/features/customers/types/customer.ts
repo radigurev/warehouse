@@ -99,6 +99,7 @@ export interface SearchCustomersRequest {
   sortDescending: boolean;
   page: number;
   pageSize: number;
+  filter?: string | null;
 }
 
 export interface CreateCategoryRequest {
