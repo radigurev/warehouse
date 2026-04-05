@@ -1,8 +1,9 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
-using Warehouse.Auth.API.Authorization;
 using Warehouse.Auth.API.Interfaces;
 using Warehouse.Common.Models;
+using Warehouse.Infrastructure.Authorization;
+using Warehouse.Infrastructure.Controllers;
 using Warehouse.ServiceModel.DTOs.Auth;
 using Warehouse.ServiceModel.Requests.Auth;
 
@@ -14,7 +15,7 @@ namespace Warehouse.Auth.API.Controllers;
 /// </summary>
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/roles")]
-public sealed class RolesController : BaseAuthController
+public sealed class RolesController : BaseApiController
 {
     private readonly IRoleService _roleService;
 

@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Warehouse.Auth.API.Configuration;
+using Warehouse.Infrastructure.Configuration;
 using Warehouse.Auth.API.Interfaces;
 using Warehouse.Auth.DBModel.Models;
 

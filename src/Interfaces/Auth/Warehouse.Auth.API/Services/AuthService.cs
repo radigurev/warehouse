@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Warehouse.Auth.API.Configuration;
+using Warehouse.Infrastructure.Configuration;
 using Warehouse.Auth.API.Interfaces;
 using Warehouse.Common.Models;
 using Warehouse.Auth.DBModel;

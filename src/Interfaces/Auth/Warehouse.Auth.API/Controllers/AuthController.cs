@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Warehouse.Auth.API.Interfaces;
 using Warehouse.Common.Models;
+using Warehouse.Infrastructure.Controllers;
 using Warehouse.ServiceModel.Requests.Auth;
 using Warehouse.ServiceModel.Responses.Auth;
 
@@ -14,7 +15,7 @@ namespace Warehouse.Auth.API.Controllers;
 /// </summary>
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/auth")]
-public sealed class AuthController : BaseAuthController
+public sealed class AuthController : BaseApiController
 {
     private readonly IAuthService _authService;
 

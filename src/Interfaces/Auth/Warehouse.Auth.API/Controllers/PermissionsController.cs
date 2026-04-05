@@ -1,8 +1,9 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
-using Warehouse.Auth.API.Authorization;
 using Warehouse.Auth.API.Interfaces;
 using Warehouse.Common.Models;
+using Warehouse.Infrastructure.Authorization;
+using Warehouse.Infrastructure.Controllers;
 using Warehouse.ServiceModel.DTOs.Auth;
 using Warehouse.ServiceModel.Requests.Auth;
 
@@ -15,7 +16,7 @@ namespace Warehouse.Auth.API.Controllers;
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/permissions")]
 [RequirePermission("roles:read")]
-public sealed class PermissionsController : BaseAuthController
+public sealed class PermissionsController : BaseApiController
 {
     private readonly IPermissionService _permissionService;
 

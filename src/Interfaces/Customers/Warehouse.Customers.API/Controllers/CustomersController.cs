@@ -2,8 +2,9 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Warehouse.Common.Models;
-using Warehouse.Customers.API.Authorization;
 using Warehouse.Customers.API.Interfaces;
+using Warehouse.Infrastructure.Authorization;
+using Warehouse.Infrastructure.Controllers;
 using Warehouse.ServiceModel.DTOs.Customers;
 using Warehouse.ServiceModel.Requests.Customers;
 using Warehouse.ServiceModel.Responses;
@@ -17,7 +18,7 @@ namespace Warehouse.Customers.API.Controllers;
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/customers")]
 [Authorize]
-public sealed class CustomersController : BaseCustomersController
+public sealed class CustomersController : BaseApiController
 {
     private readonly ICustomerService _customerService;
 

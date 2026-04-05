@@ -1,8 +1,9 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
-using Warehouse.Auth.API.Authorization;
 using Warehouse.Auth.API.Interfaces;
 using Warehouse.Common.Models;
+using Warehouse.Infrastructure.Authorization;
+using Warehouse.Infrastructure.Controllers;
 using Warehouse.ServiceModel.DTOs.Auth;
 using Warehouse.ServiceModel.Responses;
 
@@ -15,7 +16,7 @@ namespace Warehouse.Auth.API.Controllers;
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/audit")]
 [RequirePermission("audit:read")]
-public sealed class AuditController : BaseAuthController
+public sealed class AuditController : BaseApiController
 {
     private readonly IAuditService _auditService;
 

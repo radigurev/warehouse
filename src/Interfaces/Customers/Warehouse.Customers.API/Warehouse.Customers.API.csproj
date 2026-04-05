@@ -30,6 +30,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\Databases\Warehouse.Customers.DBModel\Warehouse.Customers.DBModel.csproj" />
     <ProjectReference Include="..\..\..\Warehouse.Common\Warehouse.Common.csproj" />
+    <ProjectReference Include="..\..\..\Warehouse.Infrastructure\Warehouse.Infrastructure.csproj" />
     <ProjectReference Include="..\..\..\Warehouse.Mapping\Warehouse.Mapping.csproj" />
     <ProjectReference Include="..\..\..\Warehouse.ServiceModel\Warehouse.ServiceModel.csproj" />
   </ItemGroup>
