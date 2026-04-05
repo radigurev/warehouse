@@ -14,18 +14,14 @@ namespace Warehouse.Customers.API.Services;
 /// Implements customer lifecycle operations: CRUD, search, soft-delete, and reactivation.
 /// <para>See <see cref="ICustomerService"/>.</para>
 /// </summary>
-public sealed class CustomerService : ICustomerService
+public sealed class CustomerService : BaseCustomerEntityService, ICustomerService
 {
-    private readonly CustomersDbContext _context;
-    private readonly IMapper _mapper;
-
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
     public CustomerService(CustomersDbContext context, IMapper mapper)
+        : base(context, mapper)
     {
-        _context = context;
-        _mapper = mapper;
     }
 
     /// <inheritdoc />
@@ -36,7 +32,7 @@ public sealed class CustomerService : ICustomerService
         if (customer is null || customer.IsDeleted)
             return Result<CustomerDetailDto>.Failure("CUSTOMER_NOT_FOUND", "Customer not found.", 404);
 
-        CustomerDetailDto dto = _mapper.Map<CustomerDetailDto>(customer);
+        CustomerDetailDto dto = Mapper.Map<CustomerDetailDto>(customer);
         return Result<CustomerDetailDto>.Success(dto);
     }
 
@@ -57,7 +53,7 @@ public sealed class CustomerService : ICustomerService
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        IReadOnlyList<CustomerDto> dtos = _mapper.Map<IReadOnlyList<CustomerDto>>(items);
+        IReadOnlyList<CustomerDto> dtos = Mapper.Map<IReadOnlyList<CustomerDto>>(items);
 
         PaginatedResponse<CustomerDto> response = new()
         {
@@ -105,11 +101,11 @@ public sealed class CustomerService : ICustomerService
             CreatedByUserId = userId
         };
 
-        _context.Customers.Add(customer);
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        Context.Customers.Add(customer);
+        await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         Customer? created = await GetCustomerWithDetailsAsync(customer.Id, cancellationToken).ConfigureAwait(false);
-        CustomerDetailDto dto = _mapper.Map<CustomerDetailDto>(created!);
+        CustomerDetailDto dto = Mapper.Map<CustomerDetailDto>(created!);
         return Result<CustomerDetailDto>.Success(dto);
     }
 
@@ -140,17 +136,17 @@ public sealed class CustomerService : ICustomerService
         customer.ModifiedAtUtc = DateTime.UtcNow;
         customer.ModifiedByUserId = userId;
 
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         Customer? updated = await GetCustomerWithDetailsAsync(id, cancellationToken).ConfigureAwait(false);
-        CustomerDetailDto dto = _mapper.Map<CustomerDetailDto>(updated!);
+        CustomerDetailDto dto = Mapper.Map<CustomerDetailDto>(updated!);
         return Result<CustomerDetailDto>.Success(dto);
     }
 
     /// <inheritdoc />
     public async Task<Result> DeactivateAsync(int id, CancellationToken cancellationToken)
     {
-        Customer? customer = await _context.Customers
+        Customer? customer = await Context.Customers
             .Include(c => c.Accounts.Where(a => !a.IsDeleted))
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken)
             .ConfigureAwait(false);
@@ -166,7 +162,7 @@ public sealed class CustomerService : ICustomerService
         customer.DeletedAtUtc = DateTime.UtcNow;
         customer.IsActive = false;
 
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return Result.Success();
     }
 
@@ -195,10 +191,10 @@ public sealed class CustomerService : ICustomerService
         customer.ModifiedAtUtc = DateTime.UtcNow;
         customer.ModifiedByUserId = userId;
 
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         Customer? reactivated = await GetCustomerWithDetailsAsync(id, cancellationToken).ConfigureAwait(false);
-        CustomerDetailDto dto = _mapper.Map<CustomerDetailDto>(reactivated!);
+        CustomerDetailDto dto = Mapper.Map<CustomerDetailDto>(reactivated!);
         return Result<CustomerDetailDto>.Success(dto);
     }
 
@@ -207,7 +203,7 @@ public sealed class CustomerService : ICustomerService
     /// </summary>
     private async Task<Customer?> GetCustomerWithDetailsAsync(int id, CancellationToken cancellationToken)
     {
-        return await _context.Customers
+        return await Context.Customers
             .Include(c => c.Category)
             .Include(c => c.Accounts.Where(a => !a.IsDeleted))
             .Include(c => c.Addresses)
@@ -222,7 +218,7 @@ public sealed class CustomerService : ICustomerService
     /// </summary>
     private IQueryable<Customer> BuildSearchQuery(SearchCustomersRequest request)
     {
-        IQueryable<Customer> query = _context.Customers
+        IQueryable<Customer> query = Context.Customers
             .AsNoTracking()
             .Include(c => c.Category);
 
@@ -265,7 +261,7 @@ public sealed class CustomerService : ICustomerService
     /// </summary>
     private async Task<string> GenerateCustomerCodeAsync(CancellationToken cancellationToken)
     {
-        int maxNumber = await _context.Customers
+        int maxNumber = await Context.Customers
             .Where(c => c.Code.StartsWith("CUST-"))
             .Select(c => c.Code.Substring(5))
             .Select(c => Convert.ToInt32(c))
@@ -284,7 +280,7 @@ public sealed class CustomerService : ICustomerService
         int? excludeId,
         CancellationToken cancellationToken)
     {
-        IQueryable<Customer> query = _context.Customers.Where(c => c.Code == code);
+        IQueryable<Customer> query = Context.Customers.Where(c => c.Code == code);
 
         if (excludeId.HasValue)
             query = query.Where(c => c.Id != excludeId.Value);
@@ -307,7 +303,7 @@ public sealed class CustomerService : ICustomerService
         if (string.IsNullOrWhiteSpace(taxId))
             return null;
 
-        IQueryable<Customer> query = _context.Customers
+        IQueryable<Customer> query = Context.Customers
             .Where(c => c.TaxId == taxId && !c.IsDeleted);
 
         if (excludeId.HasValue)
@@ -330,7 +326,7 @@ public sealed class CustomerService : ICustomerService
         if (!categoryId.HasValue)
             return null;
 
-        bool exists = await _context.CustomerCategories
+        bool exists = await Context.CustomerCategories
             .AnyAsync(c => c.Id == categoryId.Value, cancellationToken)
             .ConfigureAwait(false);
 
@@ -347,7 +343,7 @@ public sealed class CustomerService : ICustomerService
         int excludeId,
         CancellationToken cancellationToken)
     {
-        bool conflict = await _context.Customers
+        bool conflict = await Context.Customers
             .AnyAsync(c => c.Code == code && c.Id != excludeId && !c.IsDeleted, cancellationToken)
             .ConfigureAwait(false);
 
@@ -367,7 +363,7 @@ public sealed class CustomerService : ICustomerService
         if (string.IsNullOrWhiteSpace(taxId))
             return null;
 
-        bool conflict = await _context.Customers
+        bool conflict = await Context.Customers
             .AnyAsync(c => c.TaxId == taxId && c.Id != excludeId && !c.IsDeleted, cancellationToken)
             .ConfigureAwait(false);
 

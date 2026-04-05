@@ -4,6 +4,7 @@ using Warehouse.Common.Models;
 using Warehouse.Customers.API.Interfaces;
 using Warehouse.Customers.DBModel;
 using Warehouse.Customers.DBModel.Models;
+using Warehouse.Infrastructure.Services;
 using Warehouse.ServiceModel.DTOs.Customers;
 using Warehouse.ServiceModel.Requests.Customers;
 
@@ -13,18 +14,14 @@ namespace Warehouse.Customers.API.Services;
 /// Implements customer account operations: CRUD, deactivation, and merge.
 /// <para>See <see cref="ICustomerAccountService"/>.</para>
 /// </summary>
-public sealed class CustomerAccountService : ICustomerAccountService
+public sealed class CustomerAccountService : BaseCustomerEntityService, ICustomerAccountService
 {
-    private readonly CustomersDbContext _context;
-    private readonly IMapper _mapper;
-
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
     public CustomerAccountService(CustomersDbContext context, IMapper mapper)
+        : base(context, mapper)
     {
-        _context = context;
-        _mapper = mapper;
     }
 
     /// <inheritdoc />
@@ -41,7 +38,7 @@ public sealed class CustomerAccountService : ICustomerAccountService
         if (duplicateValidation is not null)
             return Result<CustomerAccountDto>.Failure(duplicateValidation.ErrorCode!, duplicateValidation.ErrorMessage!, duplicateValidation.StatusCode!.Value);
 
-        bool isFirst = !await _context.CustomerAccounts
+        bool isFirst = !await Context.CustomerAccounts
             .AnyAsync(a => a.CustomerId == customerId && !a.IsDeleted, cancellationToken)
             .ConfigureAwait(false);
 
@@ -56,10 +53,10 @@ public sealed class CustomerAccountService : ICustomerAccountService
             CreatedAtUtc = DateTime.UtcNow
         };
 
-        _context.CustomerAccounts.Add(account);
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        Context.CustomerAccounts.Add(account);
+        await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        CustomerAccountDto dto = _mapper.Map<CustomerAccountDto>(account);
+        CustomerAccountDto dto = Mapper.Map<CustomerAccountDto>(account);
         return Result<CustomerAccountDto>.Success(dto);
     }
 
@@ -72,14 +69,14 @@ public sealed class CustomerAccountService : ICustomerAccountService
         if (customerValidation is not null)
             return Result<IReadOnlyList<CustomerAccountDto>>.Failure(customerValidation.ErrorCode!, customerValidation.ErrorMessage!, customerValidation.StatusCode!.Value);
 
-        List<CustomerAccount> accounts = await _context.CustomerAccounts
+        List<CustomerAccount> accounts = await Context.CustomerAccounts
             .AsNoTracking()
             .Where(a => a.CustomerId == customerId && !a.IsDeleted)
             .OrderBy(a => a.CreatedAtUtc)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        IReadOnlyList<CustomerAccountDto> dtos = _mapper.Map<IReadOnlyList<CustomerAccountDto>>(accounts);
+        IReadOnlyList<CustomerAccountDto> dtos = Mapper.Map<IReadOnlyList<CustomerAccountDto>>(accounts);
         return Result<IReadOnlyList<CustomerAccountDto>>.Success(dtos);
     }
 
@@ -90,7 +87,7 @@ public sealed class CustomerAccountService : ICustomerAccountService
         UpdateAccountRequest request,
         CancellationToken cancellationToken)
     {
-        CustomerAccount? account = await _context.CustomerAccounts
+        CustomerAccount? account = await Context.CustomerAccounts
             .FirstOrDefaultAsync(a => a.Id == accountId && a.CustomerId == customerId && !a.IsDeleted, cancellationToken)
             .ConfigureAwait(false);
 
@@ -100,13 +97,18 @@ public sealed class CustomerAccountService : ICustomerAccountService
         account.Description = request.Description;
 
         if (request.IsPrimary && !account.IsPrimary)
-            await UnsetOtherPrimaryAccountsAsync(customerId, accountId, cancellationToken).ConfigureAwait(false);
+            await PrimaryFlagHelper.UnsetOthersAsync(
+                Context.CustomerAccounts,
+                a => a.CustomerId == customerId && a.IsPrimary && !a.IsDeleted,
+                accountId,
+                a => a.IsPrimary = false,
+                cancellationToken).ConfigureAwait(false);
 
         account.IsPrimary = request.IsPrimary;
 
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        CustomerAccountDto dto = _mapper.Map<CustomerAccountDto>(account);
+        CustomerAccountDto dto = Mapper.Map<CustomerAccountDto>(account);
         return Result<CustomerAccountDto>.Success(dto);
     }
 
@@ -116,7 +118,7 @@ public sealed class CustomerAccountService : ICustomerAccountService
         int accountId,
         CancellationToken cancellationToken)
     {
-        CustomerAccount? account = await _context.CustomerAccounts
+        CustomerAccount? account = await Context.CustomerAccounts
             .FirstOrDefaultAsync(a => a.Id == accountId && a.CustomerId == customerId && !a.IsDeleted, cancellationToken)
             .ConfigureAwait(false);
 
@@ -126,7 +128,7 @@ public sealed class CustomerAccountService : ICustomerAccountService
         if (account.Balance != 0m)
             return Result.Failure("ACCOUNT_HAS_BALANCE", $"Cannot deactivate account with a non-zero balance of {account.Balance} {account.CurrencyCode}.", 409);
 
-        int activeCount = await _context.CustomerAccounts
+        int activeCount = await Context.CustomerAccounts
             .CountAsync(a => a.CustomerId == customerId && !a.IsDeleted, cancellationToken)
             .ConfigureAwait(false);
 
@@ -136,7 +138,7 @@ public sealed class CustomerAccountService : ICustomerAccountService
         account.IsDeleted = true;
         account.DeletedAtUtc = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return Result.Success();
     }
 
@@ -168,17 +170,17 @@ public sealed class CustomerAccountService : ICustomerAccountService
         CancellationToken cancellationToken)
     {
         await using Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction =
-            await _context.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+            await Context.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
 
         target.Balance += source.Balance;
         source.Balance = 0m;
         source.IsDeleted = true;
         source.DeletedAtUtc = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
 
-        CustomerAccountDto dto = _mapper.Map<CustomerAccountDto>(target);
+        CustomerAccountDto dto = Mapper.Map<CustomerAccountDto>(target);
         return Result<CustomerAccountDto>.Success(dto);
     }
 
@@ -212,25 +214,9 @@ public sealed class CustomerAccountService : ICustomerAccountService
         int accountId,
         CancellationToken cancellationToken)
     {
-        return await _context.CustomerAccounts
+        return await Context.CustomerAccounts
             .FirstOrDefaultAsync(a => a.Id == accountId, cancellationToken)
             .ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Validates that a customer exists and is not soft-deleted.
-    /// </summary>
-    private async Task<Result?> ValidateCustomerExistsAsync(
-        int customerId,
-        CancellationToken cancellationToken)
-    {
-        bool exists = await _context.Customers
-            .AnyAsync(c => c.Id == customerId && !c.IsDeleted, cancellationToken)
-            .ConfigureAwait(false);
-
-        return exists
-            ? null
-            : Result.Failure("CUSTOMER_NOT_FOUND", "Customer not found.", 404);
     }
 
     /// <summary>
@@ -241,7 +227,7 @@ public sealed class CustomerAccountService : ICustomerAccountService
         string currencyCode,
         CancellationToken cancellationToken)
     {
-        bool exists = await _context.CustomerAccounts
+        bool exists = await Context.CustomerAccounts
             .AnyAsync(a => a.CustomerId == customerId && a.CurrencyCode == currencyCode && !a.IsDeleted, cancellationToken)
             .ConfigureAwait(false);
 
@@ -250,20 +236,4 @@ public sealed class CustomerAccountService : ICustomerAccountService
             : null;
     }
 
-    /// <summary>
-    /// Unsets the IsPrimary flag on all other active accounts for the customer.
-    /// </summary>
-    private async Task UnsetOtherPrimaryAccountsAsync(
-        int customerId,
-        int excludeAccountId,
-        CancellationToken cancellationToken)
-    {
-        List<CustomerAccount> otherPrimary = await _context.CustomerAccounts
-            .Where(a => a.CustomerId == customerId && a.Id != excludeAccountId && a.IsPrimary && !a.IsDeleted)
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
-
-        foreach (CustomerAccount account in otherPrimary)
-            account.IsPrimary = false;
-    }
 }

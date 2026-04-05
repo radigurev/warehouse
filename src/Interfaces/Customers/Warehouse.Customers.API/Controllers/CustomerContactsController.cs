@@ -2,8 +2,9 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Warehouse.Common.Models;
-using Warehouse.Customers.API.Authorization;
 using Warehouse.Customers.API.Interfaces;
+using Warehouse.Infrastructure.Authorization;
+using Warehouse.Infrastructure.Controllers;
 using Warehouse.ServiceModel.DTOs.Customers;
 using Warehouse.ServiceModel.Requests.Customers;
 
@@ -11,21 +12,28 @@ namespace Warehouse.Customers.API.Controllers;
 
 /// <summary>
 /// Handles customer contact information: addresses, phones, and emails.
-/// <para>See <see cref="ICustomerContactService"/>.</para>
+/// <para>See <see cref="ICustomerAddressService"/>, <see cref="ICustomerPhoneService"/>, <see cref="ICustomerEmailService"/>.</para>
 /// </summary>
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/customers/{customerId:int}")]
 [Authorize]
-public sealed class CustomerContactsController : BaseCustomersController
+public sealed class CustomerContactsController : BaseApiController
 {
-    private readonly ICustomerContactService _contactService;
+    private readonly ICustomerAddressService _addressService;
+    private readonly ICustomerPhoneService _phoneService;
+    private readonly ICustomerEmailService _emailService;
 
     /// <summary>
-    /// Initializes a new instance with the specified customer contact service.
+    /// Initializes a new instance with the specified contact services.
     /// </summary>
-    public CustomerContactsController(ICustomerContactService contactService)
+    public CustomerContactsController(
+        ICustomerAddressService addressService,
+        ICustomerPhoneService phoneService,
+        ICustomerEmailService emailService)
     {
-        _contactService = contactService;
+        _addressService = addressService;
+        _phoneService = phoneService;
+        _emailService = emailService;
     }
 
     /// <summary>
@@ -41,7 +49,7 @@ public sealed class CustomerContactsController : BaseCustomersController
         [FromBody] CreateAddressRequest request,
         CancellationToken cancellationToken)
     {
-        Result<CustomerAddressDto> result = await _contactService
+        Result<CustomerAddressDto> result = await _addressService
             .CreateAddressAsync(customerId, request, cancellationToken);
 
         return ToCreatedResult(result, "GetCustomerById", _ => new { id = customerId });
@@ -56,7 +64,7 @@ public sealed class CustomerContactsController : BaseCustomersController
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetAddressesAsync(int customerId, CancellationToken cancellationToken)
     {
-        Result<IReadOnlyList<CustomerAddressDto>> result = await _contactService
+        Result<IReadOnlyList<CustomerAddressDto>> result = await _addressService
             .GetAddressesAsync(customerId, cancellationToken);
 
         return ToActionResult(result);
@@ -75,7 +83,7 @@ public sealed class CustomerContactsController : BaseCustomersController
         [FromBody] UpdateAddressRequest request,
         CancellationToken cancellationToken)
     {
-        Result<CustomerAddressDto> result = await _contactService
+        Result<CustomerAddressDto> result = await _addressService
             .UpdateAddressAsync(customerId, addressId, request, cancellationToken);
 
         return ToActionResult(result);
@@ -93,7 +101,7 @@ public sealed class CustomerContactsController : BaseCustomersController
         int addressId,
         CancellationToken cancellationToken)
     {
-        Result result = await _contactService
+        Result result = await _addressService
             .DeleteAddressAsync(customerId, addressId, cancellationToken);
 
         return ToActionResult(result);
@@ -112,7 +120,7 @@ public sealed class CustomerContactsController : BaseCustomersController
         [FromBody] CreatePhoneRequest request,
         CancellationToken cancellationToken)
     {
-        Result<CustomerPhoneDto> result = await _contactService
+        Result<CustomerPhoneDto> result = await _phoneService
             .CreatePhoneAsync(customerId, request, cancellationToken);
 
         return ToCreatedResult(result, "GetCustomerById", _ => new { id = customerId });
@@ -127,7 +135,7 @@ public sealed class CustomerContactsController : BaseCustomersController
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetPhonesAsync(int customerId, CancellationToken cancellationToken)
     {
-        Result<IReadOnlyList<CustomerPhoneDto>> result = await _contactService
+        Result<IReadOnlyList<CustomerPhoneDto>> result = await _phoneService
             .GetPhonesAsync(customerId, cancellationToken);
 
         return ToActionResult(result);
@@ -146,7 +154,7 @@ public sealed class CustomerContactsController : BaseCustomersController
         [FromBody] UpdatePhoneRequest request,
         CancellationToken cancellationToken)
     {
-        Result<CustomerPhoneDto> result = await _contactService
+        Result<CustomerPhoneDto> result = await _phoneService
             .UpdatePhoneAsync(customerId, phoneId, request, cancellationToken);
 
         return ToActionResult(result);
@@ -164,7 +172,7 @@ public sealed class CustomerContactsController : BaseCustomersController
         int phoneId,
         CancellationToken cancellationToken)
     {
-        Result result = await _contactService
+        Result result = await _phoneService
             .DeletePhoneAsync(customerId, phoneId, cancellationToken);
 
         return ToActionResult(result);
@@ -184,7 +192,7 @@ public sealed class CustomerContactsController : BaseCustomersController
         [FromBody] CreateEmailRequest request,
         CancellationToken cancellationToken)
     {
-        Result<CustomerEmailDto> result = await _contactService
+        Result<CustomerEmailDto> result = await _emailService
             .CreateEmailAsync(customerId, request, cancellationToken);
 
         return ToCreatedResult(result, "GetCustomerById", _ => new { id = customerId });
@@ -199,7 +207,7 @@ public sealed class CustomerContactsController : BaseCustomersController
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetEmailsAsync(int customerId, CancellationToken cancellationToken)
     {
-        Result<IReadOnlyList<CustomerEmailDto>> result = await _contactService
+        Result<IReadOnlyList<CustomerEmailDto>> result = await _emailService
             .GetEmailsAsync(customerId, cancellationToken);
 
         return ToActionResult(result);
@@ -219,7 +227,7 @@ public sealed class CustomerContactsController : BaseCustomersController
         [FromBody] UpdateEmailRequest request,
         CancellationToken cancellationToken)
     {
-        Result<CustomerEmailDto> result = await _contactService
+        Result<CustomerEmailDto> result = await _emailService
             .UpdateEmailAsync(customerId, emailId, request, cancellationToken);
 
         return ToActionResult(result);
@@ -237,7 +245,7 @@ public sealed class CustomerContactsController : BaseCustomersController
         int emailId,
         CancellationToken cancellationToken)
     {
-        Result result = await _contactService
+        Result result = await _emailService
             .DeleteEmailAsync(customerId, emailId, cancellationToken);
 
         return ToActionResult(result);
