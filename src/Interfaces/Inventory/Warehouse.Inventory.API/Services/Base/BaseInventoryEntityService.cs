@@ -2,7 +2,7 @@ using AutoMapper;
 using Warehouse.Infrastructure.Services;
 using Warehouse.Inventory.DBModel;
 
-namespace Warehouse.Inventory.API.Services;
+namespace Warehouse.Inventory.API.Services.Base;
 
 /// <summary>
 /// Intermediate base class for inventory domain services.

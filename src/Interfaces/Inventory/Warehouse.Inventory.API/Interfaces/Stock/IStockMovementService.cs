@@ -3,7 +3,7 @@ using Warehouse.ServiceModel.DTOs.Inventory;
 using Warehouse.ServiceModel.Requests.Inventory;
 using Warehouse.ServiceModel.Responses;
 
-namespace Warehouse.Inventory.API.Interfaces;
+namespace Warehouse.Inventory.API.Interfaces.Stock;
 
 /// <summary>
 /// Defines stock movement operations: record and search.

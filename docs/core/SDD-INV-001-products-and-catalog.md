@@ -1,6 +1,6 @@
 # SDD-INV-001 — Products and Catalog
 
-> Status: Draft
+> Status: Active
 > Last updated: 2026-04-05
 > Owner: TBD
 > Category: Core
@@ -90,6 +90,7 @@ This spec defines the Product catalog sub-domain for the Warehouse Inventory sys
 
 - The system MUST support reactivating a soft-deleted product by setting `IsDeleted = false`, `DeletedAtUtc = null`, and `IsActive = true`.
 - The system MUST update `ModifiedAtUtc` and `ModifiedByUserId` on reactivation.
+- Reactivating a product that is already active (not soft-deleted) MUST return a 409 Conflict error with code `PRODUCT_ALREADY_ACTIVE`.
 - Reactivating a product whose code now conflicts with another active product MUST return a 409 Conflict error.
 
 ### 2.2 Product Categories
@@ -141,7 +142,7 @@ This spec defines the Product catalog sub-domain for the Warehouse Inventory sys
 #### 2.4.1 Create BOM
 
 - The system MUST support creating a BOM header for a parent product with an optional name, version, and effective date.
-- The system MUST enforce that a product has at most one active BOM at a time.
+- The system MUST enforce that a product has at most one active BOM at a time. Creating a BOM when one already exists MUST return a 409 Conflict error with code `BOM_ALREADY_EXISTS`.
 - The system MUST record `CreatedAtUtc` and `CreatedByUserId` on creation.
 
 #### 2.4.2 Add BOM Line
@@ -284,6 +285,8 @@ This spec defines the Product catalog sub-domain for the Warehouse Inventory sys
 | E23 | Deactivate product with stock | 409 | `PRODUCT_HAS_STOCK` | Cannot deactivate product -- it has non-zero stock levels. |
 | E24 | Validation failure (field-level) | 400 | `VALIDATION_ERROR` | One or more fields are invalid. (ProblemDetails with field errors) |
 | E25 | Insufficient permissions | 403 | `FORBIDDEN` | You do not have permission to perform this action. |
+| E26 | Reactivate already active product | 409 | `PRODUCT_ALREADY_ACTIVE` | Product is already active. |
+| E27 | Create BOM when one already exists for product | 409 | `BOM_ALREADY_EXISTS` | An active bill of materials already exists for this product. |
 
 All error responses MUST use ProblemDetails (RFC 7807) format.
 
@@ -458,6 +461,13 @@ All error responses MUST use ProblemDetails (RFC 7807) format.
   - Full validation rule set
   - Database schema on `inventory` schema
 
+- **v2 -- Error alignment (2026-04-05)** (non-breaking)
+  - Added `PRODUCT_ALREADY_ACTIVE` (409) error for reactivating an already active product
+  - Added `BOM_ALREADY_EXISTS` (409) error for creating a BOM when one already exists
+  - Added explicit edge case for BOM already exists on create
+  - Added explicit edge case for reactivating an already active product
+  - Status changed from Draft to Active
+
 ---
 
 ## 8. Test Plan
@@ -477,6 +487,7 @@ All error responses MUST use ProblemDetails (RFC 7807) format.
 - `DeactivateAsync_ActiveProduct_SetsIsDeletedAndDeletedAt` [Unit]
 - `DeactivateAsync_AlreadyDeleted_ReturnsNotFound` [Unit]
 - `ReactivateAsync_SoftDeletedProduct_ClearsDeletedFlags` [Unit]
+- `ReactivateAsync_AlreadyActive_ReturnsConflictError` [Unit]
 - `ReactivateAsync_ConflictingCode_ReturnsConflictError` [Unit]
 
 ### Unit Tests -- ProductCategoryServiceTests
@@ -500,6 +511,7 @@ All error responses MUST use ProblemDetails (RFC 7807) format.
 ### Unit Tests -- BomServiceTests
 
 - `CreateAsync_ValidRequest_ReturnsCreatedBom` [Unit]
+- `CreateAsync_BomAlreadyExists_ReturnsConflictError` [Unit]
 - `AddLineAsync_ValidRequest_ReturnsCreatedLine` [Unit]
 - `AddLineAsync_SelfReference_ReturnsValidationError` [Unit]
 - `AddLineAsync_DuplicateChild_ReturnsConflictError` [Unit]

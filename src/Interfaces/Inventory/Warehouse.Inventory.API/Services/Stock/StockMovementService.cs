@@ -2,14 +2,15 @@ using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Warehouse.Common.Models;
 using Warehouse.GenericFiltering;
-using Warehouse.Inventory.API.Interfaces;
+using Warehouse.Inventory.API.Interfaces.Stock;
+using Warehouse.Inventory.API.Services.Base;
 using Warehouse.Inventory.DBModel;
 using Warehouse.Inventory.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Inventory;
 using Warehouse.ServiceModel.Requests.Inventory;
 using Warehouse.ServiceModel.Responses;
 
-namespace Warehouse.Inventory.API.Services;
+namespace Warehouse.Inventory.API.Services.Stock;
 
 /// <summary>
 /// Implements stock movement operations: record and search.
@@ -38,6 +39,10 @@ public sealed class StockMovementService : BaseInventoryEntityService, IStockMov
         Result? warehouseValidation = await ValidateWarehouseExistsAsync(request.WarehouseId, cancellationToken).ConfigureAwait(false);
         if (warehouseValidation is not null)
             return Result<StockMovementDto>.Failure(warehouseValidation.ErrorCode!, warehouseValidation.ErrorMessage!, warehouseValidation.StatusCode!.Value);
+
+        Result? stockValidation = await ValidateSufficientStockAsync(request, cancellationToken).ConfigureAwait(false);
+        if (stockValidation is not null)
+            return Result<StockMovementDto>.Failure(stockValidation.ErrorCode!, stockValidation.ErrorMessage!, stockValidation.StatusCode!.Value);
 
         StockMovement movement = CreateMovementEntity(request, userId);
 
@@ -193,6 +198,34 @@ public sealed class StockMovementService : BaseInventoryEntityService, IStockMov
             "quantity" => sortDescending ? query.OrderByDescending(m => m.Quantity) : query.OrderBy(m => m.Quantity),
             _ => sortDescending ? query.OrderByDescending(m => m.CreatedAtUtc) : query.OrderBy(m => m.CreatedAtUtc)
         };
+    }
+
+    /// <summary>
+    /// Validates that sufficient stock exists for an outbound movement.
+    /// </summary>
+    private async Task<Result?> ValidateSufficientStockAsync(
+        RecordStockMovementRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (request.Quantity >= 0)
+            return null;
+
+        StockLevel? stockLevel = await Context.StockLevels
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s =>
+                s.ProductId == request.ProductId &&
+                s.WarehouseId == request.WarehouseId &&
+                s.LocationId == request.LocationId &&
+                s.BatchId == request.BatchId,
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        decimal available = stockLevel?.QuantityOnHand ?? 0;
+
+        if (available < Math.Abs(request.Quantity))
+            return Result.Failure("INSUFFICIENT_STOCK", "Insufficient stock for this movement.", 409);
+
+        return null;
     }
 
     /// <summary>

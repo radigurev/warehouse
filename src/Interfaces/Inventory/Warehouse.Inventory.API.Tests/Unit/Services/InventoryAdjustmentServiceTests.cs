@@ -1,6 +1,6 @@
 using FluentAssertions;
 using Warehouse.Common.Models;
-using Warehouse.Inventory.API.Services;
+using Warehouse.Inventory.API.Services.Stock;
 using Warehouse.Inventory.API.Tests.Fixtures;
 using Warehouse.Inventory.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Inventory;
@@ -109,7 +109,7 @@ public sealed class InventoryAdjustmentServiceTests : InventoryTestBase
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.ErrorCode.Should().Be("INVALID_STATUS");
+        result.ErrorCode.Should().Be("ADJUSTMENT_NOT_PENDING");
         result.StatusCode.Should().Be(409);
     }
 
@@ -140,7 +140,7 @@ public sealed class InventoryAdjustmentServiceTests : InventoryTestBase
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.ErrorCode.Should().Be("INVALID_STATUS");
+        result.ErrorCode.Should().Be("ADJUSTMENT_NOT_PENDING");
         result.StatusCode.Should().Be(409);
     }
 
@@ -172,7 +172,7 @@ public sealed class InventoryAdjustmentServiceTests : InventoryTestBase
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.ErrorCode.Should().Be("INVALID_STATUS");
+        result.ErrorCode.Should().Be("ADJUSTMENT_NOT_APPROVED");
         result.StatusCode.Should().Be(409);
     }
 

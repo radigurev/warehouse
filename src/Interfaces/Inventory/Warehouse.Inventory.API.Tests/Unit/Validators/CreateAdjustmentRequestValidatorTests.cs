@@ -54,7 +54,7 @@ public sealed class CreateAdjustmentRequestValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "WarehouseId" && e.ErrorCode == "INVALID_WAREHOUSE_ID");
+        result.Errors.Should().Contain(e => e.PropertyName == "WarehouseId" && e.ErrorCode == "INVALID_WAREHOUSE");
     }
 
     [Test]
@@ -73,7 +73,7 @@ public sealed class CreateAdjustmentRequestValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Reason" && e.ErrorCode == "INVALID_REASON");
+        result.Errors.Should().Contain(e => e.PropertyName == "Reason" && e.ErrorCode == "INVALID_ADJUSTMENT_REASON");
     }
 
     [Test]
@@ -92,7 +92,7 @@ public sealed class CreateAdjustmentRequestValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Lines" && e.ErrorCode == "INVALID_ADJUSTMENT_LINES");
+        result.Errors.Should().Contain(e => e.PropertyName == "Lines" && e.ErrorCode == "ADJUSTMENT_LINES_REQUIRED");
     }
 
     [Test]
@@ -111,6 +111,6 @@ public sealed class CreateAdjustmentRequestValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.ErrorCode == "INVALID_PRODUCT_ID");
+        result.Errors.Should().Contain(e => e.ErrorCode == "INVALID_PRODUCT");
     }
 }

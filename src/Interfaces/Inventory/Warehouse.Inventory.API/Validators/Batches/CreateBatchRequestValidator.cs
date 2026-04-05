@@ -14,7 +14,7 @@ public sealed class CreateBatchRequestValidator : AbstractValidator<CreateBatchR
     public CreateBatchRequestValidator()
     {
         RuleFor(x => x.ProductId)
-            .GreaterThan(0).WithErrorCode("INVALID_PRODUCT_ID").WithMessage("Product ID is required.");
+            .GreaterThan(0).WithErrorCode("INVALID_PRODUCT").WithMessage("Product ID is required.");
 
         RuleFor(x => x.BatchNumber)
             .NotEmpty().WithErrorCode("INVALID_BATCH_NUMBER").WithMessage("Batch number is required.")

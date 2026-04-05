@@ -2,14 +2,15 @@ using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Warehouse.Common.Models;
 using Warehouse.GenericFiltering;
-using Warehouse.Inventory.API.Interfaces;
+using Warehouse.Inventory.API.Interfaces.Warehouse;
+using Warehouse.Inventory.API.Services.Base;
 using Warehouse.Inventory.DBModel;
 using Warehouse.Inventory.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Inventory;
 using Warehouse.ServiceModel.Requests.Inventory;
 using Warehouse.ServiceModel.Responses;
 
-namespace Warehouse.Inventory.API.Services;
+namespace Warehouse.Inventory.API.Services.Warehouse;
 
 /// <summary>
 /// Implements zone lifecycle operations: CRUD and search.
@@ -127,6 +128,13 @@ public sealed class ZoneService : BaseInventoryEntityService, IZoneService
 
         if (zone is null)
             return Result.Failure("ZONE_NOT_FOUND", "Zone not found.", 404);
+
+        bool hasLocations = await Context.StorageLocations
+            .AnyAsync(l => l.ZoneId == id, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (hasLocations)
+            return Result.Failure("ZONE_HAS_LOCATIONS", "Cannot delete zone that has storage locations.", 409);
 
         Context.Zones.Remove(zone);
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);

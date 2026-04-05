@@ -1,6 +1,6 @@
 # SDD-INV-003 — Warehouse Structure
 
-> Status: Draft
+> Status: Active
 > Last updated: 2026-04-05
 > Owner: TBD
 > Category: Core
@@ -211,7 +211,7 @@ This spec defines the Warehouse Structure sub-domain for the Warehouse Inventory
 | E9 | Delete location with stock | 409 | `LOCATION_HAS_STOCK` | Cannot delete location -- it has non-zero stock levels. |
 | E10 | Transfer not found | 404 | `TRANSFER_NOT_FOUND` | Warehouse transfer not found. |
 | E11 | Same source and destination | 400 | `TRANSFER_SAME_WAREHOUSE` | Source and destination warehouses must be different. |
-| E12 | Complete transfer insufficient stock | 409 | `TRANSFER_INSUFFICIENT_STOCK` | Insufficient stock at source for product {code}. Available: {available}, requested: {quantity}. |
+| E12 | Complete transfer insufficient stock | 409 | `INSUFFICIENT_STOCK` | Insufficient stock at source for product {code}. Available: {available}, requested: {quantity}. |
 | E13 | Cancel non-draft transfer | 409 | `TRANSFER_NOT_DRAFT` | Only draft transfers can be cancelled. Current status: {status}. |
 | E14 | Complete non-draft transfer | 409 | `TRANSFER_NOT_DRAFT` | Only draft transfers can be completed. Current status: {status}. |
 | E15 | Validation failure (field-level) | 400 | `VALIDATION_ERROR` | One or more fields are invalid. |
@@ -352,6 +352,10 @@ All error responses MUST use ProblemDetails (RFC 7807) format.
   - Warehouse transfer workflow (Draft -> Completed/Cancelled)
   - ProblemDetails error responses
   - Database schema on `inventory` schema
+
+- **v2 -- Error alignment (2026-04-05)** (non-breaking)
+  - Transfer insufficient stock error code changed from `TRANSFER_INSUFFICIENT_STOCK` to `INSUFFICIENT_STOCK` for consistency with SDD-INV-002
+  - Status changed from Draft to Active
 
 ---
 

@@ -14,7 +14,7 @@ public sealed class CreateProductSubstituteRequestValidator : AbstractValidator<
     public CreateProductSubstituteRequestValidator()
     {
         RuleFor(x => x.ProductId)
-            .GreaterThan(0).WithErrorCode("INVALID_PRODUCT_ID").WithMessage("Product ID is required.");
+            .GreaterThan(0).WithErrorCode("INVALID_PRODUCT").WithMessage("Product ID is required.");
 
         RuleFor(x => x.SubstituteProductId)
             .GreaterThan(0).WithErrorCode("INVALID_SUBSTITUTE_PRODUCT_ID").WithMessage("Substitute product ID is required.");

@@ -14,13 +14,13 @@ public sealed class RecordStockMovementRequestValidator : AbstractValidator<Reco
     public RecordStockMovementRequestValidator()
     {
         RuleFor(x => x.ProductId)
-            .GreaterThan(0).WithErrorCode("INVALID_PRODUCT_ID").WithMessage("Product ID is required.");
+            .GreaterThan(0).WithErrorCode("INVALID_PRODUCT").WithMessage("Product ID is required.");
 
         RuleFor(x => x.WarehouseId)
-            .GreaterThan(0).WithErrorCode("INVALID_WAREHOUSE_ID").WithMessage("Warehouse ID is required.");
+            .GreaterThan(0).WithErrorCode("INVALID_WAREHOUSE").WithMessage("Warehouse ID is required.");
 
         RuleFor(x => x.Quantity)
-            .NotEqual(0).WithErrorCode("INVALID_QUANTITY").WithMessage("Quantity must not be zero.");
+            .NotEqual(0).WithErrorCode("INVALID_MOVEMENT_QUANTITY").WithMessage("Quantity must not be zero.");
 
         RuleFor(x => x.ReasonCode)
             .NotEmpty().WithErrorCode("INVALID_REASON_CODE").WithMessage("Reason code is required.")

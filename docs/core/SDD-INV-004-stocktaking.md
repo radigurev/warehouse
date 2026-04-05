@@ -1,6 +1,6 @@
 # SDD-INV-004 — Stocktaking
 
-> Status: Draft
+> Status: Active
 > Last updated: 2026-04-05
 > Owner: TBD
 > Category: Core
@@ -231,6 +231,12 @@ All error responses MUST use ProblemDetails (RFC 7807) format.
   - Automatic adjustment creation from completed stocktake
   - ProblemDetails error responses
   - Database schema on `inventory` schema
+
+- **v2 -- Status activation (2026-04-05)** (non-breaking)
+  - Confirmed endpoint uses `/complete` (not `/finalize`)
+  - Confirmed permission prefix uses `stocktake:` (not `stocktake-sessions:`)
+  - Confirmed separate StocktakeCountsController for count entry endpoints
+  - Status changed from Draft to Active
 
 ---
 

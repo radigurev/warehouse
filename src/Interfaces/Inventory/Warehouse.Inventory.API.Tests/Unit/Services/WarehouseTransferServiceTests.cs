@@ -1,6 +1,6 @@
 using FluentAssertions;
 using Warehouse.Common.Models;
-using Warehouse.Inventory.API.Services;
+using Warehouse.Inventory.API.Services.Warehouse;
 using Warehouse.Inventory.API.Tests.Fixtures;
 using Warehouse.Inventory.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Inventory;
@@ -13,7 +13,7 @@ namespace Warehouse.Inventory.API.Tests.Unit.Services;
 /// <para>Links to specification SDD-INV-002.</para>
 /// </summary>
 [TestFixture]
-[Category("SDD-INV-002")]
+[Category("SDD-INV-003")]
 public sealed class WarehouseTransferServiceTests : InventoryTestBase
 {
     private WarehouseTransferService _sut = null!;
@@ -67,7 +67,7 @@ public sealed class WarehouseTransferServiceTests : InventoryTestBase
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.ErrorCode.Should().Be("SAME_WAREHOUSE");
+        result.ErrorCode.Should().Be("TRANSFER_SAME_WAREHOUSE");
         result.StatusCode.Should().Be(400);
     }
 
@@ -136,7 +136,7 @@ public sealed class WarehouseTransferServiceTests : InventoryTestBase
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.ErrorCode.Should().Be("INVALID_STATUS");
+        result.ErrorCode.Should().Be("TRANSFER_NOT_DRAFT");
         result.StatusCode.Should().Be(409);
     }
 
@@ -170,7 +170,7 @@ public sealed class WarehouseTransferServiceTests : InventoryTestBase
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.ErrorCode.Should().Be("INVALID_STATUS");
+        result.ErrorCode.Should().Be("TRANSFER_NOT_DRAFT");
         result.StatusCode.Should().Be(409);
     }
 

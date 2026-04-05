@@ -1,6 +1,6 @@
 using FluentAssertions;
 using Warehouse.Common.Models;
-using Warehouse.Inventory.API.Services;
+using Warehouse.Inventory.API.Services.Stocktake;
 using Warehouse.Inventory.API.Tests.Fixtures;
 using Warehouse.Inventory.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Inventory;
@@ -9,7 +9,7 @@ using Warehouse.ServiceModel.Requests.Inventory;
 namespace Warehouse.Inventory.API.Tests.Unit.Services;
 
 /// <summary>
-/// Unit tests for stocktake session state machine: create, start, record count, finalize, cancel.
+/// Unit tests for stocktake session lifecycle: create, start, complete, cancel.
 /// <para>Links to specification SDD-INV-004.</para>
 /// </summary>
 [TestFixture]
@@ -103,54 +103,19 @@ public sealed class StocktakeSessionServiceTests : InventoryTestBase
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.ErrorCode.Should().Be("INVALID_STATUS");
+        result.ErrorCode.Should().Be("SESSION_NOT_DRAFT");
         result.StatusCode.Should().Be(409);
     }
 
     [Test]
-    public async Task RecordCountAsync_InProgressSession_AddsCountEntry()
-    {
-        // Arrange
-        WarehouseEntity warehouse = await SeedWarehouseAsync().ConfigureAwait(false);
-        Product product = await SeedProductAsync().ConfigureAwait(false);
-        StocktakeSession session = await SeedStocktakeSessionAsync(warehouse.Id, "InProgress").ConfigureAwait(false);
-        RecordStocktakeCountRequest request = new() { ProductId = product.Id, CountedQuantity = 42m };
-
-        // Act
-        Result<StocktakeSessionDetailDto> result = await _sut.RecordCountAsync(session.Id, request, 1, CancellationToken.None).ConfigureAwait(false);
-
-        // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.Counts.Should().HaveCount(1);
-    }
-
-    [Test]
-    public async Task RecordCountAsync_NonInProgressSession_ReturnsInvalidStatus()
-    {
-        // Arrange
-        WarehouseEntity warehouse = await SeedWarehouseAsync().ConfigureAwait(false);
-        Product product = await SeedProductAsync().ConfigureAwait(false);
-        StocktakeSession session = await SeedStocktakeSessionAsync(warehouse.Id, "Draft").ConfigureAwait(false);
-        RecordStocktakeCountRequest request = new() { ProductId = product.Id, CountedQuantity = 42m };
-
-        // Act
-        Result<StocktakeSessionDetailDto> result = await _sut.RecordCountAsync(session.Id, request, 1, CancellationToken.None).ConfigureAwait(false);
-
-        // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorCode.Should().Be("INVALID_STATUS");
-        result.StatusCode.Should().Be(409);
-    }
-
-    [Test]
-    public async Task FinalizeAsync_InProgressSession_SetsCompletedStatus()
+    public async Task CompleteAsync_InProgressSession_SetsCompletedStatus()
     {
         // Arrange
         WarehouseEntity warehouse = await SeedWarehouseAsync().ConfigureAwait(false);
         StocktakeSession session = await SeedStocktakeSessionAsync(warehouse.Id, "InProgress").ConfigureAwait(false);
 
         // Act
-        Result<StocktakeSessionDetailDto> result = await _sut.FinalizeAsync(session.Id, 1, CancellationToken.None).ConfigureAwait(false);
+        Result<StocktakeSessionDetailDto> result = await _sut.CompleteAsync(session.Id, 1, CancellationToken.None).ConfigureAwait(false);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -158,18 +123,18 @@ public sealed class StocktakeSessionServiceTests : InventoryTestBase
     }
 
     [Test]
-    public async Task FinalizeAsync_NonInProgressSession_ReturnsInvalidStatus()
+    public async Task CompleteAsync_NonInProgressSession_ReturnsInvalidStatus()
     {
         // Arrange
         WarehouseEntity warehouse = await SeedWarehouseAsync().ConfigureAwait(false);
         StocktakeSession session = await SeedStocktakeSessionAsync(warehouse.Id, "Draft").ConfigureAwait(false);
 
         // Act
-        Result<StocktakeSessionDetailDto> result = await _sut.FinalizeAsync(session.Id, 1, CancellationToken.None).ConfigureAwait(false);
+        Result<StocktakeSessionDetailDto> result = await _sut.CompleteAsync(session.Id, 1, CancellationToken.None).ConfigureAwait(false);
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.ErrorCode.Should().Be("INVALID_STATUS");
+        result.ErrorCode.Should().Be("SESSION_NOT_IN_PROGRESS");
         result.StatusCode.Should().Be(409);
     }
 
@@ -201,7 +166,7 @@ public sealed class StocktakeSessionServiceTests : InventoryTestBase
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.ErrorCode.Should().Be("INVALID_STATUS");
+        result.ErrorCode.Should().Be("SESSION_CANNOT_CANCEL");
         result.StatusCode.Should().Be(409);
     }
 }

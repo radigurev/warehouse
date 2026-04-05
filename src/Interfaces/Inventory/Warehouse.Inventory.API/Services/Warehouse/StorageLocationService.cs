@@ -2,14 +2,15 @@ using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Warehouse.Common.Models;
 using Warehouse.GenericFiltering;
-using Warehouse.Inventory.API.Interfaces;
+using Warehouse.Inventory.API.Interfaces.Warehouse;
+using Warehouse.Inventory.API.Services.Base;
 using Warehouse.Inventory.DBModel;
 using Warehouse.Inventory.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Inventory;
 using Warehouse.ServiceModel.Requests.Inventory;
 using Warehouse.ServiceModel.Responses;
 
-namespace Warehouse.Inventory.API.Services;
+namespace Warehouse.Inventory.API.Services.Warehouse;
 
 /// <summary>
 /// Implements storage location lifecycle operations: CRUD and search.
@@ -134,6 +135,13 @@ public sealed class StorageLocationService : BaseInventoryEntityService, IStorag
 
         if (location is null)
             return Result.Failure("LOCATION_NOT_FOUND", "Storage location not found.", 404);
+
+        bool hasStock = await Context.StockLevels
+            .AnyAsync(s => s.LocationId == id && s.QuantityOnHand > 0, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (hasStock)
+            return Result.Failure("LOCATION_HAS_STOCK", "Cannot delete location that has stock.", 409);
 
         Context.StorageLocations.Remove(location);
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);

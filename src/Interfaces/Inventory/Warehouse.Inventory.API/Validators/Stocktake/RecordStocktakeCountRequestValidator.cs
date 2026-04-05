@@ -14,9 +14,9 @@ public sealed class RecordStocktakeCountRequestValidator : AbstractValidator<Rec
     public RecordStocktakeCountRequestValidator()
     {
         RuleFor(x => x.ProductId)
-            .GreaterThan(0).WithErrorCode("INVALID_PRODUCT_ID").WithMessage("Product ID is required.");
+            .GreaterThan(0).WithErrorCode("INVALID_PRODUCT").WithMessage("Product ID is required.");
 
         RuleFor(x => x.CountedQuantity)
-            .GreaterThanOrEqualTo(0).WithErrorCode("INVALID_COUNTED_QUANTITY").WithMessage("Counted quantity must be zero or greater.");
+            .GreaterThanOrEqualTo(0).WithErrorCode("INVALID_COUNT_QUANTITY").WithMessage("Counted quantity must be zero or greater.");
     }
 }

@@ -56,7 +56,7 @@ public sealed class RecordStockMovementRequestValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "ProductId" && e.ErrorCode == "INVALID_PRODUCT_ID");
+        result.Errors.Should().Contain(e => e.PropertyName == "ProductId" && e.ErrorCode == "INVALID_PRODUCT");
     }
 
     [Test]
@@ -76,7 +76,7 @@ public sealed class RecordStockMovementRequestValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Quantity" && e.ErrorCode == "INVALID_QUANTITY");
+        result.Errors.Should().Contain(e => e.PropertyName == "Quantity" && e.ErrorCode == "INVALID_MOVEMENT_QUANTITY");
     }
 
     [Test]

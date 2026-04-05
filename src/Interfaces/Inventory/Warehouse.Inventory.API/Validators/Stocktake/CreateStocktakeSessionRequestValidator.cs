@@ -14,7 +14,7 @@ public sealed class CreateStocktakeSessionRequestValidator : AbstractValidator<C
     public CreateStocktakeSessionRequestValidator()
     {
         RuleFor(x => x.WarehouseId)
-            .GreaterThan(0).WithErrorCode("INVALID_WAREHOUSE_ID").WithMessage("Warehouse ID is required.");
+            .GreaterThan(0).WithErrorCode("INVALID_WAREHOUSE").WithMessage("Warehouse ID is required.");
 
         RuleFor(x => x.Name)
             .NotEmpty().WithErrorCode("INVALID_SESSION_NAME").WithMessage("Session name is required.")

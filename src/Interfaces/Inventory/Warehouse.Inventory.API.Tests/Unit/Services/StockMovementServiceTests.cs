@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Warehouse.Common.Models;
-using Warehouse.Inventory.API.Services;
+using Warehouse.Inventory.API.Services.Stock;
 using Warehouse.Inventory.API.Tests.Fixtures;
 using Warehouse.Inventory.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Inventory;

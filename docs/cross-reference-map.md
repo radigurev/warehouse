@@ -164,10 +164,13 @@ This document provides a bidirectional mapping between SDD specifications and so
 | File | Type | Role |
 |---|---|---|
 | `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/StocktakeSessionsController.cs` | Controller | Stocktake session lifecycle endpoints |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/StocktakeCountsController.cs` | Controller | Stocktake count entry endpoints |
 | `src/Interfaces/Inventory/Warehouse.Inventory.API/Services/StocktakeSessionService.cs` | Service | Stocktake session workflow |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Services/StocktakeCountService.cs` | Service | Count entry management |
 | `src/Databases/Warehouse.Inventory.DBModel/Models/StocktakeSession.cs` | Entity | Stocktake session entity |
 | `src/Databases/Warehouse.Inventory.DBModel/Models/StocktakeCount.cs` | Entity | Count entry entity |
 | `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Services/StocktakeSessionServiceTests.cs` | Test | Stocktake service tests |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Services/StocktakeCountServiceTests.cs` | Test | Count entry service tests |
 
 ## Section 2 — Source File → Specs
 
@@ -229,6 +232,7 @@ This document provides a bidirectional mapping between SDD specifications and so
 | `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/StorageLocationsController.cs` | SDD-INV-003 |
 | `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/WarehouseTransfersController.cs` | SDD-INV-003 |
 | `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/StocktakeSessionsController.cs` | SDD-INV-004 |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/StocktakeCountsController.cs` | SDD-INV-004 |
 | `src/Interfaces/Inventory/Warehouse.Inventory.API/Services/*` | SDD-INV-001, SDD-INV-002, SDD-INV-003, SDD-INV-004 |
 | `src/Warehouse.Mapping/Profiles/Inventory/InventoryMappingProfile.cs` | SDD-INV-001, SDD-INV-002, SDD-INV-003, SDD-INV-004 |
 | `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Services/*` | SDD-INV-001, SDD-INV-002, SDD-INV-003, SDD-INV-004 |

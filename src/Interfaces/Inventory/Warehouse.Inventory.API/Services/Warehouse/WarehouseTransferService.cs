@@ -1,15 +1,17 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Warehouse.Common.Models;
 using Warehouse.GenericFiltering;
-using Warehouse.Inventory.API.Interfaces;
+using Warehouse.Inventory.API.Interfaces.Warehouse;
+using Warehouse.Inventory.API.Services.Base;
 using Warehouse.Inventory.DBModel;
 using Warehouse.Inventory.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Inventory;
 using Warehouse.ServiceModel.Requests.Inventory;
 using Warehouse.ServiceModel.Responses;
 
-namespace Warehouse.Inventory.API.Services;
+namespace Warehouse.Inventory.API.Services.Warehouse;
 
 /// <summary>
 /// Implements warehouse transfer operations: create, complete, cancel, get, and search.
@@ -73,7 +75,7 @@ public sealed class WarehouseTransferService : BaseInventoryEntityService, IWare
         CancellationToken cancellationToken)
     {
         if (request.SourceWarehouseId == request.DestinationWarehouseId)
-            return Result<WarehouseTransferDetailDto>.Failure("SAME_WAREHOUSE", "Source and destination warehouses must be different.", 400);
+            return Result<WarehouseTransferDetailDto>.Failure("TRANSFER_SAME_WAREHOUSE", "Source and destination warehouses must be different.", 400);
 
         WarehouseTransfer transfer = new()
         {
@@ -117,9 +119,17 @@ public sealed class WarehouseTransferService : BaseInventoryEntityService, IWare
             return Result<WarehouseTransferDetailDto>.Failure("TRANSFER_NOT_FOUND", "Warehouse transfer not found.", 404);
 
         if (transfer.Status != "Draft")
-            return Result<WarehouseTransferDetailDto>.Failure("INVALID_STATUS", "Only draft transfers can be completed.", 409);
+            return Result<WarehouseTransferDetailDto>.Failure("TRANSFER_NOT_DRAFT", "Only draft transfers can be completed.", 409);
 
-        await ApplyTransferLinesToStockAsync(transfer, userId, cancellationToken).ConfigureAwait(false);
+        await using IDbContextTransaction transaction = await Context.Database
+            .BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+
+        Result? stockValidation = await ApplyTransferLinesToStockAsync(transfer, userId, cancellationToken).ConfigureAwait(false);
+        if (stockValidation is not null)
+        {
+            await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+            return Result<WarehouseTransferDetailDto>.Failure(stockValidation.ErrorCode!, stockValidation.ErrorMessage!, stockValidation.StatusCode!.Value);
+        }
 
         transfer.Status = "Completed";
         transfer.CompletedAtUtc = DateTime.UtcNow;
@@ -129,6 +139,7 @@ public sealed class WarehouseTransferService : BaseInventoryEntityService, IWare
             transfer.Notes = $"{transfer.Notes}\n[Completion] {request.Notes}".Trim();
 
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
 
         WarehouseTransferDetailDto dto = Mapper.Map<WarehouseTransferDetailDto>(transfer);
         return Result<WarehouseTransferDetailDto>.Success(dto);
@@ -145,7 +156,7 @@ public sealed class WarehouseTransferService : BaseInventoryEntityService, IWare
             return Result.Failure("TRANSFER_NOT_FOUND", "Warehouse transfer not found.", 404);
 
         if (transfer.Status != "Draft")
-            return Result.Failure("INVALID_STATUS", "Only draft transfers can be cancelled.", 409);
+            return Result.Failure("TRANSFER_NOT_DRAFT", "Only draft transfers can be cancelled.", 409);
 
         transfer.Status = "Cancelled";
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -154,22 +165,28 @@ public sealed class WarehouseTransferService : BaseInventoryEntityService, IWare
 
     /// <summary>
     /// Applies each transfer line by moving stock between warehouses.
+    /// Returns a failure result if any source stock level is insufficient.
     /// </summary>
-    private async Task ApplyTransferLinesToStockAsync(
+    private async Task<Result?> ApplyTransferLinesToStockAsync(
         WarehouseTransfer transfer,
         int userId,
         CancellationToken cancellationToken)
     {
         foreach (WarehouseTransferLine line in transfer.Lines)
         {
-            await AdjustStockForTransferLineAsync(transfer, line, userId, cancellationToken).ConfigureAwait(false);
+            Result? lineResult = await AdjustStockForTransferLineAsync(transfer, line, userId, cancellationToken).ConfigureAwait(false);
+            if (lineResult is not null)
+                return lineResult;
         }
+
+        return null;
     }
 
     /// <summary>
     /// Adjusts stock levels and records movements for a single transfer line.
+    /// Returns a failure result if the source stock level is insufficient.
     /// </summary>
-    private async Task AdjustStockForTransferLineAsync(
+    private async Task<Result?> AdjustStockForTransferLineAsync(
         WarehouseTransfer transfer,
         WarehouseTransferLine line,
         int userId,
@@ -177,6 +194,10 @@ public sealed class WarehouseTransferService : BaseInventoryEntityService, IWare
     {
         StockLevel sourceLevel = await FindOrCreateStockLevelAsync(
             line.ProductId, transfer.SourceWarehouseId, line.SourceLocationId, cancellationToken).ConfigureAwait(false);
+
+        if (sourceLevel.QuantityOnHand < line.Quantity)
+            return Result.Failure("INSUFFICIENT_STOCK", "Insufficient stock at source for transfer.", 409);
+
         sourceLevel.QuantityOnHand -= line.Quantity;
         sourceLevel.ModifiedAtUtc = DateTime.UtcNow;
 
@@ -187,6 +208,8 @@ public sealed class WarehouseTransferService : BaseInventoryEntityService, IWare
 
         Context.StockMovements.Add(CreateTransferMovement(line, transfer, userId, -line.Quantity, transfer.SourceWarehouseId, line.SourceLocationId));
         Context.StockMovements.Add(CreateTransferMovement(line, transfer, userId, line.Quantity, transfer.DestinationWarehouseId, line.DestinationLocationId));
+
+        return null;
     }
 
     /// <summary>

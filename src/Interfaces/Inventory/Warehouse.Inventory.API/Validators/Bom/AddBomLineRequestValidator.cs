@@ -17,6 +17,6 @@ public sealed class AddBomLineRequestValidator : AbstractValidator<AddBomLineReq
             .GreaterThan(0).WithErrorCode("INVALID_CHILD_PRODUCT").WithMessage("Child product ID is required.");
 
         RuleFor(x => x.Quantity)
-            .GreaterThan(0).WithErrorCode("INVALID_QUANTITY").WithMessage("Quantity must be greater than zero.");
+            .GreaterThan(0).WithErrorCode("INVALID_BOM_QUANTITY").WithMessage("Quantity must be greater than zero.");
     }
 }

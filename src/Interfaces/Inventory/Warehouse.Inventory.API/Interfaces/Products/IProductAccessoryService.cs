@@ -2,7 +2,7 @@ using Warehouse.Common.Models;
 using Warehouse.ServiceModel.DTOs.Inventory;
 using Warehouse.ServiceModel.Requests.Inventory;
 
-namespace Warehouse.Inventory.API.Interfaces;
+namespace Warehouse.Inventory.API.Interfaces.Products;
 
 /// <summary>
 /// Defines product accessory link operations: create, delete, and list.

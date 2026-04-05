@@ -3,10 +3,10 @@ using Warehouse.ServiceModel.DTOs.Inventory;
 using Warehouse.ServiceModel.Requests.Inventory;
 using Warehouse.ServiceModel.Responses;
 
-namespace Warehouse.Inventory.API.Interfaces;
+namespace Warehouse.Inventory.API.Interfaces.Stocktake;
 
 /// <summary>
-/// Defines stocktake session operations: create, start, count, finalize, cancel, get, and search.
+/// Defines stocktake session lifecycle operations: create, start, complete, cancel, get, and search.
 /// <para>See <see cref="StocktakeSessionDto"/>, <see cref="StocktakeSessionDetailDto"/>.</para>
 /// </summary>
 public interface IStocktakeSessionService
@@ -32,17 +32,22 @@ public interface IStocktakeSessionService
     Task<Result<StocktakeSessionDetailDto>> StartAsync(int id, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Records a count entry for an in-progress session.
+    /// Completes an in-progress session, setting status to Completed.
     /// </summary>
-    Task<Result<StocktakeSessionDetailDto>> RecordCountAsync(int sessionId, RecordStocktakeCountRequest request, int userId, CancellationToken cancellationToken);
-
-    /// <summary>
-    /// Finalizes an in-progress session as Completed.
-    /// </summary>
-    Task<Result<StocktakeSessionDetailDto>> FinalizeAsync(int id, int userId, CancellationToken cancellationToken);
+    Task<Result<StocktakeSessionDetailDto>> CompleteAsync(int id, int userId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Cancels a draft or in-progress session.
     /// </summary>
     Task<Result> CancelAsync(int id, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Returns all count entries with non-zero variance for a completed session.
+    /// </summary>
+    Task<Result<IReadOnlyList<StocktakeCountDto>>> GetVarianceReportAsync(int sessionId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Creates an inventory adjustment from the variances of a completed session.
+    /// </summary>
+    Task<Result<InventoryAdjustmentDetailDto>> CreateAdjustmentFromSessionAsync(int sessionId, int userId, CancellationToken cancellationToken);
 }

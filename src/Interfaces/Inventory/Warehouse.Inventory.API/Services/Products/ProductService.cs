@@ -2,14 +2,15 @@ using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Warehouse.Common.Models;
 using Warehouse.GenericFiltering;
-using Warehouse.Inventory.API.Interfaces;
+using Warehouse.Inventory.API.Interfaces.Products;
+using Warehouse.Inventory.API.Services.Base;
 using Warehouse.Inventory.DBModel;
 using Warehouse.Inventory.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Inventory;
 using Warehouse.ServiceModel.Requests.Inventory;
 using Warehouse.ServiceModel.Responses;
 
-namespace Warehouse.Inventory.API.Services;
+namespace Warehouse.Inventory.API.Services.Products;
 
 /// <summary>
 /// Implements product lifecycle operations: CRUD, search, soft-delete, and reactivation.

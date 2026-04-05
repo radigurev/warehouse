@@ -1,6 +1,6 @@
 # SDD-INV-002 — Stock Management
 
-> Status: Draft
+> Status: Active
 > Last updated: 2026-04-05
 > Owner: TBD
 > Category: Core
@@ -66,9 +66,9 @@ This spec defines the Stock Management sub-domain for the Warehouse Inventory sy
 - Stock movements are immutable -- they MUST NOT be updated or deleted after creation.
 
 **Edge cases:**
-- Recording a movement for a non-existent product MUST return a 404 Not Found error.
-- Recording a movement for a non-existent warehouse or location MUST return a 404 Not Found error.
-- Recording a movement that would make stock negative MUST return a 409 Conflict error.
+- Recording a movement for a non-existent product MUST return a 400 Validation error with code `INVALID_PRODUCT`.
+- Recording a movement for a non-existent warehouse or location MUST return a 400 Validation error with code `INVALID_WAREHOUSE` or `INVALID_LOCATION`.
+- Recording a movement that would make stock negative MUST return a 409 Conflict error with code `INSUFFICIENT_STOCK`.
 
 #### 2.2.2 Search Stock Movements
 
@@ -154,7 +154,7 @@ This spec defines the Stock Management sub-domain for the Warehouse Inventory sy
 
 **Edge cases:**
 - Creating a batch with a duplicate batch number for the same product MUST return a 409 Conflict error.
-- Creating a batch for a non-existent product MUST return a 404 Not Found error.
+- Creating a batch for a non-existent product MUST return a 400 Validation error with code `INVALID_PRODUCT`.
 
 ---
 
@@ -217,10 +217,13 @@ This spec defines the Stock Management sub-domain for the Warehouse Inventory sy
 | E8 | Apply adjustment causes negative stock | 409 | `ADJUSTMENT_INSUFFICIENT_STOCK` | Applying adjustment would result in negative stock for product {code} at {location}. |
 | E9 | Batch not found | 404 | `BATCH_NOT_FOUND` | Batch not found. |
 | E10 | Duplicate batch number | 409 | `DUPLICATE_BATCH_NUMBER` | A batch with this number already exists for this product. |
-| E11 | Batch product not found | 404 | `PRODUCT_NOT_FOUND` | Product not found. |
+| E11 | Batch references non-existent product | 400 | `INVALID_PRODUCT` | The specified product does not exist. |
 | E12 | Deactivate batch with stock | 409 | `BATCH_HAS_STOCK` | Cannot deactivate batch -- it has non-zero stock levels. |
 | E13 | Validation failure (field-level) | 400 | `VALIDATION_ERROR` | One or more fields are invalid. |
 | E14 | Insufficient permissions | 403 | `FORBIDDEN` | You do not have permission to perform this action. |
+| E15 | Movement references non-existent product | 400 | `INVALID_PRODUCT` | The specified product does not exist. |
+| E16 | Movement references non-existent warehouse | 400 | `INVALID_WAREHOUSE` | The specified warehouse does not exist. |
+| E17 | Movement references non-existent location | 400 | `INVALID_LOCATION` | The specified storage location does not exist. |
 
 All error responses MUST use ProblemDetails (RFC 7807) format.
 
@@ -368,6 +371,12 @@ All error responses MUST use ProblemDetails (RFC 7807) format.
   - ProblemDetails error responses
   - Database schema on `inventory` schema
 
+- **v2 -- Error alignment (2026-04-05)** (non-breaking)
+  - Non-existent product/warehouse/location references on stock movements return 400 (validation error) instead of 404
+  - Non-existent product on batch creation returns 400 `INVALID_PRODUCT` instead of 404 `PRODUCT_NOT_FOUND`
+  - Added explicit error rules E15-E17 for movement reference validation
+  - Status changed from Draft to Active
+
 ---
 
 ## 8. Test Plan
@@ -385,7 +394,7 @@ All error responses MUST use ProblemDetails (RFC 7807) format.
 - `RecordAsync_ValidInboundMovement_CreatesMovementAndUpdatesStock` [Unit]
 - `RecordAsync_ValidOutboundMovement_CreatesMovementAndUpdatesStock` [Unit]
 - `RecordAsync_InsufficientStock_ReturnsConflictError` [Unit]
-- `RecordAsync_NonExistentProduct_ReturnsNotFound` [Unit]
+- `RecordAsync_NonExistentProduct_ReturnsValidationError` [Unit]
 - `SearchAsync_WithFilters_ReturnsFilteredResults` [Unit]
 - `GetByIdAsync_ExistingMovement_ReturnsMovement` [Unit]
 
@@ -405,7 +414,7 @@ All error responses MUST use ProblemDetails (RFC 7807) format.
 
 - `CreateAsync_ValidRequest_ReturnsCreatedBatch` [Unit]
 - `CreateAsync_DuplicateBatchNumber_ReturnsConflict` [Unit]
-- `CreateAsync_NonExistentProduct_ReturnsNotFound` [Unit]
+- `CreateAsync_NonExistentProduct_ReturnsValidationError` [Unit]
 - `UpdateAsync_ValidRequest_ReturnsUpdatedBatch` [Unit]
 - `DeactivateAsync_ActiveBatch_SetsInactive` [Unit]
 - `SearchAsync_WithFilters_ReturnsFilteredResults` [Unit]

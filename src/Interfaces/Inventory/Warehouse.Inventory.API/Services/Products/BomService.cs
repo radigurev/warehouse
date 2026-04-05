@@ -1,13 +1,14 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Warehouse.Common.Models;
-using Warehouse.Inventory.API.Interfaces;
+using Warehouse.Inventory.API.Interfaces.Products;
+using Warehouse.Inventory.API.Services.Base;
 using Warehouse.Inventory.DBModel;
 using Warehouse.Inventory.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Inventory;
 using Warehouse.ServiceModel.Requests.Inventory;
 
-namespace Warehouse.Inventory.API.Services;
+namespace Warehouse.Inventory.API.Services.Products;
 
 /// <summary>
 /// Implements bill of materials operations: CRUD and line management.
@@ -59,6 +60,13 @@ public sealed class BomService : BaseInventoryEntityService, IBomService
         Result? productValidation = await ValidateProductExistsAsync(request.ParentProductId, cancellationToken).ConfigureAwait(false);
         if (productValidation is not null)
             return Result<BomDto>.Failure(productValidation.ErrorCode!, productValidation.ErrorMessage!, productValidation.StatusCode!.Value);
+
+        bool activeBomExists = await Context.BillOfMaterials
+            .AnyAsync(b => b.ParentProductId == request.ParentProductId && b.IsActive, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (activeBomExists)
+            return Result<BomDto>.Failure("BOM_ALREADY_EXISTS", "An active BOM already exists for this product.", 409);
 
         BillOfMaterials bom = new()
         {
@@ -120,6 +128,9 @@ public sealed class BomService : BaseInventoryEntityService, IBomService
 
         if (bom is null)
             return Result<BomDto>.Failure("BOM_NOT_FOUND", "Bill of materials not found.", 404);
+
+        if (request.ChildProductId == bom.ParentProductId)
+            return Result<BomDto>.Failure("BOM_SELF_REFERENCE", "A product cannot be a component of itself.", 400);
 
         bool duplicate = bom.Lines.Any(l => l.ChildProductId == request.ChildProductId);
         if (duplicate)

@@ -14,7 +14,7 @@ public sealed class CreateZoneRequestValidator : AbstractValidator<CreateZoneReq
     public CreateZoneRequestValidator()
     {
         RuleFor(x => x.WarehouseId)
-            .GreaterThan(0).WithErrorCode("INVALID_WAREHOUSE_ID").WithMessage("Warehouse ID is required.");
+            .GreaterThan(0).WithErrorCode("INVALID_WAREHOUSE").WithMessage("Warehouse ID is required.");
 
         RuleFor(x => x.Code)
             .NotEmpty().WithErrorCode("INVALID_ZONE_CODE").WithMessage("Zone code is required.")

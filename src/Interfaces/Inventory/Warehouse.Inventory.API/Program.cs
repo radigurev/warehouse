@@ -4,8 +4,14 @@ using Microsoft.EntityFrameworkCore;
 using NLog;
 using NLog.Web;
 using Warehouse.Infrastructure.Extensions;
-using Warehouse.Inventory.API.Interfaces;
-using Warehouse.Inventory.API.Services;
+using Warehouse.Inventory.API.Interfaces.Products;
+using Warehouse.Inventory.API.Interfaces.Stock;
+using Warehouse.Inventory.API.Interfaces.Stocktake;
+using Warehouse.Inventory.API.Interfaces.Warehouse;
+using Warehouse.Inventory.API.Services.Products;
+using Warehouse.Inventory.API.Services.Stock;
+using Warehouse.Inventory.API.Services.Stocktake;
+using Warehouse.Inventory.API.Services.Warehouse;
 using Warehouse.Inventory.DBModel;
 using Warehouse.Mapping.Profiles.Inventory;
 
@@ -93,4 +99,5 @@ static void ConfigureApplicationServices(IServiceCollection services)
     services.AddScoped<IInventoryAdjustmentService, InventoryAdjustmentService>();
     services.AddScoped<IWarehouseTransferService, WarehouseTransferService>();
     services.AddScoped<IStocktakeSessionService, StocktakeSessionService>();
+    services.AddScoped<IStocktakeCountService, StocktakeCountService>();
 }

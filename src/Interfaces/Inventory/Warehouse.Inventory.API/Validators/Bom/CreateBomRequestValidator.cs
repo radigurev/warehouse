@@ -29,7 +29,7 @@ public sealed class CreateBomRequestValidator : AbstractValidator<CreateBomReque
                 .GreaterThan(0).WithErrorCode("INVALID_CHILD_PRODUCT").WithMessage("Child product ID is required.");
 
             line.RuleFor(l => l.Quantity)
-                .GreaterThan(0).WithErrorCode("INVALID_QUANTITY").WithMessage("Quantity must be greater than zero.");
+                .GreaterThan(0).WithErrorCode("INVALID_BOM_QUANTITY").WithMessage("Quantity must be greater than zero.");
         });
     }
 }

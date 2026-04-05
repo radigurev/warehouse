@@ -3,7 +3,7 @@ using Warehouse.ServiceModel.DTOs.Inventory;
 using Warehouse.ServiceModel.Requests.Inventory;
 using Warehouse.ServiceModel.Responses;
 
-namespace Warehouse.Inventory.API.Interfaces;
+namespace Warehouse.Inventory.API.Interfaces.Warehouse;
 
 /// <summary>
 /// Defines storage location lifecycle operations: CRUD and search.

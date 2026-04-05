@@ -14,11 +14,11 @@ public sealed class CreateTransferRequestValidator : AbstractValidator<CreateTra
     public CreateTransferRequestValidator()
     {
         RuleFor(x => x.SourceWarehouseId)
-            .GreaterThan(0).WithErrorCode("INVALID_SOURCE_WAREHOUSE").WithMessage("Source warehouse ID is required.");
+            .GreaterThan(0).WithErrorCode("INVALID_WAREHOUSE").WithMessage("Source warehouse ID is required.");
 
         RuleFor(x => x.DestinationWarehouseId)
-            .GreaterThan(0).WithErrorCode("INVALID_DESTINATION_WAREHOUSE").WithMessage("Destination warehouse ID is required.")
-            .NotEqual(x => x.SourceWarehouseId).WithErrorCode("SAME_WAREHOUSE").WithMessage("Source and destination warehouses must be different.");
+            .GreaterThan(0).WithErrorCode("INVALID_WAREHOUSE").WithMessage("Destination warehouse ID is required.")
+            .NotEqual(x => x.SourceWarehouseId).WithErrorCode("TRANSFER_SAME_WAREHOUSE").WithMessage("Source and destination warehouses must be different.");
 
         RuleFor(x => x.Notes)
             .MaximumLength(2000).WithErrorCode("INVALID_NOTES").WithMessage("Notes must not exceed 2000 characters.")
@@ -30,10 +30,10 @@ public sealed class CreateTransferRequestValidator : AbstractValidator<CreateTra
         RuleForEach(x => x.Lines).ChildRules(line =>
         {
             line.RuleFor(l => l.ProductId)
-                .GreaterThan(0).WithErrorCode("INVALID_PRODUCT_ID").WithMessage("Product ID is required.");
+                .GreaterThan(0).WithErrorCode("INVALID_PRODUCT").WithMessage("Product ID is required.");
 
             line.RuleFor(l => l.Quantity)
-                .GreaterThan(0).WithErrorCode("INVALID_QUANTITY").WithMessage("Quantity must be greater than zero.");
+                .GreaterThan(0).WithErrorCode("INVALID_TRANSFER_QUANTITY").WithMessage("Quantity must be greater than zero.");
         });
     }
 }

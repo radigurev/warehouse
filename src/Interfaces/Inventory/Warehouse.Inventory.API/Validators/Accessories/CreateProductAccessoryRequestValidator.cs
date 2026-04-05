@@ -14,7 +14,7 @@ public sealed class CreateProductAccessoryRequestValidator : AbstractValidator<C
     public CreateProductAccessoryRequestValidator()
     {
         RuleFor(x => x.ProductId)
-            .GreaterThan(0).WithErrorCode("INVALID_PRODUCT_ID").WithMessage("Product ID is required.");
+            .GreaterThan(0).WithErrorCode("INVALID_PRODUCT").WithMessage("Product ID is required.");
 
         RuleFor(x => x.AccessoryProductId)
             .GreaterThan(0).WithErrorCode("INVALID_ACCESSORY_PRODUCT_ID").WithMessage("Accessory product ID is required.");

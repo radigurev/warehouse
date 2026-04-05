@@ -44,7 +44,7 @@ public sealed class CreateZoneRequestValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "WarehouseId" && e.ErrorCode == "INVALID_WAREHOUSE_ID");
+        result.Errors.Should().Contain(e => e.PropertyName == "WarehouseId" && e.ErrorCode == "INVALID_WAREHOUSE");
     }
 
     [Test]

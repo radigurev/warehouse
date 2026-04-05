@@ -1,15 +1,17 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Warehouse.Common.Models;
 using Warehouse.GenericFiltering;
-using Warehouse.Inventory.API.Interfaces;
+using Warehouse.Inventory.API.Interfaces.Stock;
+using Warehouse.Inventory.API.Services.Base;
 using Warehouse.Inventory.DBModel;
 using Warehouse.Inventory.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Inventory;
 using Warehouse.ServiceModel.Requests.Inventory;
 using Warehouse.ServiceModel.Responses;
 
-namespace Warehouse.Inventory.API.Services;
+namespace Warehouse.Inventory.API.Services.Stock;
 
 /// <summary>
 /// Implements inventory adjustment operations: create, approve, reject, apply, get, and search.
@@ -116,7 +118,7 @@ public sealed class InventoryAdjustmentService : BaseInventoryEntityService, IIn
             return Result<InventoryAdjustmentDetailDto>.Failure("ADJUSTMENT_NOT_FOUND", "Inventory adjustment not found.", 404);
 
         if (adjustment.Status != "Pending")
-            return Result<InventoryAdjustmentDetailDto>.Failure("INVALID_STATUS", "Only pending adjustments can be approved.", 409);
+            return Result<InventoryAdjustmentDetailDto>.Failure("ADJUSTMENT_NOT_PENDING", "Only pending adjustments can be approved.", 409);
 
         adjustment.Status = "Approved";
         adjustment.ApprovedAtUtc = DateTime.UtcNow;
@@ -144,7 +146,7 @@ public sealed class InventoryAdjustmentService : BaseInventoryEntityService, IIn
             return Result<InventoryAdjustmentDetailDto>.Failure("ADJUSTMENT_NOT_FOUND", "Inventory adjustment not found.", 404);
 
         if (adjustment.Status != "Pending")
-            return Result<InventoryAdjustmentDetailDto>.Failure("INVALID_STATUS", "Only pending adjustments can be rejected.", 409);
+            return Result<InventoryAdjustmentDetailDto>.Failure("ADJUSTMENT_NOT_PENDING", "Only pending adjustments can be rejected.", 409);
 
         adjustment.Status = "Rejected";
         adjustment.RejectedAtUtc = DateTime.UtcNow;
@@ -169,24 +171,34 @@ public sealed class InventoryAdjustmentService : BaseInventoryEntityService, IIn
             return Result<InventoryAdjustmentDetailDto>.Failure("ADJUSTMENT_NOT_FOUND", "Inventory adjustment not found.", 404);
 
         if (adjustment.Status != "Approved")
-            return Result<InventoryAdjustmentDetailDto>.Failure("INVALID_STATUS", "Only approved adjustments can be applied.", 409);
+            return Result<InventoryAdjustmentDetailDto>.Failure("ADJUSTMENT_NOT_APPROVED", "Only approved adjustments can be applied.", 409);
 
-        await ApplyAdjustmentLinesToStockAsync(adjustment, userId, cancellationToken).ConfigureAwait(false);
+        await using IDbContextTransaction transaction = await Context.Database
+            .BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+
+        Result? stockValidation = await ApplyAdjustmentLinesToStockAsync(adjustment, userId, cancellationToken).ConfigureAwait(false);
+        if (stockValidation is not null)
+        {
+            await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+            return Result<InventoryAdjustmentDetailDto>.Failure(stockValidation.ErrorCode!, stockValidation.ErrorMessage!, stockValidation.StatusCode!.Value);
+        }
 
         adjustment.Status = "Applied";
         adjustment.AppliedAtUtc = DateTime.UtcNow;
         adjustment.AppliedByUserId = userId;
 
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
 
         InventoryAdjustmentDetailDto dto = Mapper.Map<InventoryAdjustmentDetailDto>(adjustment);
         return Result<InventoryAdjustmentDetailDto>.Success(dto);
     }
 
     /// <summary>
-    /// Applies each adjustment line to the corresponding stock level.
+    /// Applies each adjustment line to the corresponding stock level within a transaction.
+    /// Returns a failure result if any stock level would go negative.
     /// </summary>
-    private async Task ApplyAdjustmentLinesToStockAsync(
+    private async Task<Result?> ApplyAdjustmentLinesToStockAsync(
         InventoryAdjustment adjustment,
         int userId,
         CancellationToken cancellationToken)
@@ -196,8 +208,11 @@ public sealed class InventoryAdjustmentService : BaseInventoryEntityService, IIn
             decimal variance = line.ActualQuantity - line.ExpectedQuantity;
             if (variance == 0) continue;
 
-            StockLevel? stockLevel = await FindOrCreateStockLevelAsync(
+            StockLevel stockLevel = await FindOrCreateStockLevelAsync(
                 line.ProductId, line.WarehouseId, line.LocationId, cancellationToken).ConfigureAwait(false);
+
+            if (stockLevel.QuantityOnHand + variance < 0)
+                return Result.Failure("INSUFFICIENT_STOCK", "Applying adjustment would result in negative stock.", 409);
 
             stockLevel.QuantityOnHand += variance;
             stockLevel.ModifiedAtUtc = DateTime.UtcNow;
@@ -215,6 +230,8 @@ public sealed class InventoryAdjustmentService : BaseInventoryEntityService, IIn
                 CreatedByUserId = userId
             });
         }
+
+        return null;
     }
 
     /// <summary>

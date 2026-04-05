@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Warehouse.Common.Models;
 using Warehouse.Infrastructure.Authorization;
 using Warehouse.Infrastructure.Controllers;
-using Warehouse.Inventory.API.Interfaces;
+using Warehouse.Inventory.API.Interfaces.Products;
 using Warehouse.ServiceModel.DTOs.Inventory;
 using Warehouse.ServiceModel.Requests.Inventory;
 

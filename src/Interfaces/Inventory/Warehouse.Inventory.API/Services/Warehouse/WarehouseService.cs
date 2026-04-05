@@ -1,14 +1,15 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Warehouse.Common.Models;
-using Warehouse.Inventory.API.Interfaces;
+using Warehouse.Inventory.API.Interfaces.Warehouse;
+using Warehouse.Inventory.API.Services.Base;
 using Warehouse.Inventory.DBModel;
 using Warehouse.Inventory.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Inventory;
 using Warehouse.ServiceModel.Requests.Inventory;
 using Warehouse.ServiceModel.Responses;
 
-namespace Warehouse.Inventory.API.Services;
+namespace Warehouse.Inventory.API.Services.Warehouse;
 
 /// <summary>
 /// Implements warehouse management operations: CRUD and soft-delete.

@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Warehouse.Common.Models;
 using Warehouse.Infrastructure.Authorization;
 using Warehouse.Infrastructure.Controllers;
-using Warehouse.Inventory.API.Interfaces;
+using Warehouse.Inventory.API.Interfaces.Stocktake;
 using Warehouse.ServiceModel.DTOs.Inventory;
 using Warehouse.ServiceModel.Requests.Inventory;
 using Warehouse.ServiceModel.Responses;
@@ -12,7 +12,7 @@ using Warehouse.ServiceModel.Responses;
 namespace Warehouse.Inventory.API.Controllers;
 
 /// <summary>
-/// Handles stocktake session operations: create, start, count, finalize, cancel, get, and search.
+/// Handles stocktake session lifecycle operations: create, start, complete, cancel, get, and search.
 /// <para>See <see cref="IStocktakeSessionService"/>.</para>
 /// </summary>
 [ApiVersion("1.0")]
@@ -34,7 +34,7 @@ public sealed class StocktakeSessionsController : BaseApiController
     /// Creates a new stocktake session in Draft status.
     /// </summary>
     [HttpPost]
-    [RequirePermission("stocktake-sessions:create")]
+    [RequirePermission("stocktake:create")]
     [ProducesResponseType(typeof(StocktakeSessionDetailDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateSessionAsync(
@@ -53,7 +53,7 @@ public sealed class StocktakeSessionsController : BaseApiController
     /// Searches stocktake sessions with filters and pagination.
     /// </summary>
     [HttpGet]
-    [RequirePermission("stocktake-sessions:read")]
+    [RequirePermission("stocktake:read")]
     [ProducesResponseType(typeof(PaginatedResponse<StocktakeSessionDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> SearchSessionsAsync(
         [FromQuery] SearchStocktakeSessionsRequest request,
@@ -69,7 +69,7 @@ public sealed class StocktakeSessionsController : BaseApiController
     /// Gets a session by ID with counts.
     /// </summary>
     [HttpGet("{id:int}", Name = "GetSessionById")]
-    [RequirePermission("stocktake-sessions:read")]
+    [RequirePermission("stocktake:read")]
     [ProducesResponseType(typeof(StocktakeSessionDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetSessionByIdAsync(int id, CancellationToken cancellationToken)
@@ -84,7 +84,7 @@ public sealed class StocktakeSessionsController : BaseApiController
     /// Starts a draft session, transitioning to InProgress.
     /// </summary>
     [HttpPost("{id:int}/start")]
-    [RequirePermission("stocktake-sessions:update")]
+    [RequirePermission("stocktake:update")]
     [ProducesResponseType(typeof(StocktakeSessionDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
@@ -97,40 +97,19 @@ public sealed class StocktakeSessionsController : BaseApiController
     }
 
     /// <summary>
-    /// Records a count entry for an in-progress session.
+    /// Completes an in-progress session, setting status to Completed.
     /// </summary>
-    [HttpPost("{sessionId:int}/counts")]
-    [RequirePermission("stocktake-sessions:update")]
+    [HttpPost("{id:int}/complete")]
+    [RequirePermission("stocktake:finalize")]
     [ProducesResponseType(typeof(StocktakeSessionDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> RecordCountAsync(
-        int sessionId,
-        [FromBody] RecordStocktakeCountRequest request,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> CompleteSessionAsync(int id, CancellationToken cancellationToken)
     {
         int userId = GetCurrentUserId();
 
         Result<StocktakeSessionDetailDto> result = await _sessionService
-            .RecordCountAsync(sessionId, request, userId, cancellationToken);
-
-        return ToActionResult(result);
-    }
-
-    /// <summary>
-    /// Finalizes an in-progress session as Completed.
-    /// </summary>
-    [HttpPost("{id:int}/finalize")]
-    [RequirePermission("stocktake-sessions:update")]
-    [ProducesResponseType(typeof(StocktakeSessionDetailDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> FinalizeSessionAsync(int id, CancellationToken cancellationToken)
-    {
-        int userId = GetCurrentUserId();
-
-        Result<StocktakeSessionDetailDto> result = await _sessionService
-            .FinalizeAsync(id, userId, cancellationToken);
+            .CompleteAsync(id, userId, cancellationToken);
 
         return ToActionResult(result);
     }
@@ -139,13 +118,51 @@ public sealed class StocktakeSessionsController : BaseApiController
     /// Cancels a draft or in-progress session.
     /// </summary>
     [HttpPost("{id:int}/cancel")]
-    [RequirePermission("stocktake-sessions:update")]
+    [RequirePermission("stocktake:update")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CancelSessionAsync(int id, CancellationToken cancellationToken)
     {
         Result result = await _sessionService.CancelAsync(id, cancellationToken);
+        return ToActionResult(result);
+    }
+
+    /// <summary>
+    /// Returns a variance report for a completed stocktake session.
+    /// </summary>
+    [HttpGet("{id:int}/variance-report")]
+    [RequirePermission("stocktake:read")]
+    [ProducesResponseType(typeof(IReadOnlyList<StocktakeCountDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> GetVarianceReportAsync(int id, CancellationToken cancellationToken)
+    {
+        Result<IReadOnlyList<StocktakeCountDto>> result = await _sessionService
+            .GetVarianceReportAsync(id, cancellationToken);
+
+        return ToActionResult(result);
+    }
+
+    /// <summary>
+    /// Creates an inventory adjustment from the variances of a completed session.
+    /// </summary>
+    [HttpPost("{id:int}/create-adjustment")]
+    [RequirePermission("stocktake:update")]
+    [ProducesResponseType(typeof(InventoryAdjustmentDetailDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> CreateAdjustmentFromSessionAsync(int id, CancellationToken cancellationToken)
+    {
+        int userId = GetCurrentUserId();
+
+        Result<InventoryAdjustmentDetailDto> result = await _sessionService
+            .CreateAdjustmentFromSessionAsync(id, userId, cancellationToken);
+
+        if (result.IsSuccess)
+            return StatusCode(StatusCodes.Status201Created, result.Value);
+
         return ToActionResult(result);
     }
 }
