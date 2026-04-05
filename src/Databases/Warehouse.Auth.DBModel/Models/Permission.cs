@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using Warehouse.Common.Interfaces;
 
 namespace Warehouse.Auth.DBModel.Models;
 
@@ -10,7 +11,7 @@ namespace Warehouse.Auth.DBModel.Models;
 /// </summary>
 [Table("Permissions", Schema = "auth")]
 [Index(nameof(Resource), nameof(Action), IsUnique = true, Name = "IX_Permissions_Resource_Action")]
-public sealed class Permission
+public sealed class Permission : IEntity
 {
     /// <summary>
     /// Gets or sets the auto-incrementing primary key.

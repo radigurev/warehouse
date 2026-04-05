@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using Warehouse.Common.Interfaces;
 
 namespace Warehouse.Customers.DBModel.Models;
 
@@ -11,7 +12,7 @@ namespace Warehouse.Customers.DBModel.Models;
 [Table("CustomerEmails", Schema = "customers")]
 [Index(nameof(CustomerId), Name = "IX_CustomerEmails_CustomerId")]
 [Index(nameof(CustomerId), nameof(EmailAddress), IsUnique = true, Name = "IX_CustomerEmails_CustomerId_EmailAddress")]
-public sealed class CustomerEmail
+public sealed class CustomerEmail : ICustomerOwnedEntity
 {
     /// <summary>
     /// Gets or sets the auto-incrementing primary key.

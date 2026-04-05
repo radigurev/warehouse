@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using Warehouse.Common.Interfaces;
 
 namespace Warehouse.Auth.DBModel.Models;
 
@@ -11,7 +12,7 @@ namespace Warehouse.Auth.DBModel.Models;
 [Table("RefreshTokens", Schema = "auth")]
 [Index(nameof(Token), IsUnique = true, Name = "IX_RefreshTokens_Token")]
 [Index(nameof(UserId), Name = "IX_RefreshTokens_UserId")]
-public sealed class RefreshToken
+public sealed class RefreshToken : IEntity
 {
     /// <summary>
     /// Gets or sets the auto-incrementing primary key.

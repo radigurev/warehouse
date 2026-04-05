@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using Warehouse.Common.Interfaces;
 
 namespace Warehouse.Auth.DBModel.Models;
 
@@ -11,7 +12,7 @@ namespace Warehouse.Auth.DBModel.Models;
 [Table("Users", Schema = "auth")]
 [Index(nameof(Username), IsUnique = true, Name = "IX_Users_Username")]
 [Index(nameof(Email), IsUnique = true, Name = "IX_Users_Email")]
-public sealed class User
+public sealed class User : IEntity
 {
     /// <summary>
     /// Gets or sets the auto-incrementing primary key.
