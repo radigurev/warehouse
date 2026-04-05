@@ -14,6 +14,7 @@
     <ProjectReference Include="..\Warehouse.ServiceModel\Warehouse.ServiceModel.csproj" />
     <ProjectReference Include="..\Databases\Warehouse.Auth.DBModel\Warehouse.Auth.DBModel.csproj" />
     <ProjectReference Include="..\Databases\Warehouse.Customers.DBModel\Warehouse.Customers.DBModel.csproj" />
+    <ProjectReference Include="..\Databases\Warehouse.Inventory.DBModel\Warehouse.Inventory.DBModel.csproj" />
   </ItemGroup>
 
 </Project>

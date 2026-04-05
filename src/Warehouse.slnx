@@ -13,6 +13,13 @@
     <Project Path="Interfaces/Customers/Warehouse.Customers.API/Warehouse.Customers.API.csproj" />
     <Project Path="Interfaces/Customers/Warehouse.Customers.API.Tests/Warehouse.Customers.API.Tests.csproj" />
   </Folder>
+  <Folder Name="/Databases/Inventory/">
+    <Project Path="Databases/Warehouse.Inventory.DBModel/Warehouse.Inventory.DBModel.csproj" />
+  </Folder>
+  <Folder Name="/Interfaces/Inventory/">
+    <Project Path="Interfaces/Inventory/Warehouse.Inventory.API/Warehouse.Inventory.API.csproj" />
+    <Project Path="Interfaces/Inventory/Warehouse.Inventory.API.Tests/Warehouse.Inventory.API.Tests.csproj" />
+  </Folder>
   <Project Path="Warehouse.Common/Warehouse.Common.csproj" />
   <Project Path="Warehouse.GenericFiltering/Warehouse.GenericFiltering.csproj" />
   <Project Path="Warehouse.Infrastructure/Warehouse.Infrastructure.csproj" />
