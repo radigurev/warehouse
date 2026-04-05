@@ -97,6 +97,78 @@ This document provides a bidirectional mapping between SDD specifications and so
 | `src/Warehouse.Mapping/Profiles/Customers/CustomerMappingProfile.cs` | Mapping | AutoMapper profile |
 | `src/Interfaces/Customers/Warehouse.Customers.API.Tests/` | Tests | Unit and integration tests |
 
+### SDD-INV-001 — Products and Catalog
+
+| File | Type | Role |
+|---|---|---|
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/ProductsController.cs` | Controller | Product CRUD endpoints |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/ProductCategoriesController.cs` | Controller | Product category CRUD endpoints |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/UnitsOfMeasureController.cs` | Controller | Unit of measure CRUD endpoints |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/BomController.cs` | Controller | Bill of materials endpoints |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/ProductAccessoriesController.cs` | Controller | Product accessory endpoints |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/ProductSubstitutesController.cs` | Controller | Product substitute endpoints |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Services/ProductService.cs` | Service | Product business logic |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Services/ProductCategoryService.cs` | Service | Category business logic |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Services/UnitOfMeasureService.cs` | Service | UoM business logic |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Services/BomService.cs` | Service | BOM business logic |
+| `src/Databases/Warehouse.Inventory.DBModel/Models/Product.cs` | Entity | Product entity |
+| `src/Databases/Warehouse.Inventory.DBModel/Models/ProductCategory.cs` | Entity | Category entity |
+| `src/Databases/Warehouse.Inventory.DBModel/Models/UnitOfMeasure.cs` | Entity | UoM entity |
+| `src/Databases/Warehouse.Inventory.DBModel/Models/BillOfMaterials.cs` | Entity | BOM header entity |
+| `src/Databases/Warehouse.Inventory.DBModel/Models/BomLine.cs` | Entity | BOM line entity |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Services/ProductServiceTests.cs` | Test | Product service tests |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Services/BomServiceTests.cs` | Test | BOM service tests |
+
+### SDD-INV-002 — Stock Management
+
+| File | Type | Role |
+|---|---|---|
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/StockLevelsController.cs` | Controller | Stock level query endpoints |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/StockMovementsController.cs` | Controller | Stock movement endpoints |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/InventoryAdjustmentsController.cs` | Controller | Adjustment lifecycle endpoints |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/BatchesController.cs` | Controller | Batch/lot management endpoints |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Services/StockLevelService.cs` | Service | Stock level queries |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Services/StockMovementService.cs` | Service | Movement recording |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Services/InventoryAdjustmentService.cs` | Service | Adjustment workflow |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Services/BatchService.cs` | Service | Batch management |
+| `src/Databases/Warehouse.Inventory.DBModel/Models/StockLevel.cs` | Entity | Stock level entity |
+| `src/Databases/Warehouse.Inventory.DBModel/Models/StockMovement.cs` | Entity | Movement entity |
+| `src/Databases/Warehouse.Inventory.DBModel/Models/InventoryAdjustment.cs` | Entity | Adjustment entity |
+| `src/Databases/Warehouse.Inventory.DBModel/Models/Batch.cs` | Entity | Batch entity |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Services/StockMovementServiceTests.cs` | Test | Movement service tests |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Services/InventoryAdjustmentServiceTests.cs` | Test | Adjustment service tests |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Services/BatchServiceTests.cs` | Test | Batch service tests |
+
+### SDD-INV-003 — Warehouse Structure
+
+| File | Type | Role |
+|---|---|---|
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/WarehousesController.cs` | Controller | Warehouse CRUD endpoints |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/ZonesController.cs` | Controller | Zone CRUD endpoints |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/StorageLocationsController.cs` | Controller | Storage location CRUD endpoints |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/WarehouseTransfersController.cs` | Controller | Transfer lifecycle endpoints |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Services/WarehouseService.cs` | Service | Warehouse business logic |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Services/ZoneService.cs` | Service | Zone business logic |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Services/StorageLocationService.cs` | Service | Location business logic |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Services/WarehouseTransferService.cs` | Service | Transfer workflow |
+| `src/Databases/Warehouse.Inventory.DBModel/Models/WarehouseEntity.cs` | Entity | Warehouse entity |
+| `src/Databases/Warehouse.Inventory.DBModel/Models/Zone.cs` | Entity | Zone entity |
+| `src/Databases/Warehouse.Inventory.DBModel/Models/StorageLocation.cs` | Entity | Location entity |
+| `src/Databases/Warehouse.Inventory.DBModel/Models/WarehouseTransfer.cs` | Entity | Transfer entity |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Services/WarehouseServiceTests.cs` | Test | Warehouse service tests |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Services/ZoneServiceTests.cs` | Test | Zone service tests |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Services/WarehouseTransferServiceTests.cs` | Test | Transfer service tests |
+
+### SDD-INV-004 — Stocktaking
+
+| File | Type | Role |
+|---|---|---|
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/StocktakeSessionsController.cs` | Controller | Stocktake session lifecycle endpoints |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Services/StocktakeSessionService.cs` | Service | Stocktake session workflow |
+| `src/Databases/Warehouse.Inventory.DBModel/Models/StocktakeSession.cs` | Entity | Stocktake session entity |
+| `src/Databases/Warehouse.Inventory.DBModel/Models/StocktakeCount.cs` | Entity | Count entry entity |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Services/StocktakeSessionServiceTests.cs` | Test | Stocktake service tests |
+
 ## Section 2 — Source File → Specs
 
 | Source File | Spec ID(s) |
@@ -142,3 +214,21 @@ This document provides a bidirectional mapping between SDD specifications and so
 | `frontend/src/views/settings/SettingsEditProfilePage.vue` | SDD-UI-003 |
 | `frontend/src/views/settings/SettingsChangePasswordPage.vue` | SDD-UI-003 |
 | `frontend/src/components/organisms/ProfileEditDialog.vue` | SDD-UI-003 |
+| `src/Databases/Warehouse.Inventory.DBModel/Models/*` | SDD-INV-001, SDD-INV-002, SDD-INV-003, SDD-INV-004 |
+| `src/Databases/Warehouse.Inventory.DBModel/InventoryDbContext.cs` | SDD-INV-001, SDD-INV-002, SDD-INV-003, SDD-INV-004 |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/ProductsController.cs` | SDD-INV-001 |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/ProductCategoriesController.cs` | SDD-INV-001 |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/UnitsOfMeasureController.cs` | SDD-INV-001 |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/BomController.cs` | SDD-INV-001 |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/StockLevelsController.cs` | SDD-INV-002 |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/StockMovementsController.cs` | SDD-INV-002 |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/InventoryAdjustmentsController.cs` | SDD-INV-002 |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/BatchesController.cs` | SDD-INV-002 |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/WarehousesController.cs` | SDD-INV-003 |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/ZonesController.cs` | SDD-INV-003 |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/StorageLocationsController.cs` | SDD-INV-003 |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/WarehouseTransfersController.cs` | SDD-INV-003 |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/StocktakeSessionsController.cs` | SDD-INV-004 |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Services/*` | SDD-INV-001, SDD-INV-002, SDD-INV-003, SDD-INV-004 |
+| `src/Warehouse.Mapping/Profiles/Inventory/InventoryMappingProfile.cs` | SDD-INV-001, SDD-INV-002, SDD-INV-003, SDD-INV-004 |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Services/*` | SDD-INV-001, SDD-INV-002, SDD-INV-003, SDD-INV-004 |

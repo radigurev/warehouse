@@ -51,7 +51,7 @@ CLAUDE.md > persona-database > persona-dotnet8-microservices > csharp-persona > 
 - **Polly:** Required on all outbound HTTP clients (to be added when services are implemented)
 - **Mapping:** AutoMapper only
 - **Logging:** NLog with structured message templates
-- **ORM:** EF Core with separate DbContext per domain (AuthDbContext, CustomersDbContext)
+- **ORM:** EF Core with separate DbContext per domain (AuthDbContext, CustomersDbContext, InventoryDbContext)
 - **Validation:** FluentValidation
 - **PK strategy:** INT IDENTITY (or GUID with `NEWSEQUENTIALID()` if GUID is chosen)
 - **API versioning:** URL-based (`/api/v1/`)
@@ -70,21 +70,28 @@ CLAUDE.md > persona-database > persona-dotnet8-microservices > csharp-persona > 
 
 | Package | Version | Projects |
 |---|---|---|
-| Microsoft.EntityFrameworkCore.SqlServer | 8.0.12 | Auth.DBModel, Customers.DBModel |
-| Microsoft.EntityFrameworkCore.Design | 8.0.12 | Auth.API, Customers.API |
-| AutoMapper.Extensions.Microsoft.DependencyInjection | 12.0.1 | Auth.API, Customers.API, Mapping |
-| FluentValidation.AspNetCore | 11.3.0 | Auth.API, Customers.API |
-| Asp.Versioning.Mvc | 8.1.0 | Auth.API, Customers.API |
-| Swashbuckle.AspNetCore | 6.6.2 | Auth.API, Customers.API |
-| Microsoft.AspNetCore.Authentication.JwtBearer | 8.0.12 | Auth.API, Customers.API |
-| NLog.Web.AspNetCore | 5.4.0 | Auth.API, Customers.API |
-| AspNetCore.HealthChecks.SqlServer | 8.0.2 | Auth.API, Customers.API |
+| Microsoft.EntityFrameworkCore.SqlServer | 8.0.12 | Auth.DBModel, Customers.DBModel, Inventory.DBModel |
+| Microsoft.EntityFrameworkCore.Tools | 8.0.12 | Auth.DBModel, Customers.DBModel, Inventory.DBModel |
+| Microsoft.EntityFrameworkCore.Design | 8.0.12 | Auth.API, Customers.API, Inventory.API |
+| AutoMapper.Extensions.Microsoft.DependencyInjection | 12.0.1 | Auth.API, Customers.API, Inventory.API, Mapping, Infrastructure |
+| FluentValidation.AspNetCore | 11.3.0 | Auth.API, Customers.API, Inventory.API |
+| Asp.Versioning.Mvc | 8.1.0 | Auth.API, Customers.API, Inventory.API, Infrastructure |
+| Asp.Versioning.Mvc.ApiExplorer | 8.1.0 | Auth.API, Customers.API, Inventory.API, Infrastructure |
+| Swashbuckle.AspNetCore | 6.6.2 | Auth.API, Customers.API, Inventory.API, Infrastructure |
+| Microsoft.AspNetCore.Authentication.JwtBearer | 8.0.12 | Auth.API, Customers.API, Inventory.API, Infrastructure |
+| NLog.Web.AspNetCore | 5.4.0 | Auth.API, Customers.API, Inventory.API |
+| AspNetCore.HealthChecks.SqlServer | 8.0.2 | Auth.API, Customers.API, Inventory.API, Infrastructure |
 | BCrypt.Net-Next | 4.0.3 | Auth.API |
 | Polly | 8.5.2 | Customers.API |
 | Microsoft.Extensions.Http.Polly | 8.0.12 | Customers.API |
-| NUnit | 3.13.3 | Auth.API.Tests, Customers.API.Tests |
-| FluentAssertions | 6.12.2 | Auth.API.Tests, Customers.API.Tests |
-| Moq | 4.20.72 | Customers.API.Tests |
+| NUnit | 3.13.3 | Auth.API.Tests, Customers.API.Tests, Inventory.API.Tests |
+| FluentAssertions | 6.12.2 | Auth.API.Tests, Customers.API.Tests, Inventory.API.Tests |
+| Moq | 4.20.72 | Customers.API.Tests, Inventory.API.Tests |
+| Microsoft.EntityFrameworkCore.InMemory | 8.0.12 | Auth.API.Tests, Customers.API.Tests, Inventory.API.Tests |
+| Microsoft.NET.Test.Sdk | 17.6.0 | Auth.API.Tests, Customers.API.Tests, Inventory.API.Tests |
+| NUnit3TestAdapter | 4.2.1 | Auth.API.Tests, Customers.API.Tests, Inventory.API.Tests |
+| NUnit.Analyzers | 3.6.1 | Auth.API.Tests, Customers.API.Tests, Inventory.API.Tests |
+| coverlet.collector | 6.0.0 | Auth.API.Tests, Customers.API.Tests, Inventory.API.Tests |
 
 ---
 
@@ -134,15 +141,20 @@ Warehouse/
 │   ├── Databases/
 │   │   ├── Warehouse.Auth.DBModel/                ← Auth EF Core entities, AuthDbContext, migrations
 │   │   │   └── Models/                            ← Auth entity models (User, Role, Permission, etc.)
-│   │   └── Warehouse.Customers.DBModel/           ← Customers EF Core entities, CustomersDbContext, migrations
-│   │       └── Models/                            ← Customer entity models (Customer, Account, etc.)
+│   │   ├── Warehouse.Customers.DBModel/           ← Customers EF Core entities, CustomersDbContext, migrations
+│   │   │   └── Models/                            ← Customer entity models (Customer, Account, etc.)
+│   │   └── Warehouse.Inventory.DBModel/           ← Inventory EF Core entities, InventoryDbContext, migrations
+│   │       └── Models/                            ← Inventory entity models (Product, StockLevel, Warehouse, etc.)
 │   ├── Interfaces/
 │   │   ├── Auth/                                  ← Auth domain
 │   │   │   ├── Warehouse.Auth.API/                ← Controllers, middleware, DI root
 │   │   │   └── Warehouse.Auth.API.Tests/          ← NUnit tests
-│   │   └── Customers/                             ← Customers domain
-│   │       ├── Warehouse.Customers.API/           ← Controllers, middleware, DI root
-│   │       └── Warehouse.Customers.API.Tests/     ← NUnit tests
+│   │   ├── Customers/                             ← Customers domain
+│   │   │   ├── Warehouse.Customers.API/           ← Controllers, middleware, DI root
+│   │   │   └── Warehouse.Customers.API.Tests/     ← NUnit tests
+│   │   └── Inventory/                             ← Inventory domain
+│   │       ├── Warehouse.Inventory.API/           ← Controllers, services, DI root
+│   │       └── Warehouse.Inventory.API.Tests/     ← NUnit tests
 │   ├── Warehouse.Common/                          ← Shared enums, helpers, extensions
 │   │   ├── Enums/
 │   │   ├── Extensions/
@@ -189,6 +201,20 @@ Warehouse.Auth.API.Tests
 Warehouse.Customers.API.Tests
   ├── Warehouse.Customers.API
   └── Warehouse.Mapping
+
+Warehouse.Inventory.API
+  ├── Warehouse.Inventory.DBModel
+  │   └── Warehouse.Common
+  ├── Warehouse.Common
+  ├── Warehouse.Infrastructure
+  ├── Warehouse.Mapping
+  ├── Warehouse.ServiceModel
+  └── Warehouse.GenericFiltering
+      └── Warehouse.Common
+
+Warehouse.Inventory.API.Tests
+  ├── Warehouse.Inventory.API
+  └── Warehouse.Mapping
 ```
 
 ---
@@ -220,6 +246,32 @@ Warehouse.Customers.API.Tests
 
 **Note:** `Customer.CreatedByUserId` and `Customer.ModifiedByUserId` are plain FK columns referencing `auth.Users` — no EF navigation property (cross-context boundary).
 
+### Inventory Domain (`Warehouse.Inventory.DBModel` — `InventoryDbContext`)
+
+| Entity | Schema | Table | Description |
+|---|---|---|---|
+| Product | inventory | Products | Product catalog item |
+| ProductCategory | inventory | ProductCategories | Hierarchical product classification |
+| UnitOfMeasure | inventory | UnitsOfMeasure | Measurement units (kg, pcs, etc.) |
+| BillOfMaterials | inventory | BillOfMaterials | BOM header (parent product) |
+| BomLine | inventory | BomLines | BOM line (child product + quantity) |
+| ProductAccessory | inventory | ProductAccessories | Related product lookup |
+| ProductSubstitute | inventory | ProductSubstitutes | Interchangeable product lookup |
+| WarehouseEntity | inventory | Warehouses | Physical warehouse definition |
+| Zone | inventory | Zones | Area within a warehouse |
+| StorageLocation | inventory | StorageLocations | Specific storage position (row/shelf/bin) |
+| StockLevel | inventory | StockLevels | Current quantity per product/warehouse/location |
+| StockMovement | inventory | StockMovements | Immutable record of quantity changes |
+| Batch | inventory | Batches | Lot/batch with expiry tracking |
+| InventoryAdjustment | inventory | InventoryAdjustments | Adjustment header with approval workflow |
+| InventoryAdjustmentLine | inventory | InventoryAdjustmentLines | Adjustment line (product/location/quantity) |
+| WarehouseTransfer | inventory | WarehouseTransfers | Inter-warehouse transfer header |
+| WarehouseTransferLine | inventory | WarehouseTransferLines | Transfer line (product/quantity/locations) |
+| StocktakeSession | inventory | StocktakeSessions | Physical count event |
+| StocktakeCount | inventory | StocktakeCounts | Individual count entry per product/location |
+
+**Note:** `CreatedByUserId` and `ModifiedByUserId` columns reference `auth.Users` — plain FK, no EF navigation (cross-context boundary).
+
 ---
 
 ## 4. API Endpoints
@@ -228,9 +280,17 @@ Warehouse.Customers.API.Tests
 
 See `docs/infrastructure/SDD-AUTH-001-authentication-and-authorization.md` for full endpoint documentation.
 
-### Customers API (`Warehouse.Customers.API` — port 5003)
+### Customers API (`Warehouse.Customers.API` — port 5002)
 
 See `docs/domain/SDD-CUST-001-customers-and-accounts.md` for full endpoint documentation (27 endpoints).
+
+### Inventory API (`Warehouse.Inventory.API` — port 5003)
+
+See specs for full endpoint documentation:
+- `docs/core/SDD-INV-001-products-and-catalog.md` — Products, categories, units of measure, BOM, accessories, substitutes
+- `docs/core/SDD-INV-002-stock-management.md` — Stock levels, movements, adjustments, batches
+- `docs/core/SDD-INV-003-warehouse-structure.md` — Warehouses, zones, storage locations, transfers
+- `docs/core/SDD-INV-004-stocktaking.md` — Stocktake sessions, counts, variance reports
 
 ---
 
@@ -345,6 +405,10 @@ Describe proposed changes. Live in `docs/changes/`.
 | Customers API tests | `src/Interfaces/Customers/Warehouse.Customers.API.Tests/` |
 | Customers DB models | `src/Databases/Warehouse.Customers.DBModel/Models/` |
 | Customers DbContext | `src/Databases/Warehouse.Customers.DBModel/CustomersDbContext.cs` |
+| Inventory API | `src/Interfaces/Inventory/Warehouse.Inventory.API/` |
+| Inventory API tests | `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/` |
+| Inventory DB models | `src/Databases/Warehouse.Inventory.DBModel/Models/` |
+| Inventory DbContext | `src/Databases/Warehouse.Inventory.DBModel/InventoryDbContext.cs` |
 | DTOs | `src/Warehouse.ServiceModel/DTOs/` |
 | Request models | `src/Warehouse.ServiceModel/Requests/` |
 | Response models | `src/Warehouse.ServiceModel/Responses/` |
