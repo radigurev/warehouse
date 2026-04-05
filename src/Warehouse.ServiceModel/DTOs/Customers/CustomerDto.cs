@@ -21,6 +21,11 @@ public sealed record CustomerDto
     public required string Name { get; init; }
 
     /// <summary>
+    /// Gets the customer name in native language.
+    /// </summary>
+    public string? NativeLanguageName { get; init; }
+
+    /// <summary>
     /// Gets the tax identification number.
     /// </summary>
     public string? TaxId { get; init; }

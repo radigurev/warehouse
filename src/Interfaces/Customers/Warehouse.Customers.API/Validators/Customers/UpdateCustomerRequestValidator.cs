@@ -17,6 +17,10 @@ public sealed class UpdateCustomerRequestValidator : AbstractValidator<UpdateCus
             .NotEmpty().WithErrorCode("INVALID_NAME").WithMessage("Customer name is required.")
             .MaximumLength(200).WithErrorCode("INVALID_NAME").WithMessage("Customer name must not exceed 200 characters.");
 
+        RuleFor(x => x.NativeLanguageName)
+            .MaximumLength(200).WithErrorCode("INVALID_NATIVE_NAME").WithMessage("Native language name must not exceed 200 characters.")
+            .When(x => !string.IsNullOrEmpty(x.NativeLanguageName));
+
         RuleFor(x => x.TaxId)
             .MaximumLength(50).WithErrorCode("INVALID_TAX_ID").WithMessage("Tax ID must not exceed 50 characters.")
             .When(x => !string.IsNullOrEmpty(x.TaxId));

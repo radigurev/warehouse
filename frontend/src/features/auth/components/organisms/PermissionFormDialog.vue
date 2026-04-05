@@ -4,33 +4,44 @@
 
     <v-card-text>
       <v-form ref="formRef" @submit.prevent="handleSubmit">
-        <v-text-field
-          v-model="form.resource"
-          :label="t('permissions.form.resource')"
-          prepend-inner-icon="mdi-cube-outline"
-          :rules="[rules.required, rules.resourceFormat, rules.resourceLength]"
-          :error-messages="fieldErrors.resource"
-          @update:model-value="fieldErrors.resource = []"
-          hint="e.g. users, inventory.products"
-          persistent-hint
-        />
+        <v-row dense>
+          <v-col v-bind="grid.fieldCols">
+            <v-text-field
+              v-model="form.resource"
+              :label="t('permissions.form.resource')"
+              prepend-inner-icon="mdi-cube-outline"
+              :density="layout.vuetifyDensity"
+              :rules="[rules.required, rules.resourceFormat, rules.resourceLength]"
+              :error-messages="fieldErrors.resource"
+              @update:model-value="fieldErrors.resource = []"
+              hint="e.g. users, inventory.products"
+              persistent-hint
+            />
+          </v-col>
 
-        <v-select
-          v-model="form.action"
-          :label="t('permissions.form.action')"
-          prepend-inner-icon="mdi-cog"
-          :items="actionItems"
-          :rules="[rules.required]"
-        />
+          <v-col v-bind="grid.fieldCols">
+            <v-select
+              v-model="form.action"
+              :label="t('permissions.form.action')"
+              prepend-inner-icon="mdi-cog"
+              :density="layout.vuetifyDensity"
+              :items="actionItems"
+              :rules="[rules.required]"
+            />
+          </v-col>
 
-        <v-textarea
-          v-model="form.description"
-          :label="t('permissions.form.description')"
-          prepend-inner-icon="mdi-text"
-          :rules="[rules.descriptionLength]"
-          rows="2"
-          variant="outlined"
-        />
+          <v-col v-bind="grid.fullCols">
+            <v-textarea
+              v-model="form.description"
+              :label="t('permissions.form.description')"
+              prepend-inner-icon="mdi-text"
+              :density="layout.vuetifyDensity"
+              :rules="[rules.descriptionLength]"
+              rows="2"
+              variant="outlined"
+            />
+          </v-col>
+        </v-row>
       </v-form>
     </v-card-text>
 
@@ -52,9 +63,13 @@ import { createPermission } from '@features/auth/api/permissions';
 import type { AxiosError } from 'axios';
 import type { ProblemDetails } from '@shared/types/api';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
+import { useLayoutStore } from '@shared/stores/layout';
+import { useFormGrid } from '@shared/composables/useFormGrid';
 
 const { t } = useI18n();
 const notification = useNotificationStore();
+const layout = useLayoutStore();
+const grid = useFormGrid();
 
 const visible = defineModel<boolean>({ required: true });
 

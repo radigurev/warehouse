@@ -31,7 +31,7 @@ import { useI18n } from 'vue-i18n';
 const { t } = useI18n();
 const model = defineModel<boolean>({ required: true });
 
-const props = defineProps<{
+defineProps<{
   mode?: 'dialog' | 'page';
   maxWidth?: string | number;
   title?: string;

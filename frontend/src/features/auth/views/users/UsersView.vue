@@ -1,19 +1,20 @@
 <template>
   <div>
-    <div class="d-flex align-center mb-4">
+    <div class="d-flex align-center mb-2">
       <v-spacer />
       <v-btn color="primary" prepend-icon="mdi-plus" @click="vm.handleCreate">
         {{ vm.t('users.create') }}
       </v-btn>
     </div>
 
-    <v-card>
+    <v-card class="view-list-card">
       <v-data-table
         :headers="vm.headers"
         :items="vm.filteredItems"
         :loading="vm.loading"
         :density="vm.layout.vuetifyDensity"
-        :items-per-page="25"
+        :items-per-page="-1"
+        fixed-header
         hover
       >
         <template #header.username="{ column }">

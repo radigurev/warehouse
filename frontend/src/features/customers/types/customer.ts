@@ -2,6 +2,7 @@ export interface CustomerDto {
   id: number;
   code: string;
   name: string;
+  nativeLanguageName: string | null;
   taxId: string | null;
   categoryName: string | null;
   isActive: boolean;
@@ -12,6 +13,7 @@ export interface CustomerDetailDto {
   id: number;
   code: string;
   name: string;
+  nativeLanguageName: string | null;
   taxId: string | null;
   categoryName: string | null;
   categoryId: number | null;
@@ -73,6 +75,7 @@ export interface CustomerCategoryDto {
 export interface CreateCustomerRequest {
   name: string;
   code?: string | null;
+  nativeLanguageName?: string | null;
   taxId?: string | null;
   categoryId?: number | null;
   notes?: string | null;
@@ -80,6 +83,7 @@ export interface CreateCustomerRequest {
 
 export interface UpdateCustomerRequest {
   name: string;
+  nativeLanguageName?: string | null;
   taxId?: string | null;
   categoryId?: number | null;
   notes?: string | null;

@@ -39,6 +39,13 @@ public sealed class Customer : IEntity
     public required string Name { get; set; }
 
     /// <summary>
+    /// Gets or sets the optional customer name in native language (max 200 characters).
+    /// </summary>
+    [MaxLength(200)]
+    [Column(TypeName = "nvarchar(200)")]
+    public string? NativeLanguageName { get; set; }
+
+    /// <summary>
     /// Gets or sets the optional tax identification number (max 50 characters).
     /// </summary>
     [MaxLength(50)]

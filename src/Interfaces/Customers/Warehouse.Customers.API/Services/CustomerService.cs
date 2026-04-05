@@ -92,6 +92,7 @@ public sealed class CustomerService : BaseCustomerEntityService, ICustomerServic
         {
             Code = code,
             Name = request.Name,
+            NativeLanguageName = request.NativeLanguageName,
             TaxId = request.TaxId,
             CategoryId = request.CategoryId,
             Notes = request.Notes,
@@ -130,6 +131,7 @@ public sealed class CustomerService : BaseCustomerEntityService, ICustomerServic
             return Result<CustomerDetailDto>.Failure(categoryValidation.ErrorCode!, categoryValidation.ErrorMessage!, categoryValidation.StatusCode!.Value);
 
         customer.Name = request.Name;
+        customer.NativeLanguageName = request.NativeLanguageName;
         customer.TaxId = request.TaxId;
         customer.CategoryId = request.CategoryId;
         customer.Notes = request.Notes;
@@ -154,10 +156,6 @@ public sealed class CustomerService : BaseCustomerEntityService, ICustomerServic
         if (customer is null || customer.IsDeleted)
             return Result.Failure("CUSTOMER_NOT_FOUND", "Customer not found.", 404);
 
-        int accountsWithBalance = customer.Accounts.Count(a => a.Balance != 0m);
-        if (accountsWithBalance > 0)
-            return Result.Failure("CUSTOMER_HAS_ACTIVE_ACCOUNTS", $"Cannot deactivate customer — {accountsWithBalance} account(s) have non-zero balances.", 409);
-
         customer.IsDeleted = true;
         customer.DeletedAtUtc = DateTime.UtcNow;
         customer.IsActive = false;
@@ -174,8 +172,11 @@ public sealed class CustomerService : BaseCustomerEntityService, ICustomerServic
     {
         Customer? customer = await GetCustomerWithDetailsAsync(id, cancellationToken).ConfigureAwait(false);
 
-        if (customer is null || !customer.IsDeleted)
+        if (customer is null)
             return Result<CustomerDetailDto>.Failure("CUSTOMER_NOT_FOUND", "Customer not found.", 404);
+
+        if (!customer.IsDeleted && customer.IsActive)
+            return Result<CustomerDetailDto>.Failure("CUSTOMER_ALREADY_ACTIVE", "Customer is already active.", 409);
 
         Result? codeConflict = await ValidateReactivationCodeAsync(customer.Code, id, cancellationToken).ConfigureAwait(false);
         if (codeConflict is not null)

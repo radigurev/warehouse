@@ -4,25 +4,33 @@
 
     <v-card-text>
       <v-form ref="formRef" @submit.prevent="handleSubmit">
-        <v-text-field
-          v-model="form.currentPassword"
-          :label="t('users.passwordForm.currentPassword')"
-          prepend-inner-icon="mdi-lock"
-          type="password"
-          :rules="[rules.required]"
-          :error-messages="fieldErrors.currentPassword"
-          @update:model-value="fieldErrors.currentPassword = []"
-        />
+        <v-row dense>
+          <v-col v-bind="grid.fieldCols">
+            <v-text-field
+              v-model="form.currentPassword"
+              :label="t('users.passwordForm.currentPassword')"
+              prepend-inner-icon="mdi-lock"
+              :density="layout.vuetifyDensity"
+              type="password"
+              :rules="[rules.required]"
+              :error-messages="fieldErrors.currentPassword"
+              @update:model-value="fieldErrors.currentPassword = []"
+            />
+          </v-col>
 
-        <v-text-field
-          v-model="form.newPassword"
-          :label="t('users.passwordForm.newPassword')"
-          prepend-inner-icon="mdi-lock-reset"
-          :type="showNew ? 'text' : 'password'"
-          :append-inner-icon="showNew ? 'mdi-eye-off' : 'mdi-eye'"
-          :rules="[rules.required, rules.passwordLength, rules.passwordComplexity]"
-          @click:append-inner="showNew = !showNew"
-        />
+          <v-col v-bind="grid.fieldCols">
+            <v-text-field
+              v-model="form.newPassword"
+              :label="t('users.passwordForm.newPassword')"
+              prepend-inner-icon="mdi-lock-reset"
+              :density="layout.vuetifyDensity"
+              :type="showNew ? 'text' : 'password'"
+              :append-inner-icon="showNew ? 'mdi-eye-off' : 'mdi-eye'"
+              :rules="[rules.required, rules.passwordLength, rules.passwordComplexity]"
+              @click:append-inner="showNew = !showNew"
+            />
+          </v-col>
+        </v-row>
       </v-form>
     </v-card-text>
 
@@ -44,9 +52,13 @@ import { changePassword } from '@features/auth/api/users';
 import type { AxiosError } from 'axios';
 import type { ProblemDetails } from '@shared/types/api';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
+import { useLayoutStore } from '@shared/stores/layout';
+import { useFormGrid } from '@shared/composables/useFormGrid';
 
 const { t } = useI18n();
 const notification = useNotificationStore();
+const layout = useLayoutStore();
+const grid = useFormGrid();
 
 const visible = defineModel<boolean>({ required: true });
 

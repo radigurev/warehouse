@@ -341,13 +341,23 @@ async function handleLogout(): Promise<void> {
 </script>
 
 <style scoped>
-.main-compact {
-  height: 100vh;
-  overflow: hidden;
+.main-compact,
+.main-comfortable {
+  overflow: hidden !important;
 }
 
-.main-comfortable {
-  overflow-y: auto;
+.main-compact :deep(.v-main__wrap),
+.main-comfortable :deep(.v-main__wrap) {
+  overflow: hidden !important;
+}
+
+.main-compact :deep(.v-container),
+.main-comfortable :deep(.v-container) {
+  overflow: hidden !important;
+}
+
+:deep(.v-application) {
+  overflow: hidden !important;
 }
 
 .main-form-page {
@@ -386,5 +396,19 @@ async function handleLogout(): Promise<void> {
   background: rgba(99, 102, 241, 0.3);
   border-radius: 12px;
   margin-top: 4px;
+}
+</style>
+
+<style>
+html,
+body,
+.v-application {
+  overflow: hidden !important;
+  height: 100vh;
+}
+
+.view-list-card .v-table__wrapper {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
 }
 </style>

@@ -171,6 +171,7 @@ export default {
     reactivated: 'Клиентът е активиран',
     viewDetails: 'Преглед',
     deactivateConfirm: 'Сигурни ли сте, че искате да деактивирате клиент „{name}"?',
+    reactivateConfirm: 'Сигурни ли сте, че искате да активирате клиент „{name}"?',
     columns: {
       code: 'Код',
       name: 'Име',
@@ -183,6 +184,7 @@ export default {
       name: 'Име на клиент',
       code: 'Код на клиент',
       codeHint: 'Оставете празно за автоматично генериране',
+      nativeLanguageName: 'Име на роден език',
       taxId: 'ЕИК / Булстат',
       category: 'Категория',
       notes: 'Бележки',
@@ -296,6 +298,7 @@ export default {
     currentPasswordRequired: 'Текущата парола е задължителна.',
     newPasswordRequired: 'Новата парола е задължителна.',
     customerNameLength: 'Името на клиента трябва да е 1-200 символа.',
+    nativeNameLength: 'Името на роден език не трябва да надвишава 200 символа.',
     codeFormat: 'Кодът трябва да съдържа само букви, цифри и тирета.',
     codeLength: 'Кодът трябва да е 1-20 символа.',
     taxIdLength: 'ЕИК трябва да е 1-50 символа.',

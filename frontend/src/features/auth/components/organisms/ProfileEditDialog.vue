@@ -4,28 +4,39 @@
 
     <v-card-text>
       <v-form ref="formRef" @submit.prevent="handleSubmit">
-        <v-text-field
-          v-model="form.email"
-          :label="t('users.form.email')"
-          prepend-inner-icon="mdi-email"
-          :rules="[rules.required, rules.emailFormat, rules.emailLength]"
-          :error-messages="fieldErrors.email"
-          @update:model-value="fieldErrors.email = []"
-        />
+        <v-row dense>
+          <v-col v-bind="grid.fullCols">
+            <v-text-field
+              v-model="form.email"
+              :label="t('users.form.email')"
+              prepend-inner-icon="mdi-email"
+              :density="layout.vuetifyDensity"
+              :rules="[rules.required, rules.emailFormat, rules.emailLength]"
+              :error-messages="fieldErrors.email"
+              @update:model-value="fieldErrors.email = []"
+            />
+          </v-col>
 
-        <v-text-field
-          v-model="form.firstName"
-          :label="t('users.form.firstName')"
-          prepend-inner-icon="mdi-badge-account-horizontal"
-          :rules="[rules.required, rules.firstNameLength]"
-        />
+          <v-col v-bind="grid.fieldCols">
+            <v-text-field
+              v-model="form.firstName"
+              :label="t('users.form.firstName')"
+              prepend-inner-icon="mdi-badge-account-horizontal"
+              :density="layout.vuetifyDensity"
+              :rules="[rules.required, rules.firstNameLength]"
+            />
+          </v-col>
 
-        <v-text-field
-          v-model="form.lastName"
-          :label="t('users.form.lastName')"
-          prepend-inner-icon="mdi-badge-account"
-          :rules="[rules.required, rules.lastNameLength]"
-        />
+          <v-col v-bind="grid.fieldCols">
+            <v-text-field
+              v-model="form.lastName"
+              :label="t('users.form.lastName')"
+              prepend-inner-icon="mdi-badge-account"
+              :density="layout.vuetifyDensity"
+              :rules="[rules.required, rules.lastNameLength]"
+            />
+          </v-col>
+        </v-row>
       </v-form>
     </v-card-text>
 
@@ -48,9 +59,13 @@ import type { UserDetailDto } from '@features/auth/types/user';
 import type { AxiosError } from 'axios';
 import type { ProblemDetails } from '@shared/types/api';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
+import { useLayoutStore } from '@shared/stores/layout';
+import { useFormGrid } from '@shared/composables/useFormGrid';
 
 const { t } = useI18n();
 const notification = useNotificationStore();
+const layout = useLayoutStore();
+const grid = useFormGrid();
 
 const visible = defineModel<boolean>({ required: true });
 

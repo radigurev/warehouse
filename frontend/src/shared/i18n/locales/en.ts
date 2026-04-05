@@ -171,6 +171,7 @@ export default {
     reactivated: 'Customer reactivated',
     viewDetails: 'View Details',
     deactivateConfirm: 'Are you sure you want to deactivate customer "{name}"?',
+    reactivateConfirm: 'Are you sure you want to reactivate customer "{name}"?',
     columns: {
       code: 'Code',
       name: 'Name',
@@ -183,6 +184,7 @@ export default {
       name: 'Customer Name',
       code: 'Customer Code',
       codeHint: 'Leave empty to auto-generate',
+      nativeLanguageName: 'Native Language Name',
       taxId: 'Tax ID',
       category: 'Category',
       notes: 'Notes',
@@ -296,6 +298,7 @@ export default {
     currentPasswordRequired: 'Current password is required.',
     newPasswordRequired: 'New password is required.',
     customerNameLength: 'Customer name must be 1-200 characters.',
+    nativeNameLength: 'Native language name must not exceed 200 characters.',
     codeFormat: 'Code must contain only letters, numbers, and hyphens.',
     codeLength: 'Code must be 1-20 characters.',
     taxIdLength: 'Tax ID must be 1-50 characters.',

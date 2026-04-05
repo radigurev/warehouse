@@ -18,7 +18,9 @@ public sealed class DatabaseSeeder
     [
         ["users", "read"], ["users", "write"], ["users", "update"], ["users", "delete"],
         ["roles", "read"], ["roles", "write"], ["roles", "update"], ["roles", "delete"],
-        ["audit", "read"]
+        ["audit", "read"],
+        ["customers", "read"], ["customers", "write"], ["customers", "update"], ["customers", "delete"],
+        ["customer-categories", "read"], ["customer-categories", "write"], ["customer-categories", "update"], ["customer-categories", "delete"]
     ];
 
     /// <summary>

@@ -6,60 +6,81 @@
 
     <v-card-text>
       <v-form ref="formRef" @submit.prevent="handleSubmit">
-        <v-text-field
-          v-model="form.name"
-          :label="t('customers.form.name')"
-          prepend-inner-icon="mdi-domain"
-          :density="layout.vuetifyDensity"
-          :rules="[rules.required, rules.nameLength]"
-          :error-messages="fieldErrors.name"
-          @update:model-value="fieldErrors.name = []"
-        />
+        <v-row dense>
+          <v-col v-bind="grid.fieldCols">
+            <v-text-field
+              v-model="form.name"
+              :label="t('customers.form.name')"
+              prepend-inner-icon="mdi-domain"
+              :density="layout.vuetifyDensity"
+              :rules="[rules.required, rules.nameLength]"
+              :error-messages="fieldErrors.name"
+              @update:model-value="fieldErrors.name = []"
+            />
+          </v-col>
 
-        <v-text-field
-          v-if="!isEdit"
-          v-model="form.code"
-          :label="t('customers.form.code')"
-          prepend-inner-icon="mdi-identifier"
-          :density="layout.vuetifyDensity"
-          :hint="t('customers.form.codeHint')"
-          persistent-hint
-          :rules="[rules.codeFormat, rules.codeLength]"
-          :error-messages="fieldErrors.code"
-          @update:model-value="fieldErrors.code = []"
-        />
+          <v-col v-if="!isEdit" v-bind="grid.fieldCols">
+            <v-text-field
+              v-model="form.code"
+              :label="t('customers.form.code')"
+              prepend-inner-icon="mdi-identifier"
+              :density="layout.vuetifyDensity"
+              :hint="t('customers.form.codeHint')"
+              persistent-hint
+              :rules="[rules.codeFormat, rules.codeLength]"
+              :error-messages="fieldErrors.code"
+              @update:model-value="fieldErrors.code = []"
+            />
+          </v-col>
 
-        <v-text-field
-          v-model="form.taxId"
-          :label="t('customers.form.taxId')"
-          prepend-inner-icon="mdi-card-account-details"
-          :density="layout.vuetifyDensity"
-          :rules="[rules.taxIdLength]"
-          :error-messages="fieldErrors.taxId"
-          @update:model-value="fieldErrors.taxId = []"
-        />
+          <v-col v-bind="grid.fieldCols">
+            <v-text-field
+              v-model="form.nativeLanguageName"
+              :label="t('customers.form.nativeLanguageName')"
+              prepend-inner-icon="mdi-translate"
+              :density="layout.vuetifyDensity"
+              :rules="[rules.nativeNameLength]"
+            />
+          </v-col>
 
-        <v-select
-          v-model="form.categoryId"
-          :label="t('customers.form.category')"
-          prepend-inner-icon="mdi-tag"
-          :density="layout.vuetifyDensity"
-          :items="categories"
-          item-title="name"
-          item-value="id"
-          clearable
-          :loading="categoriesLoading"
-        />
+          <v-col v-bind="grid.fieldCols">
+            <v-text-field
+              v-model="form.taxId"
+              :label="t('customers.form.taxId')"
+              prepend-inner-icon="mdi-card-account-details"
+              :density="layout.vuetifyDensity"
+              :rules="[rules.taxIdLength]"
+              :error-messages="fieldErrors.taxId"
+              @update:model-value="fieldErrors.taxId = []"
+            />
+          </v-col>
 
-        <v-textarea
-          v-model="form.notes"
-          :label="t('customers.form.notes')"
-          prepend-inner-icon="mdi-note-text"
-          :density="layout.vuetifyDensity"
-          :rules="[rules.notesLength]"
-          rows="3"
-          auto-grow
-        />
+          <v-col v-bind="grid.fieldCols">
+            <v-select
+              v-model="form.categoryId"
+              :label="t('customers.form.category')"
+              prepend-inner-icon="mdi-tag"
+              :density="layout.vuetifyDensity"
+              :items="categories"
+              item-title="name"
+              item-value="id"
+              clearable
+              :loading="categoriesLoading"
+            />
+          </v-col>
+
+          <v-col v-bind="grid.fullCols">
+            <v-textarea
+              v-model="form.notes"
+              :label="t('customers.form.notes')"
+              prepend-inner-icon="mdi-note-text"
+              :density="layout.vuetifyDensity"
+              :rules="[rules.notesLength]"
+              rows="3"
+              auto-grow
+            />
+          </v-col>
+        </v-row>
       </v-form>
     </v-card-text>
 
@@ -84,10 +105,12 @@ import type { AxiosError } from 'axios';
 import type { ProblemDetails } from '@shared/types/api';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
 import { useLayoutStore } from '@shared/stores/layout';
+import { useFormGrid } from '@shared/composables/useFormGrid';
 
 const { t } = useI18n();
 const notification = useNotificationStore();
 const layout = useLayoutStore();
+const grid = useFormGrid();
 
 const visible = defineModel<boolean>({ required: true });
 
@@ -115,6 +138,7 @@ const fieldErrors = reactive<Record<string, string[]>>({
 const form = reactive({
   name: '',
   code: '',
+  nativeLanguageName: '',
   taxId: '',
   categoryId: null as number | null,
   notes: '',
@@ -140,6 +164,7 @@ async function populateForm(): Promise<void> {
       const detail = await getCustomerById(props.customer.id);
       form.name = detail.name;
       form.code = detail.code;
+      form.nativeLanguageName = detail.nativeLanguageName ?? '';
       form.taxId = detail.taxId ?? '';
       form.categoryId = detail.categoryId;
       form.notes = detail.notes ?? '';
@@ -150,6 +175,7 @@ async function populateForm(): Promise<void> {
     isEdit.value = false;
     form.name = '';
     form.code = '';
+    form.nativeLanguageName = '';
     form.taxId = '';
     form.categoryId = null;
     form.notes = '';
@@ -167,6 +193,7 @@ const rules = {
   nameLength: (v: string) => !v || v.length <= 200 || t('validation.customerNameLength'),
   codeFormat: (v: string) => !v || /^[a-zA-Z0-9-]*$/.test(v) || t('validation.codeFormat'),
   codeLength: (v: string) => !v || v.length <= 20 || t('validation.codeLength'),
+  nativeNameLength: (v: string) => !v || v.length <= 200 || t('validation.nativeNameLength'),
   taxIdLength: (v: string) => !v || v.length <= 50 || t('validation.taxIdLength'),
   notesLength: (v: string) => !v || v.length <= 2000 || t('validation.notesLength'),
 };
@@ -180,6 +207,7 @@ async function handleSubmit(): Promise<void> {
     if (isEdit.value && props.customer) {
       await updateCustomer(props.customer.id, {
         name: form.name,
+        nativeLanguageName: form.nativeLanguageName || null,
         taxId: form.taxId || null,
         categoryId: form.categoryId,
         notes: form.notes || null,
@@ -189,6 +217,7 @@ async function handleSubmit(): Promise<void> {
       await createCustomer({
         name: form.name,
         code: form.code || null,
+        nativeLanguageName: form.nativeLanguageName || null,
         taxId: form.taxId || null,
         categoryId: form.categoryId,
         notes: form.notes || null,

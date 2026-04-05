@@ -22,6 +22,10 @@ public sealed class CreateCustomerRequestValidator : AbstractValidator<CreateCus
             .Matches("^[A-Za-z0-9-]*$").WithErrorCode("INVALID_CODE").WithMessage("Customer code must contain only alphanumeric characters and hyphens.")
             .When(x => !string.IsNullOrEmpty(x.Code));
 
+        RuleFor(x => x.NativeLanguageName)
+            .MaximumLength(200).WithErrorCode("INVALID_NATIVE_NAME").WithMessage("Native language name must not exceed 200 characters.")
+            .When(x => !string.IsNullOrEmpty(x.NativeLanguageName));
+
         RuleFor(x => x.TaxId)
             .MaximumLength(50).WithErrorCode("INVALID_TAX_ID").WithMessage("Tax ID must not exceed 50 characters.")
             .When(x => !string.IsNullOrEmpty(x.TaxId));

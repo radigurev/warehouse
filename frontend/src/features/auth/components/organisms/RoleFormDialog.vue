@@ -6,23 +6,31 @@
 
     <v-card-text>
       <v-form ref="formRef" @submit.prevent="handleSubmit">
-        <v-text-field
-          v-model="form.name"
-          :label="t('roles.form.name')"
-          prepend-inner-icon="mdi-shield-account"
-          :rules="[rules.required, rules.nameLength]"
-          :error-messages="fieldErrors.name"
-          @update:model-value="fieldErrors.name = []"
-        />
+        <v-row dense>
+          <v-col v-bind="grid.fieldCols">
+            <v-text-field
+              v-model="form.name"
+              :label="t('roles.form.name')"
+              prepend-inner-icon="mdi-shield-account"
+              :density="layout.vuetifyDensity"
+              :rules="[rules.required, rules.nameLength]"
+              :error-messages="fieldErrors.name"
+              @update:model-value="fieldErrors.name = []"
+            />
+          </v-col>
 
-        <v-textarea
-          v-model="form.description"
-          :label="t('roles.form.description')"
-          prepend-inner-icon="mdi-text"
-          :rules="[rules.descriptionLength]"
-          rows="3"
-          variant="outlined"
-        />
+          <v-col v-bind="grid.fullCols">
+            <v-textarea
+              v-model="form.description"
+              :label="t('roles.form.description')"
+              prepend-inner-icon="mdi-text"
+              :density="layout.vuetifyDensity"
+              :rules="[rules.descriptionLength]"
+              rows="3"
+              variant="outlined"
+            />
+          </v-col>
+        </v-row>
       </v-form>
     </v-card-text>
 
@@ -45,9 +53,13 @@ import type { RoleDto } from '@features/auth/types/role';
 import type { AxiosError } from 'axios';
 import type { ProblemDetails } from '@shared/types/api';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
+import { useLayoutStore } from '@shared/stores/layout';
+import { useFormGrid } from '@shared/composables/useFormGrid';
 
 const { t } = useI18n();
 const notification = useNotificationStore();
+const layout = useLayoutStore();
+const grid = useFormGrid();
 
 const visible = defineModel<boolean>({ required: true });
 

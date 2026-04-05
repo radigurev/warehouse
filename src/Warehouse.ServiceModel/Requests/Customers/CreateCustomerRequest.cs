@@ -16,6 +16,11 @@ public sealed record CreateCustomerRequest
     public string? Code { get; init; }
 
     /// <summary>
+    /// Gets the customer name in native language. Optional, max 200 characters.
+    /// </summary>
+    public string? NativeLanguageName { get; init; }
+
+    /// <summary>
     /// Gets the tax identification number. Optional, 1-50 characters when provided.
     /// </summary>
     public string? TaxId { get; init; }

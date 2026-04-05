@@ -18,8 +18,11 @@
         </div>
         <v-spacer />
         <StatusChip :active="vm.customer.isActive" class="mr-2" />
-        <v-btn v-if="!vm.customer.isActive" color="success" variant="tonal" prepend-icon="mdi-account-check" @click="vm.handleReactivate">
+        <v-btn v-if="!vm.customer.isActive" color="success" variant="tonal" prepend-icon="mdi-account-check" @click="showReactivateDialog = true">
           {{ vm.t('customers.reactivate') }}
+        </v-btn>
+        <v-btn v-else color="error" variant="tonal" prepend-icon="mdi-account-off" @click="showDeactivateDialog = true">
+          {{ vm.t('customers.deactivate') }}
         </v-btn>
       </div>
 
@@ -31,6 +34,10 @@
         </v-card-title>
         <v-card-text>
           <v-row dense>
+            <v-col v-if="vm.customer.nativeLanguageName" cols="12" md="6">
+              <div class="text-caption text-medium-emphasis">{{ vm.t('customers.form.nativeLanguageName') }}</div>
+              <div>{{ vm.customer.nativeLanguageName }}</div>
+            </v-col>
             <v-col cols="12" md="6">
               <div class="text-caption text-medium-emphasis">{{ vm.t('customers.form.taxId') }}</div>
               <div>{{ vm.customer.taxId || '—' }}</div>
@@ -159,82 +166,94 @@
     </template>
 
     <!-- Add Address Dialog -->
-    <v-dialog v-model="showAddressForm" max-width="500" persistent>
-      <v-card>
-        <v-card-title>{{ vm.t('customers.detail.addAddress') }}</v-card-title>
-        <v-card-text>
-          <v-form ref="addressFormRef" @submit.prevent="submitAddress">
-            <v-select v-model="addressForm.addressType" :label="vm.t('customers.detail.addressType')" :items="['Billing', 'Shipping', 'Both']" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
-            <v-text-field v-model="addressForm.streetLine1" :label="vm.t('customers.detail.street1')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
-            <v-text-field v-model="addressForm.streetLine2" :label="vm.t('customers.detail.street2')" :density="vm.layout.vuetifyDensity" />
-            <v-text-field v-model="addressForm.city" :label="vm.t('customers.detail.city')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
-            <v-text-field v-model="addressForm.stateProvince" :label="vm.t('customers.detail.state')" :density="vm.layout.vuetifyDensity" />
-            <v-text-field v-model="addressForm.postalCode" :label="vm.t('customers.detail.postalCode')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
-            <v-text-field v-model="addressForm.countryCode" :label="vm.t('customers.detail.countryCode')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule, countryCodeRule]" maxlength="2" />
-          </v-form>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="showAddressForm = false">{{ vm.t('common.cancel') }}</v-btn>
-          <v-btn color="primary" variant="flat" @click="submitAddress">{{ vm.t('common.save') }}</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <FormWrapper v-model="showAddressForm" max-width="500" :title="vm.t('customers.detail.addAddress')" icon="mdi-map-marker-plus">
+      <v-card-text>
+        <v-form ref="addressFormRef" @submit.prevent="submitAddress">
+          <v-select v-model="addressForm.addressType" :label="vm.t('customers.detail.addressType')" :items="['Billing', 'Shipping', 'Both']" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
+          <v-text-field v-model="addressForm.streetLine1" :label="vm.t('customers.detail.street1')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
+          <v-text-field v-model="addressForm.streetLine2" :label="vm.t('customers.detail.street2')" :density="vm.layout.vuetifyDensity" />
+          <v-text-field v-model="addressForm.city" :label="vm.t('customers.detail.city')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
+          <v-text-field v-model="addressForm.stateProvince" :label="vm.t('customers.detail.state')" :density="vm.layout.vuetifyDensity" />
+          <v-text-field v-model="addressForm.postalCode" :label="vm.t('customers.detail.postalCode')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
+          <v-text-field v-model="addressForm.countryCode" :label="vm.t('customers.detail.countryCode')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule, countryCodeRule]" maxlength="2" />
+        </v-form>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer />
+        <v-btn variant="text" @click="showAddressForm = false">{{ vm.t('common.cancel') }}</v-btn>
+        <v-btn color="primary" variant="flat" @click="submitAddress">{{ vm.t('common.save') }}</v-btn>
+      </v-card-actions>
+    </FormWrapper>
 
     <!-- Add Phone Dialog -->
-    <v-dialog v-model="showPhoneForm" max-width="400" persistent>
-      <v-card>
-        <v-card-title>{{ vm.t('customers.detail.addPhone') }}</v-card-title>
-        <v-card-text>
-          <v-form ref="phoneFormRef" @submit.prevent="submitPhone">
-            <v-select v-model="phoneForm.phoneType" :label="vm.t('customers.detail.phoneType')" :items="['Mobile', 'Landline', 'Fax']" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
-            <v-text-field v-model="phoneForm.phoneNumber" :label="vm.t('customers.detail.phoneNumber')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
-            <v-text-field v-model="phoneForm.extension" :label="vm.t('customers.detail.extension')" :density="vm.layout.vuetifyDensity" />
-          </v-form>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="showPhoneForm = false">{{ vm.t('common.cancel') }}</v-btn>
-          <v-btn color="primary" variant="flat" @click="submitPhone">{{ vm.t('common.save') }}</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <FormWrapper v-model="showPhoneForm" max-width="400" :title="vm.t('customers.detail.addPhone')" icon="mdi-phone-plus">
+      <v-card-text>
+        <v-form ref="phoneFormRef" @submit.prevent="submitPhone">
+          <v-select v-model="phoneForm.phoneType" :label="vm.t('customers.detail.phoneType')" :items="['Mobile', 'Landline', 'Fax']" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
+          <v-text-field v-model="phoneForm.phoneNumber" :label="vm.t('customers.detail.phoneNumber')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
+          <v-text-field v-model="phoneForm.extension" :label="vm.t('customers.detail.extension')" :density="vm.layout.vuetifyDensity" />
+        </v-form>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer />
+        <v-btn variant="text" @click="showPhoneForm = false">{{ vm.t('common.cancel') }}</v-btn>
+        <v-btn color="primary" variant="flat" @click="submitPhone">{{ vm.t('common.save') }}</v-btn>
+      </v-card-actions>
+    </FormWrapper>
 
     <!-- Add Email Dialog -->
-    <v-dialog v-model="showEmailForm" max-width="400" persistent>
-      <v-card>
-        <v-card-title>{{ vm.t('customers.detail.addEmail') }}</v-card-title>
-        <v-card-text>
-          <v-form ref="emailFormRef" @submit.prevent="submitEmail">
-            <v-select v-model="emailForm.emailType" :label="vm.t('customers.detail.emailType')" :items="['General', 'Billing', 'Support']" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
-            <v-text-field v-model="emailForm.emailAddress" :label="vm.t('customers.detail.emailAddress')" type="email" :density="vm.layout.vuetifyDensity" :rules="[requiredRule, emailRule]" />
-          </v-form>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="showEmailForm = false">{{ vm.t('common.cancel') }}</v-btn>
-          <v-btn color="primary" variant="flat" @click="submitEmail">{{ vm.t('common.save') }}</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <FormWrapper v-model="showEmailForm" max-width="400" :title="vm.t('customers.detail.addEmail')" icon="mdi-email-plus">
+      <v-card-text>
+        <v-form ref="emailFormRef" @submit.prevent="submitEmail">
+          <v-select v-model="emailForm.emailType" :label="vm.t('customers.detail.emailType')" :items="['General', 'Billing', 'Support']" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
+          <v-text-field v-model="emailForm.emailAddress" :label="vm.t('customers.detail.emailAddress')" type="email" :density="vm.layout.vuetifyDensity" :rules="[requiredRule, emailRule]" />
+        </v-form>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer />
+        <v-btn variant="text" @click="showEmailForm = false">{{ vm.t('common.cancel') }}</v-btn>
+        <v-btn color="primary" variant="flat" @click="submitEmail">{{ vm.t('common.save') }}</v-btn>
+      </v-card-actions>
+    </FormWrapper>
 
     <!-- Add Account Dialog -->
-    <v-dialog v-model="showAccountForm" max-width="400" persistent>
-      <v-card>
-        <v-card-title>{{ vm.t('customers.detail.addAccount') }}</v-card-title>
-        <v-card-text>
-          <v-form ref="accountFormRef" @submit.prevent="submitAccount">
-            <v-text-field v-model="accountForm.currencyCode" :label="vm.t('customers.detail.currencyCode')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule, currencyCodeRule]" maxlength="3" />
-            <v-text-field v-model="accountForm.description" :label="vm.t('customers.detail.accountDescription')" :density="vm.layout.vuetifyDensity" />
-          </v-form>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="showAccountForm = false">{{ vm.t('common.cancel') }}</v-btn>
-          <v-btn color="primary" variant="flat" @click="submitAccount">{{ vm.t('common.save') }}</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <FormWrapper v-model="showAccountForm" max-width="400" :title="vm.t('customers.detail.addAccount')" icon="mdi-bank-plus">
+      <v-card-text>
+        <v-form ref="accountFormRef" @submit.prevent="submitAccount">
+          <v-text-field v-model="accountForm.currencyCode" :label="vm.t('customers.detail.currencyCode')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule, currencyCodeRule]" maxlength="3" />
+          <v-text-field v-model="accountForm.description" :label="vm.t('customers.detail.accountDescription')" :density="vm.layout.vuetifyDensity" />
+        </v-form>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer />
+        <v-btn variant="text" @click="showAccountForm = false">{{ vm.t('common.cancel') }}</v-btn>
+        <v-btn color="primary" variant="flat" @click="submitAccount">{{ vm.t('common.save') }}</v-btn>
+      </v-card-actions>
+    </FormWrapper>
+
+    <!-- Deactivate Confirmation -->
+    <ConfirmDialog
+      v-model="showDeactivateDialog"
+      :title="vm.t('customers.deactivate')"
+      :message="vm.t('customers.deactivateConfirm', { name: vm.customer?.name })"
+      :confirm-text="vm.t('customers.deactivate')"
+      color="error"
+      icon="mdi-account-off"
+      :loading="deactivating"
+      @confirm="handleDeactivate"
+    />
+
+    <!-- Reactivate Confirmation -->
+    <ConfirmDialog
+      v-model="showReactivateDialog"
+      :title="vm.t('customers.reactivate')"
+      :message="vm.t('customers.reactivateConfirm', { name: vm.customer?.name })"
+      :confirm-text="vm.t('customers.reactivate')"
+      color="success"
+      icon="mdi-account-check"
+      :loading="reactivating"
+      @confirm="handleReactivate"
+    />
   </div>
 </template>
 
@@ -243,9 +262,41 @@ import { ref, reactive } from 'vue';
 import { useCustomerDetailView } from '@features/customers/composables/useCustomerDetailView';
 import { useNotificationStore } from '@shared/stores/notification';
 import StatusChip from '@shared/components/atoms/StatusChip.vue';
+import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
+import ConfirmDialog from '@shared/components/molecules/ConfirmDialog.vue';
 
 const notification = useNotificationStore();
 const vm = reactive(useCustomerDetailView());
+
+// --- Deactivate / Reactivate ---
+const showDeactivateDialog = ref(false);
+const showReactivateDialog = ref(false);
+const deactivating = ref(false);
+const reactivating = ref(false);
+
+async function handleDeactivate(): Promise<void> {
+  deactivating.value = true;
+  try {
+    await vm.handleDeactivate();
+    showDeactivateDialog.value = false;
+  } catch {
+    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } finally {
+    deactivating.value = false;
+  }
+}
+
+async function handleReactivate(): Promise<void> {
+  reactivating.value = true;
+  try {
+    await vm.handleReactivate();
+    showReactivateDialog.value = false;
+  } catch {
+    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } finally {
+    reactivating.value = false;
+  }
+}
 
 // --- Inline form state ---
 const showAddressForm = ref(false);
