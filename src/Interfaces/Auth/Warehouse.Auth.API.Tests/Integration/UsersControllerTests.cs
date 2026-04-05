@@ -6,6 +6,7 @@ using Warehouse.Auth.API.Tests.Fixtures;
 using Warehouse.ServiceModel.DTOs.Auth;
 using Warehouse.ServiceModel.Requests.Auth;
 using Warehouse.ServiceModel.Responses;
+using Warehouse.ServiceModel.Responses.Auth;
 
 namespace Warehouse.Auth.API.Tests.Integration;
 
@@ -60,13 +61,11 @@ public sealed class UsersControllerTests : AuthApiTestBase
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        UserDetailDto? body = await response.Content.ReadFromJsonAsync<UserDetailDto>();
+        CreateUserResponse? body = await response.Content.ReadFromJsonAsync<CreateUserResponse>();
         body.Should().NotBeNull();
         body!.Username.Should().Be("newuser");
-        body.Email.Should().Be("newuser@warehouse.local");
-        body.FirstName.Should().Be("New");
-        body.LastName.Should().Be("User");
-        body.IsActive.Should().BeTrue();
+        body.Id.Should().BeGreaterThan(0);
+        body.GeneratedPassword.Should().NotBeNullOrEmpty();
     }
 
     [Test]
@@ -125,7 +124,7 @@ public sealed class UsersControllerTests : AuthApiTestBase
         // Arrange
         HttpClient client = await CreateAuthenticatedClientAsync();
         HttpResponseMessage createResponse = await CreateUserViaApiAsync(client, "findme", "findme@warehouse.local", "FindMe1!");
-        UserDetailDto? created = await createResponse.Content.ReadFromJsonAsync<UserDetailDto>();
+        CreateUserResponse? created = await createResponse.Content.ReadFromJsonAsync<CreateUserResponse>();
         int userId = created!.Id;
 
         // Act
@@ -146,7 +145,7 @@ public sealed class UsersControllerTests : AuthApiTestBase
         HttpClient client = await CreateAuthenticatedClientAsync();
         HttpResponseMessage createResponse = await CreateUserViaApiAsync(
             client, "updateme", "old@warehouse.local", "UpdateMe1!", "Old", "Name");
-        UserDetailDto? created = await createResponse.Content.ReadFromJsonAsync<UserDetailDto>();
+        CreateUserResponse? created = await createResponse.Content.ReadFromJsonAsync<CreateUserResponse>();
         int userId = created!.Id;
 
         UpdateUserRequest updateRequest = new()
@@ -175,7 +174,7 @@ public sealed class UsersControllerTests : AuthApiTestBase
         HttpClient client = await CreateAuthenticatedClientAsync();
         HttpResponseMessage createResponse = await CreateUserViaApiAsync(
             client, "byeuser", "bye@warehouse.local", "ByeUser1!");
-        UserDetailDto? created = await createResponse.Content.ReadFromJsonAsync<UserDetailDto>();
+        CreateUserResponse? created = await createResponse.Content.ReadFromJsonAsync<CreateUserResponse>();
         int userId = created!.Id;
 
         // Act
@@ -191,9 +190,9 @@ public sealed class UsersControllerTests : AuthApiTestBase
         // Arrange
         HttpClient adminClient = await CreateAuthenticatedClientAsync();
         await CreateUserViaApiAsync(adminClient, "willdie", "willdie@warehouse.local", "WillDie1!");
-        UserDetailDto? created = (await (await CreateUserViaApiAsync(
+        CreateUserResponse? created = (await (await CreateUserViaApiAsync(
             adminClient, "willdie2", "willdie2@warehouse.local", "WillDie2!"))
-            .Content.ReadFromJsonAsync<UserDetailDto>());
+            .Content.ReadFromJsonAsync<CreateUserResponse>());
         int userId = created!.Id;
 
         HttpResponseMessage deactivateResponse = await adminClient.DeleteAsync($"/api/v1/users/{userId}");

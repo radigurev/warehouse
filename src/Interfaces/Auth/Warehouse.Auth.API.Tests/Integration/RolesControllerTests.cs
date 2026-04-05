@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Warehouse.Auth.API.Tests.Fixtures;
 using Warehouse.ServiceModel.DTOs.Auth;
 using Warehouse.ServiceModel.Requests.Auth;
+using Warehouse.ServiceModel.Responses.Auth;
 
 namespace Warehouse.Auth.API.Tests.Integration;
 
@@ -111,7 +112,7 @@ public sealed class RolesControllerTests : AuthApiTestBase
         HttpResponseMessage createUserResponse = await CreateUserViaApiAsync(
             client, "roleuser", "roleuser@warehouse.local", "RoleUser1!");
         createUserResponse.StatusCode.Should().Be(HttpStatusCode.Created);
-        UserDetailDto? createdUser = await createUserResponse.Content.ReadFromJsonAsync<UserDetailDto>();
+        CreateUserResponse? createdUser = await createUserResponse.Content.ReadFromJsonAsync<CreateUserResponse>();
         int userId = createdUser!.Id;
 
         AssignRolesRequest assignRequest = new() { RoleIds = [roleId] };
