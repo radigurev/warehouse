@@ -15,6 +15,7 @@
   </Folder>
   <Project Path="Warehouse.Common/Warehouse.Common.csproj" />
   <Project Path="Warehouse.GenericFiltering/Warehouse.GenericFiltering.csproj" />
+  <Project Path="Warehouse.Infrastructure/Warehouse.Infrastructure.csproj" />
   <Project Path="Warehouse.Mapping/Warehouse.Mapping.csproj" />
   <Project Path="Warehouse.ServiceModel/Warehouse.ServiceModel.csproj" />
 </Solution>
