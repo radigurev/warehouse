@@ -1,7 +1,32 @@
 {
   "permissions": {
     "allow": [
-      "Bash(find src:*)"
+      "Bash(find src:*)",
+      "Bash(sqlcmd -S localhost -Q \"SELECT @@VERSION\" -C)",
+      "Bash(dotnet --version)",
+      "Bash(npm --version)",
+      "Bash(dotnet ef:*)",
+      "Bash(dotnet tool:*)",
+      "Bash(dotnet build:*)",
+      "Bash(sqlcmd:*)",
+      "Bash(sqllocaldb info:*)",
+      "Bash(npm install:*)",
+      "Bash(dotnet run:*)",
+      "Bash(npm run:*)",
+      "Bash(curl -s -o /dev/null -w \"Auth API \\(5001\\): %{http_code}\\\\n\" http://localhost:5001/health)",
+      "Bash(curl -s -o /dev/null -w \"Customers API \\(5002\\): %{http_code}\\\\n\" http://localhost:5002/health)",
+      "Bash(curl -s -o /dev/null -w \"Inventory API \\(5003\\): %{http_code}\\\\n\" http://localhost:5003/health)",
+      "Bash(curl -s -o /dev/null -w \"Frontend \\(3000\\): %{http_code}\\\\n\" http://localhost:3000)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5001/healthz)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5001/swagger)",
+      "Bash(curl -s http://localhost:5001/swagger/index.html)",
+      "Bash(curl:*)",
+      "Bash(taskkill //F //FI \"WINDOWTITLE eq *Warehouse.Auth.API*\")",
+      "Bash(pkill -f \"Warehouse.Auth.API\")",
+      "Bash(printf '{\"\"\"\"username\"\"\"\":\"\"\"\"admin\"\"\"\",\"\"\"\"password\"\"\"\":\"\"\"\"Admin123!\"\"\"\"}')",
+      "Bash(find C:/Users/radoslav.gurev/source/repos/Personal/warehouse -type f -name *Request.cs)",
+      "Bash(taskkill //F //PID 6544 //PID 37784 //PID 29908)",
+      "Bash(npx vue-tsc:*)"
     ]
   },
   "mcpServers": {

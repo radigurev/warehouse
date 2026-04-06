@@ -1,14 +1,14 @@
 # Warehouse — Spec-Driven Development (SDD) Documentation
 
-> Last updated: 2026-04-04
+> Last updated: 2026-04-06
 
 ## Documentation Structure
 
-This project uses a **two-tier documentation model**:
+This project uses a **two-tier documentation model** and conforms to **ISA-95 (IEC 62264)** for enterprise–operations integration. See `CLAUDE.md` section 1.1 for full ISA-95 compliance rules.
 
 ### Tier 1 — System Specs (`SDD-*`)
 
-System specs describe the **current, implemented behavior** of the system. They are the source of truth for what the code does today. Each spec has a unique ID and lives in a categorized subfolder.
+System specs describe the **current, implemented behavior** of the system. They are the source of truth for what the code does today. Each spec has a unique ID and lives in a categorized subfolder. All specs MUST reference applicable ISA-95 parts/sections in their Context block.
 
 ### Tier 2 — Change Specs (`CHG-*`)
 
@@ -67,13 +67,17 @@ Test classes reference spec IDs: `{TestClassName}_SDD_{DOMAIN}_{NNN}_{Descriptio
 
 ## System Spec Registry
 
-| ID | Category | Title | Status |
-|---|---|---|---|
-| SDD-AUTH-001 | Infrastructure | Authentication and Authorization | Implemented |
-| SDD-UI-001 | Core | Auth Administration SPA | Implemented |
-| SDD-UI-002 | Domain | Form Display Mode (Modal vs Page) | Implemented |
-| SDD-UI-003 | Domain | User Settings | Implemented |
-| SDD-CUST-001 | Domain | Customers and Accounts | Draft |
+| ID | Category | Title | ISA-95 Reference | Status |
+|---|---|---|---|---|
+| SDD-AUTH-001 | Infrastructure | Authentication and Authorization | Part 2, Section 6 — Personnel Model | Implemented |
+| SDD-UI-001 | Core | Auth Administration SPA | — | Implemented |
+| SDD-UI-002 | Domain | Form Display Mode (Modal vs Page) | — | Draft |
+| SDD-UI-003 | Domain | User Settings | — | Draft |
+| SDD-CUST-001 | Domain | Customers and Accounts | — | Implemented |
+| SDD-INV-001 | Core | Products and Catalog | Part 2, Section 7 — Material Model | Active |
+| SDD-INV-002 | Core | Stock Management | Part 2 Section 7 + Part 3 — Inventory Operations | Active |
+| SDD-INV-003 | Core | Warehouse Structure | Part 2 Section 5 + Part 3 — Inventory Operations | Active |
+| SDD-INV-004 | Core | Stocktaking | Part 3 — Inventory Counting | Active |
 
 ## Change Spec Registry
 
@@ -81,6 +85,8 @@ Test classes reference spec IDs: `{TestClassName}_SDD_{DOMAIN}_{NNN}_{Descriptio
 |---|---|---|---|
 | CHG-ENH-001 | Auth SPA UI Redesign | SDD-UI-001 | Implemented |
 | CHG-ENH-002 | Audit UX and Navigation Improvements | SDD-UI-001, SDD-AUTH-001 | Implemented |
+| CHG-ENH-003 | Server-Side Pagination | SDD-AUTH-001, SDD-CUST-001, SDD-INV-001 | Implemented |
+| CHG-REFAC-001 | Infrastructure Extraction and Service Split | SDD-AUTH-001 | Implemented |
 
 ## Status Legend
 
@@ -89,6 +95,7 @@ Test classes reference spec IDs: `{TestClassName}_SDD_{DOMAIN}_{NNN}_{Descriptio
 | `Draft` | Spec is being written, not yet reviewed |
 | `Review` | Spec is ready for review |
 | `Approved` | Spec is approved, implementation can begin |
+| `Active` | Spec describes current implemented behavior (actively maintained) |
 | `Implemented` | Spec describes current implemented behavior |
 | `Deprecated` | Spec is no longer active |
 
@@ -97,15 +104,13 @@ Test classes reference spec IDs: `{TestClassName}_SDD_{DOMAIN}_{NNN}_{Descriptio
 | Prefix | Next ID |
 |---|---|
 | `SDD-CUST` | 002 |
-| `SDD-INV` | 001 |
-| `SDD-WH` | 001 |
-| `SDD-SHIP` | 001 |
+| `SDD-INV` | 005 |
 | `SDD-UI` | 004 |
 | `SDD-AUTH` | 002 |
 | `SDD-FILT` | 001 |
 | `SDD-OBS` | 001 |
 | `CHG-FEAT` | 001 |
-| `CHG-ENH` | 003 |
+| `CHG-ENH` | 004 |
 | `CHG-FIX` | 001 |
-| `CHG-REFAC` | 001 |
+| `CHG-REFAC` | 002 |
 | `CHG-DEBT` | 001 |
