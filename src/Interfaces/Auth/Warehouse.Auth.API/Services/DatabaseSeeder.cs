@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.FeatureManagement;
 using Warehouse.Auth.API.Interfaces;
 using Warehouse.Auth.DBModel;
 using Warehouse.Auth.DBModel.Models;
+using Warehouse.Infrastructure.Configuration;
 
 namespace Warehouse.Auth.API.Services;
 
@@ -12,6 +14,7 @@ public sealed class DatabaseSeeder
 {
     private readonly AuthDbContext _context;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly IFeatureManager _featureManager;
     private readonly ILogger<DatabaseSeeder> _logger;
 
     private static readonly string[][] DefaultPermissions =
@@ -41,10 +44,15 @@ public sealed class DatabaseSeeder
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
-    public DatabaseSeeder(AuthDbContext context, IPasswordHasher passwordHasher, ILogger<DatabaseSeeder> logger)
+    public DatabaseSeeder(
+        AuthDbContext context,
+        IPasswordHasher passwordHasher,
+        IFeatureManager featureManager,
+        ILogger<DatabaseSeeder> logger)
     {
         _context = context;
         _passwordHasher = passwordHasher;
+        _featureManager = featureManager;
         _logger = logger;
     }
 
@@ -53,6 +61,13 @@ public sealed class DatabaseSeeder
     /// </summary>
     public async Task SeedAsync(CancellationToken cancellationToken)
     {
+        bool seedingEnabled = await _featureManager.IsEnabledAsync(FeatureFlags.EnableDatabaseSeeding).ConfigureAwait(false);
+        if (!seedingEnabled)
+        {
+            _logger.LogInformation("Database seeding is disabled by feature flag {Flag}", FeatureFlags.EnableDatabaseSeeding);
+            return;
+        }
+
         Role adminRole = await SeedAdminRoleAsync(cancellationToken).ConfigureAwait(false);
         await SeedPermissionsAsync(adminRole, cancellationToken).ConfigureAwait(false);
         await SeedAdminUserAsync(adminRole, cancellationToken).ConfigureAwait(false);
@@ -113,6 +128,13 @@ public sealed class DatabaseSeeder
 
     private async Task SeedAdminUserAsync(Role adminRole, CancellationToken cancellationToken)
     {
+        bool adminSeedEnabled = await _featureManager.IsEnabledAsync(FeatureFlags.EnableSeedDefaultAdmin).ConfigureAwait(false);
+        if (!adminSeedEnabled)
+        {
+            _logger.LogInformation("Default admin user seeding is disabled by feature flag {Flag}", FeatureFlags.EnableSeedDefaultAdmin);
+            return;
+        }
+
         bool adminUserExists = await _context.Users
             .AnyAsync(u => u.Username == "admin", cancellationToken)
             .ConfigureAwait(false);
