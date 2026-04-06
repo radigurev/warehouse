@@ -57,6 +57,9 @@ static void ConfigureServices(WebApplicationBuilder builder)
     ConfigureFluentValidation(services);
     ConfigureAutoMapper(services);
     services.AddWarehouseHealthChecks(configuration);
+    services.AddWarehouseRedisCache(configuration);
+    services.AddWarehouseMessageBus(configuration);
+    services.AddWarehouseTracing(configuration, "warehouse-inventory-api");
     ConfigureApplicationServices(services);
 
     services.AddControllers();

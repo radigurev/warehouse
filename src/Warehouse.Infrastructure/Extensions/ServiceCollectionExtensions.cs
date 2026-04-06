@@ -6,6 +6,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using MassTransit;
+using Microsoft.Extensions.Http.Resilience;
+using Microsoft.FeatureManagement;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Warehouse.Infrastructure.Authorization;
 using Warehouse.Infrastructure.Configuration;
 using Warehouse.Infrastructure.Http;
@@ -153,6 +158,139 @@ public static class ServiceCollectionExtensions
     {
         services.AddHttpContextAccessor();
         services.AddTransient<CorrelationIdDelegatingHandler>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers Redis as the distributed cache (IDistributedCache) and adds a Redis readiness health check.
+    /// Reads the connection string from <c>ConnectionStrings:Redis</c> (defaults to localhost:6379).
+    /// </summary>
+    public static IServiceCollection AddWarehouseRedisCache(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        string redisConnection = configuration.GetConnectionString("Redis") ?? "localhost:6379";
+
+        services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = redisConnection;
+            options.InstanceName = "warehouse:";
+        });
+
+        services.AddHealthChecks()
+            .AddRedis(redisConnection, name: "redis", tags: ["ready"]);
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers a typed HttpClient with standard Polly resilience policies:
+    /// retry (exponential backoff + jitter, 3 attempts), circuit breaker (5 failures, 30s break),
+    /// and total request timeout (30s). Includes correlation ID propagation.
+    /// </summary>
+    public static IServiceCollection AddWarehouseHttpClient<TClient, TImplementation>(
+        this IServiceCollection services,
+        string baseAddress)
+        where TClient : class
+        where TImplementation : class, TClient
+    {
+        services.AddHttpClient<TClient, TImplementation>(client =>
+            {
+                client.BaseAddress = new Uri(baseAddress);
+            })
+            .AddHttpMessageHandler<CorrelationIdDelegatingHandler>()
+            .AddStandardResilienceHandler(options =>
+            {
+                options.Retry.MaxRetryAttempts = 3;
+                options.Retry.Delay = TimeSpan.FromMilliseconds(500);
+                options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
+                options.Retry.UseJitter = true;
+
+                options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
+                options.CircuitBreaker.MinimumThroughput = 5;
+                options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(15);
+
+                options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(10);
+                options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(30);
+            });
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers OpenTelemetry distributed tracing with ASP.NET Core, HttpClient,
+    /// and SQL Client auto-instrumentation, exporting via OTLP to Jaeger.
+    /// </summary>
+    public static IServiceCollection AddWarehouseTracing(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        string serviceName)
+    {
+        string otlpEndpoint = configuration["OpenTelemetry:OtlpEndpoint"] ?? "http://localhost:4317";
+
+        services.AddOpenTelemetry()
+            .ConfigureResource(resource => resource
+                .AddService(serviceName: serviceName, serviceVersion: "1.0.0"))
+            .WithTracing(tracing => tracing
+                .AddAspNetCoreInstrumentation(options =>
+                {
+                    options.Filter = httpContext =>
+                        !httpContext.Request.Path.StartsWithSegments("/health");
+                })
+                .AddHttpClientInstrumentation()
+                .AddSqlClientInstrumentation(options =>
+                {
+                    options.SetDbStatementForText = true;
+                })
+                .AddOtlpExporter(options =>
+                {
+                    options.Endpoint = new Uri(otlpEndpoint);
+                }));
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers MassTransit with RabbitMQ transport. Consumers are registered via the
+    /// <paramref name="configureConsumers"/> callback. Reads RabbitMQ connection settings
+    /// from <c>RabbitMQ:Host</c>, <c>RabbitMQ:Username</c>, and <c>RabbitMQ:Password</c>.
+    /// </summary>
+    public static IServiceCollection AddWarehouseMessageBus(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        Action<IBusRegistrationConfigurator>? configureConsumers = null)
+    {
+        string host = configuration["RabbitMQ:Host"] ?? "localhost";
+        string username = configuration["RabbitMQ:Username"] ?? "warehouse";
+        string password = configuration["RabbitMQ:Password"] ?? "warehouse";
+
+        services.AddMassTransit(bus =>
+        {
+            configureConsumers?.Invoke(bus);
+
+            bus.UsingRabbitMq((context, cfg) =>
+            {
+                cfg.Host(host, "/", h =>
+                {
+                    h.Username(username);
+                    h.Password(password);
+                });
+
+                cfg.ConfigureEndpoints(context);
+            });
+        });
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers Microsoft Feature Management, reading feature flag definitions
+    /// from the <c>FeatureManagement</c> section of application configuration.
+    /// </summary>
+    public static IServiceCollection AddWarehouseFeatureFlags(this IServiceCollection services)
+    {
+        services.AddFeatureManagement();
 
         return services;
     }

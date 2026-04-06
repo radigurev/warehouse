@@ -52,6 +52,9 @@ static void ConfigureServices(WebApplicationBuilder builder)
     services.AddWarehouseApiVersioning();
     services.AddWarehouseSwagger("Warehouse Auth API", "Authentication and authorization service for the Warehouse system.");
     services.AddWarehouseHealthChecks(configuration);
+    services.AddWarehouseRedisCache(configuration);
+    services.AddWarehouseFeatureFlags();
+    services.AddWarehouseTracing(configuration, "warehouse-auth-api");
 
     ConfigureFluentValidation(services);
     ConfigureAutoMapper(services);
