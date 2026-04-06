@@ -50,7 +50,7 @@ The original 9-service plan (2026-04-02) was restructured to comply with ISA-95 
 | DBModel | Separate DbContext per domain | Cross-context references via plain FK columns, no EF navigation across boundaries |
 | Message bus | Not needed | Internal app, no fan-out events; can add later |
 | Auth | Self-issued JWT (short-lived access + refresh tokens) | No external IdP needed; OAuth2 can be layered later |
-| API gateway | Not initially | Direct service calls from frontend; add gateway when service count warrants it |
+| API gateway | YARP (Phase 1.5) | Single entry point for Vue SPA; routing, rate limiting, health aggregation |
 | Frontend | Vue.js 3 SPA (Vuetify + TypeScript + Pinia) | Single frontend calling all backend services via Vite proxy |
 | Standard | ISA-95 / IEC 62264 | Every service maps to one ISA-95 operations domain |
 
@@ -119,7 +119,102 @@ The original 9-service plan (2026-04-02) was restructured to comply with ISA-95 
 
 ---
 
-### Phase 2 — Procurement & Fulfillment Operations (NEXT)
+### Phase 1.5 — Infrastructure Prerequisites (NEXT — before Phase 2)
+
+These cross-cutting infrastructure capabilities MUST be in place before adding inter-service communication in Phase 2. Without them, debugging and operating 5+ services becomes unmanageable.
+
+#### API Gateway — `Warehouse.Gateway`
+**Technology:** YARP (Yet Another Reverse Proxy)
+**Port:** 5000
+**Priority:** P1
+
+| Feature | Description |
+|---|---|
+| **Reverse proxy** | Route `/api/v1/auth/*` → Auth:5001, `/api/v1/customers/*` → Customers:5002, etc. |
+| **Rate limiting** | ASP.NET Core RateLimiting middleware — fixed/sliding window per client/IP |
+| **Response aggregation** | Optional — combine calls to multiple services into single response |
+| **Authentication passthrough** | Forward JWT tokens to downstream services |
+| **Health aggregation** | Aggregate health status from all downstream services |
+
+**Rationale:** The Vue SPA currently hits 3 different ports via Vite proxy. With 5+ services this is unsustainable. The gateway provides a single URL, centralizes rate limiting, and enables response aggregation.
+
+---
+
+#### Correlation ID Middleware
+**Location:** `Warehouse.Infrastructure`
+**Priority:** P1
+
+| Feature | Description |
+|---|---|
+| **Generate** | Create `X-Correlation-ID` (GUID) if not present on incoming request |
+| **Propagate** | Inject correlation ID into all outbound `HttpClient` requests |
+| **Log enrichment** | Add `CorrelationId` to NLog structured log context |
+| **Response header** | Return `X-Correlation-ID` in response for frontend debugging |
+
+---
+
+#### Centralized Logging
+**Technology:** Seq (development) or ELK stack (production)
+**Priority:** P1
+
+| Feature | Description |
+|---|---|
+| **NLog sink** | Add Seq/Elasticsearch NLog target alongside existing file target |
+| **Structured fields** | All log entries include `CorrelationId`, `ServiceName`, `UserId`, `RequestPath` |
+| **Dashboard** | Seq UI or Kibana for log search, filtering, and alerting |
+| **Retention** | Configure log retention policies per environment |
+
+**Rationale:** Current NLog writes per-process log files. With multiple service instances, cross-service request debugging requires a centralized sink with correlation ID filtering.
+
+---
+
+#### Distributed Tracing
+**Technology:** OpenTelemetry SDK → Jaeger or Zipkin
+**Priority:** P1
+
+| Feature | Description |
+|---|---|
+| **Auto-instrumentation** | ASP.NET Core, HttpClient, EF Core, SQL Client |
+| **Custom spans** | Business-critical operations (adjustment apply, transfer complete, goods receiving) |
+| **Trace propagation** | W3C TraceContext headers across inter-service HTTP calls |
+| **Export** | OTLP exporter → Jaeger (dev) or cloud-hosted collector (prod) |
+
+**Rationale:** Without distributed tracing, debugging a request that spans Auth → Purchasing → Inventory (e.g., goods receiving) requires manually correlating logs across 3 services. OpenTelemetry provides end-to-end request visibility.
+
+---
+
+#### Polly Resilience Policies
+**Technology:** Polly 8.x / Microsoft.Extensions.Http.Resilience
+**Location:** `Warehouse.Infrastructure`
+**Priority:** P1
+
+| Policy | Configuration |
+|---|---|
+| **Retry** | Exponential backoff, 3 attempts, jitter |
+| **Circuit breaker** | Break after 5 consecutive failures, 30s recovery |
+| **Timeout** | 10s per-request timeout |
+| **Bulkhead** | Max concurrent calls per downstream service |
+
+All inter-service `HttpClient` registrations MUST include the standard Polly policy pipeline. Shared via `Warehouse.Infrastructure` extension methods.
+
+---
+
+#### Feature Flags
+**Technology:** Microsoft.FeatureManagement
+**Priority:** P2
+
+| Feature | Description |
+|---|---|
+| **Flag definition** | `appsettings.json` feature flag section per service |
+| **Percentage rollout** | Gradual feature enablement by percentage |
+| **User targeting** | Enable features for specific users/roles |
+| **Kill switch** | Disable features instantly without redeployment |
+
+**Rationale:** Useful for gradual rollout of Phase 2 features (e.g., enable goods receiving for one warehouse before all).
+
+---
+
+### Phase 2 — Procurement & Fulfillment Operations
 
 #### 4. Warehouse.Purchasing.API — Procurement Operations
 **ISA-95 Domain:** Procurement Operations (Part 3 — Material Receipt)
@@ -352,6 +447,8 @@ The original 9-service plan (2026-04-02) was restructured to comply with ISA-95 
 | 1 | **Auth** | Personnel & Authorization | L3 | 5001 | P0 | — | **Done** |
 | 2 | **Customers** | Business Partner Management | L3 | 5002 | P0 | Auth | **Done** |
 | 3 | **Inventory** | Inventory Operations | L3 | 5003 | P1 | Auth, Customers | **Done** |
+| — | **Gateway** | Cross-cutting | — | 5000 | P1 | All services | Not started |
+| — | **Infrastructure** | Cross-cutting | — | — | P1 | — | Partial |
 | 4 | **Purchasing** | Procurement Operations | L3 | 5004 | P1 | Auth, Inventory, Customers | Not started |
 | 5 | **Fulfillment** | Fulfillment Operations | L3 | 5005 | P1 | Auth, Inventory, Customers | Not started |
 | 6 | **Production** | Production Operations | L3 | 5006 | P2 | Auth, Inventory | Not started |
@@ -360,6 +457,18 @@ The original 9-service plan (2026-04-02) was restructured to comply with ISA-95 
 | 9 | **Planning** | Business Planning | L4 | 5009 | P3 | Auth, Inventory, Purchasing, Fulfillment, Production | Not started |
 | 10 | **Reporting** | Cross-cutting | — | 5010 | P3 | Auth, all (read) | Not started |
 | 11 | **Admin** | Cross-cutting | — | 5011 | P3 | Auth | Not started |
+
+### Infrastructure Components (Phase 1.5)
+
+| # | Component | Technology | Priority | Status |
+|---|---|---|---|---|
+| I1 | **API Gateway** | YARP | P1 | Not started |
+| I2 | **Correlation IDs** | Custom middleware (Warehouse.Infrastructure) | P1 | Not started |
+| I3 | **Centralized Logging** | Seq (dev) / ELK (prod) | P1 | Not started |
+| I4 | **Distributed Tracing** | OpenTelemetry → Jaeger | P1 | Not started |
+| I5 | **Polly Resilience** | Polly 8.x / Microsoft.Extensions.Http.Resilience | P1 | Package only (Customers.API) |
+| I6 | **Rate Limiting** | ASP.NET Core RateLimiting (at gateway) | P2 | Not started |
+| I7 | **Feature Flags** | Microsoft.FeatureManagement | P2 | Not started |
 
 ---
 
@@ -381,6 +490,8 @@ Warehouse/
 │       └── shared/         ← Components, stores, i18n
 └── src/
     ├── Warehouse.slnx
+    ├── Gateway/
+    │   └── Warehouse.Gateway/             ← YARP reverse proxy (port 5000)
     ├── Databases/
     │   ├── Warehouse.Auth.DBModel/
     │   ├── Warehouse.Customers.DBModel/
@@ -454,6 +565,13 @@ These items should be addressed before or during Phase 2 to ensure the foundatio
 | 1 | Auth | Personnel & Authorization | SDD-AUTH-001 | Done | Partial | — | **Implemented** |
 | 2 | Customers | Business Partner Management | SDD-CUST-001 | Done | Partial | — | **Implemented** |
 | 3 | Inventory | Inventory Operations | SDD-INV-001..004 | Done | Partial | — | **Implemented** |
+| I1 | Gateway (YARP) | Cross-cutting | — | — | — | — | Not started |
+| I2 | Correlation IDs | Cross-cutting | — | — | — | — | Not started |
+| I3 | Centralized Logging | Cross-cutting | — | — | — | — | Not started |
+| I4 | Distributed Tracing | Cross-cutting | — | — | — | — | Not started |
+| I5 | Polly Resilience | Cross-cutting | — | Package only | — | — | Not started |
+| I6 | Rate Limiting | Cross-cutting | — | — | — | — | Not started |
+| I7 | Feature Flags | Cross-cutting | — | — | — | — | Not started |
 | 4 | Purchasing | Procurement Operations | — | — | — | — | Not started |
 | 5 | Fulfillment | Fulfillment Operations | — | — | — | — | Not started |
 | 6 | Production | Production Operations | — | — | — | — | Not started |

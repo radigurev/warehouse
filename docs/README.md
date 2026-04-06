@@ -108,6 +108,7 @@ Test classes reference spec IDs: `{TestClassName}_SDD_{DOMAIN}_{NNN}_{Descriptio
 | `SDD-UI` | 004 |
 | `SDD-AUTH` | 002 |
 | `SDD-FILT` | 001 |
+| `SDD-INFRA` | 001 |
 | `SDD-OBS` | 001 |
 | `CHG-FEAT` | 001 |
 | `CHG-ENH` | 004 |

@@ -242,23 +242,25 @@ These rules are **MANDATORY** for all new development:
 
 ### 1.1.6.1 Movement Reason Code Extensions
 
-The `StockMovementReason` enum extends ISA-95 base movement types with finer-grained codes required for business reporting and audit. Each extended code maps back to an ISA-95 base type.
+The `StockMovementReason` enum uses ISA-95 standard terminology directly. Each value maps 1:1 to an ISA-95 base movement type, with additional business-specific codes that extend the standard.
 
 | WMS Reason Code | ISA-95 Base Type | Rationale |
 |---|---|---|
-| `PurchaseReceipt` | Receipt | Specialized for purchase order inbound receipts |
-| `SalesDispatch` | Shipment | Specialized for sales order outbound fulfillment |
+| `Receipt` | Receipt | Direct 1:1 mapping to ISA-95 base type (inbound) |
+| `Shipment` | Shipment | Direct 1:1 mapping to ISA-95 base type (outbound) |
 | `Adjustment` | Adjustment | Direct 1:1 mapping to ISA-95 base type |
 | `Transfer` | Transfer | Direct 1:1 mapping to ISA-95 base type |
 | `CustomerReturn` | Receipt | Goods returned by customer (inbound receipt) |
 | `SupplierReturn` | Shipment | Goods returned to supplier (outbound shipment) |
 | `ProductionConsumption` | Production Consumption | Direct 1:1 mapping to ISA-95 base type |
-| `ProductionReceipt` | Production Output | Finished goods received from production |
+| `ProductionOutput` | Production Output | Direct 1:1 mapping to ISA-95 base type |
 | `WriteOff` | Adjustment | Irreversible loss — damage, expiry, theft |
-| `StocktakeCorrection` | Count Adjustment | Variance correction from physical inventory count |
+| `CountAdjustment` | Count Adjustment | Direct 1:1 mapping to ISA-95 base type |
 | `Other` | *(escape hatch)* | Edge cases not covered by specific codes; SHOULD be avoided in favor of specific codes |
 
-**Rationale:** Business operations require finer granularity than the seven ISA-95 base movement types for accurate reporting, audit trails, and operational analytics. The extended codes preserve full traceability to ISA-95 base types while enabling domain-specific filtering and dashboards.
+**Note:** `ReasonCode` is stored as `StockMovementReason` enum (C#) with EF Core value conversion to `nvarchar(50)` in the database. `ReferenceType` is stored as `StockMovementReferenceType?` enum with the same pattern.
+
+**Rationale:** Using ISA-95 standard terminology directly ensures unambiguous mapping and eliminates translation layers. Extended codes (CustomerReturn, SupplierReturn, WriteOff) preserve full traceability to ISA-95 base types while enabling domain-specific filtering and dashboards.
 
 ### 1.1.7 ISA-95 Compliance Checklist (New Features)
 
@@ -474,10 +476,67 @@ None yet. Will be added as needed (e.g., Hosted Services for async processing).
 
 ## 7. External Integrations
 
-None yet. Planned integrations:
+- **Vue.js 3 SPA frontend** — consuming backend REST APIs (implemented)
+- **ERP system** — planned, ISA-95 Part 4 information exchange (see Section 1.1.5)
 
-- ERP system (details TBD)
-- Vue.js 3 SPA frontend (consuming backend REST APIs)
+---
+
+## 7.1 Infrastructure Roadmap
+
+Infrastructure capabilities required as the service count grows. These are **Phase 2 prerequisites** — implement before Purchasing/Fulfillment services.
+
+| # | Concern | Technology | Current State | Priority |
+|---|---|---|---|---|
+| 1 | **API Gateway** | YARP (preferred) or Ocelot | Not started | P1 |
+| 2 | **Health Checks** | AspNetCore.Diagnostics.HealthChecks | Implemented (liveness + readiness per service) | Done |
+| 3 | **Resilience** | Polly 8.x / Microsoft.Extensions.Http.Resilience | Package on Customers.API only, not configured | P1 |
+| 4 | **Centralized Logging** | Seq (dev) or ELK (prod) + Correlation IDs | NLog per service, no aggregation sink | P1 |
+| 5 | **Distributed Tracing** | OpenTelemetry → Jaeger/Zipkin | Not started | P1 |
+| 6 | **API Documentation** | Swashbuckle.AspNetCore | Implemented per service | Done |
+| 7 | **Rate Limiting** | AspNetCore.RateLimiting (built-in .NET 8) | Not started | P2 |
+| 8 | **Feature Flags** | Microsoft.FeatureManagement | Not started | P2 |
+
+### API Gateway
+
+Single entry point for the frontend. Handles routing, rate limiting, and response aggregation so the Vue SPA hits one URL instead of N service URLs. Implement as `Warehouse.Gateway` project using YARP (Yet Another Reverse Proxy). The gateway does NOT contain business logic — it only routes, rate-limits, and optionally aggregates responses.
+
+### Resilience (Polly)
+
+Required on ALL outbound typed HttpClients between services. Configure retry (exponential backoff), circuit breaker, and timeout policies. When implementing inter-service calls in Phase 2 (e.g., Purchasing calls Inventory to create stock movements), every `HttpClient` registration MUST include Polly policies.
+
+### Centralized Logging
+
+Current NLog writes per-process log files which become unusable with multiple service instances. Add:
+1. **Correlation ID middleware** — generate/propagate `X-Correlation-ID` header across all inter-service calls
+2. **Log sink** — Seq (for development/small deployments) or ELK stack (Elasticsearch + Logstash + Kibana) for production
+3. **Structured fields** — all log entries MUST include `CorrelationId`, `ServiceName`, `UserId`
+
+### Distributed Tracing
+
+OpenTelemetry SDK integrated into each service, exporting to Jaeger or Zipkin. Essential for debugging requests that span multiple services (e.g., a goods receiving call that touches Auth → Purchasing → Inventory). Add via `Warehouse.Infrastructure` shared extension methods.
+
+### Rate Limiting
+
+Apply at the API Gateway level using .NET 8 built-in `AspNetCore.RateLimiting`. Fixed window or sliding window per client/IP. Protects against abuse, runaway frontend bugs, and accidental DDoS.
+
+### Feature Flags
+
+`Microsoft.FeatureManagement` for gradual feature rollouts. Enables A/B testing, kill switches for new behavior, and per-tenant feature gating. Add when major new features are deployed (Phase 2+).
+
+### Implementation Order
+
+```
+Phase 2 prerequisites:
+  1. API Gateway (YARP)
+  2. Correlation ID middleware
+  3. Centralized Logging (Seq sink)
+  4. Distributed Tracing (OpenTelemetry → Jaeger)
+  5. Polly Resilience on all inter-service HttpClients
+
+Phase 2+:
+  6. Rate Limiting (at gateway)
+  7. Feature Flags
+```
 
 ---
 
