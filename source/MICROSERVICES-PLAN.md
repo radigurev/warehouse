@@ -510,8 +510,8 @@ Inventory: Stock.BelowReorderPoint
 | 1 | **Auth** | Personnel & Authorization | L3 | 5001 | P0 | — | **Done** |
 | 2 | **Customers** | Business Partner Management | L3 | 5002 | P0 | Auth | **Done** |
 | 3 | **Inventory** | Inventory Operations | L3 | 5003 | P1 | Auth, Customers | **Done** |
-| — | **Gateway** | Cross-cutting | — | 5000 | P1 | All services | Not started |
-| — | **Infrastructure** | Cross-cutting | — | — | P1 | — | Partial |
+| — | **Gateway** | Cross-cutting | — | 5000 | P1 | All services | **Done** |
+| — | **Infrastructure** | Cross-cutting | — | — | P1 | — | Partial (I1, I2 done; I3–I5 blocked) |
 | 4 | **Purchasing** | Procurement Operations | L3 | 5004 | P1 | Auth, Inventory, Customers | Not started |
 | 5 | **Fulfillment** | Fulfillment Operations | L3 | 5005 | P1 | Auth, Inventory, Customers | Not started |
 | 6 | **Production** | Production Operations | L3 | 5006 | P2 | Auth, Inventory | Not started |
@@ -525,13 +525,13 @@ Inventory: Stock.BelowReorderPoint
 
 | # | Component | Technology | Priority | Status |
 |---|---|---|---|---|
-| I1 | **API Gateway** | YARP | P1 | Not started |
-| I2 | **Correlation IDs** | Custom middleware (Warehouse.Infrastructure) | P1 | Not started |
-| I3 | **Centralized Logging** | Seq (dev) / ELK (prod) | P1 | Not started |
-| I4 | **Distributed Tracing** | OpenTelemetry → Jaeger | P1 | Not started |
-| I5 | **Polly Resilience** | Polly 8.x / Microsoft.Extensions.Http.Resilience | P1 | Package only (Customers.API) |
-| I6 | **Distributed Cache** | Redis (StackExchange.Redis) | P1 | Not started |
-| I7 | **Message Broker** | RabbitMQ (MassTransit) | P1 | Not started |
+| I1 | **API Gateway** | YARP 2.3.0 | P1 | **Done** — port 5000, 22 routes, health aggregation |
+| I2 | **Correlation IDs** | Custom middleware (Warehouse.Infrastructure) | P1 | **Done** — generate/propagate X-Correlation-ID, NLog enrichment |
+| I3 | **Centralized Logging** | Loki + Grafana | P1 | **Blocked** — NLog targets ready; needs Docker/Podman for Loki + Grafana containers |
+| I4 | **Distributed Tracing** | OpenTelemetry → Jaeger | P1 | **Blocked** — needs Docker/Podman for Jaeger container |
+| I5 | **Polly Resilience** | Polly 8.x / Microsoft.Extensions.Http.Resilience | P1 | Not started — no inter-service HttpClients yet |
+| I6 | **Distributed Cache** | Redis (StackExchange.Redis) | P1 | **Blocked** — needs Docker/Podman for Redis container |
+| I7 | **Message Broker** | RabbitMQ (MassTransit) | P1 | **Blocked** — needs Docker/Podman for RabbitMQ container |
 | I8 | **Rate Limiting** | ASP.NET Core RateLimiting (at gateway) | P2 | Not started |
 | I9 | **Feature Flags** | Microsoft.FeatureManagement | P2 | Not started |
 
@@ -616,8 +616,8 @@ These items should be addressed before or during Phase 2 to ensure the foundatio
 
 | # | Item | Priority | Effort | Description |
 |---|---|---|---|---|
-| 1 | Enforce batch tracking | High | Medium | Add `RequiresBatchTracking` flag on Product. When true, `BatchId` becomes required on movements and stock levels. Validates Material Definition → Material Lot chain. |
-| 2 | Align reason code names | Medium | Low | Rename `PurchaseReceipt` → `Receipt`, `SalesDispatch` → `Shipment` on `StockMovementReason` enum to match ISA-95 base types. Keep domain-specific codes as sub-types. |
+| 1 | ~~Enforce batch tracking~~ | ~~High~~ | ~~Medium~~ | **Done** — `RequiresBatchTracking` flag on Product; StockMovementService rejects movements without BatchId when enabled. |
+| 2 | ~~Align reason code names~~ | ~~Medium~~ | ~~Low~~ | **Done** — Renamed to ISA-95 terminology (Receipt, Shipment, CountAdjustment, ProductionOutput); ReasonCode + ReferenceType now use enums with EF string conversion. |
 | 3 | Add Material Sublot | Low | Medium | Add `Sublot` entity under Batch for finer traceability (e.g., split a batch across multiple locations). Completes the ISA-95 three-level Material chain. |
 | 4 | ISA-95 Part 4 message schema | Low | High | Define JSON schemas derived from B2MML for ERP information exchange. Needed when ERP integration begins. |
 
@@ -630,13 +630,13 @@ These items should be addressed before or during Phase 2 to ensure the foundatio
 | 1 | Auth | Personnel & Authorization | SDD-AUTH-001 | Done | Partial | — | **Implemented** |
 | 2 | Customers | Business Partner Management | SDD-CUST-001 | Done | Partial | — | **Implemented** |
 | 3 | Inventory | Inventory Operations | SDD-INV-001..004 | Done | Partial | — | **Implemented** |
-| I1 | Gateway (YARP) | Cross-cutting | — | — | — | — | Not started |
-| I2 | Correlation IDs | Cross-cutting | — | — | — | — | Not started |
-| I3 | Centralized Logging | Cross-cutting | — | — | — | — | Not started |
-| I4 | Distributed Tracing | Cross-cutting | — | — | — | — | Not started |
-| I5 | Polly Resilience | Cross-cutting | — | Package only | — | — | Not started |
-| I6 | Redis (Distributed Cache) | Cross-cutting | — | — | — | — | Not started |
-| I7 | RabbitMQ (Message Broker) | Cross-cutting | — | — | — | — | Not started |
+| I1 | Gateway (YARP) | Cross-cutting | — | Done | — | — | **Implemented** |
+| I2 | Correlation IDs | Cross-cutting | — | Done | — | — | **Implemented** |
+| I3 | Centralized Logging | Cross-cutting | — | — | — | — | Blocked (needs containers) |
+| I4 | Distributed Tracing | Cross-cutting | — | — | — | — | Blocked (needs containers) |
+| I5 | Polly Resilience | Cross-cutting | — | — | — | — | Not started |
+| I6 | Redis (Distributed Cache) | Cross-cutting | — | — | — | — | Blocked (needs containers) |
+| I7 | RabbitMQ (Message Broker) | Cross-cutting | — | — | — | — | Blocked (needs containers) |
 | I8 | Rate Limiting | Cross-cutting | — | — | — | — | Not started |
 | I9 | Feature Flags | Cross-cutting | — | — | — | — | Not started |
 | 4 | Purchasing | Procurement Operations | — | — | — | — | Not started |
