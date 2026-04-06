@@ -1,4 +1,5 @@
 using AutoMapper;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Warehouse.Common.Enums;
@@ -9,6 +10,7 @@ using Warehouse.Inventory.API.Services.Base;
 using Warehouse.Inventory.DBModel;
 using Warehouse.Inventory.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Inventory;
+using Warehouse.ServiceModel.Events;
 using Warehouse.ServiceModel.Requests.Inventory;
 using Warehouse.ServiceModel.Responses;
 
@@ -20,12 +22,15 @@ namespace Warehouse.Inventory.API.Services.Warehouse;
 /// </summary>
 public sealed class WarehouseTransferService : BaseInventoryEntityService, IWarehouseTransferService
 {
+    private readonly IPublishEndpoint _publishEndpoint;
+
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
-    public WarehouseTransferService(InventoryDbContext context, IMapper mapper)
+    public WarehouseTransferService(InventoryDbContext context, IMapper mapper, IPublishEndpoint publishEndpoint)
         : base(context, mapper)
     {
+        _publishEndpoint = publishEndpoint;
     }
 
     /// <inheritdoc />
@@ -141,6 +146,21 @@ public sealed class WarehouseTransferService : BaseInventoryEntityService, IWare
 
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+        try
+        {
+            await _publishEndpoint.Publish(new WarehouseTransferCompletedEvent
+            {
+                TransferId = transfer.Id,
+                SourceWarehouseId = transfer.SourceWarehouseId,
+                DestinationWarehouseId = transfer.DestinationWarehouseId,
+                CompletedByUserId = userId,
+                CompletedAt = transfer.CompletedAtUtc!.Value
+            }, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+        }
 
         WarehouseTransferDetailDto dto = Mapper.Map<WarehouseTransferDetailDto>(transfer);
         return Result<WarehouseTransferDetailDto>.Success(dto);

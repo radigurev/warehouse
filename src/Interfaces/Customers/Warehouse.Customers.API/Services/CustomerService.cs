@@ -1,4 +1,5 @@
 using AutoMapper;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Warehouse.Common.Models;
 using Warehouse.Customers.API.Interfaces;
@@ -6,6 +7,7 @@ using Warehouse.Customers.DBModel;
 using Warehouse.Customers.DBModel.Models;
 using Warehouse.GenericFiltering;
 using Warehouse.ServiceModel.DTOs.Customers;
+using Warehouse.ServiceModel.Events;
 using Warehouse.ServiceModel.Requests.Customers;
 using Warehouse.ServiceModel.Responses;
 
@@ -17,12 +19,15 @@ namespace Warehouse.Customers.API.Services;
 /// </summary>
 public sealed class CustomerService : BaseCustomerEntityService, ICustomerService
 {
+    private readonly IPublishEndpoint _publishEndpoint;
+
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
-    public CustomerService(CustomersDbContext context, IMapper mapper)
+    public CustomerService(CustomersDbContext context, IMapper mapper, IPublishEndpoint publishEndpoint)
         : base(context, mapper)
     {
+        _publishEndpoint = publishEndpoint;
     }
 
     /// <inheritdoc />
@@ -105,6 +110,22 @@ public sealed class CustomerService : BaseCustomerEntityService, ICustomerServic
 
         Context.Customers.Add(customer);
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        try
+        {
+            await _publishEndpoint.Publish(new CustomerCreatedEvent
+            {
+                CustomerId = customer.Id,
+                Code = customer.Code,
+                Name = customer.Name,
+                CategoryId = customer.CategoryId,
+                CreatedByUserId = userId,
+                CreatedAt = customer.CreatedAtUtc
+            }, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+        }
 
         Customer? created = await GetCustomerWithDetailsAsync(customer.Id, cancellationToken).ConfigureAwait(false);
         CustomerDetailDto dto = Mapper.Map<CustomerDetailDto>(created!);

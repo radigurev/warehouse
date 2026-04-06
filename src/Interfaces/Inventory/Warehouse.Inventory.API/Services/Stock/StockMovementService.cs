@@ -1,4 +1,5 @@
 using AutoMapper;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Warehouse.Common.Models;
 using Warehouse.GenericFiltering;
@@ -7,6 +8,7 @@ using Warehouse.Inventory.API.Services.Base;
 using Warehouse.Inventory.DBModel;
 using Warehouse.Inventory.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Inventory;
+using Warehouse.ServiceModel.Events;
 using Warehouse.ServiceModel.Requests.Inventory;
 using Warehouse.ServiceModel.Responses;
 
@@ -18,12 +20,15 @@ namespace Warehouse.Inventory.API.Services.Stock;
 /// </summary>
 public sealed class StockMovementService : BaseInventoryEntityService, IStockMovementService
 {
+    private readonly IPublishEndpoint _publishEndpoint;
+
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
-    public StockMovementService(InventoryDbContext context, IMapper mapper)
+    public StockMovementService(InventoryDbContext context, IMapper mapper, IPublishEndpoint publishEndpoint)
         : base(context, mapper)
     {
+        _publishEndpoint = publishEndpoint;
     }
 
     /// <inheritdoc />
@@ -53,6 +58,23 @@ public sealed class StockMovementService : BaseInventoryEntityService, IStockMov
         Context.StockMovements.Add(movement);
         await UpdateStockLevelAsync(request, cancellationToken).ConfigureAwait(false);
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        try
+        {
+            await _publishEndpoint.Publish(new StockMovementRecordedEvent
+            {
+                MovementId = movement.Id,
+                ProductId = movement.ProductId,
+                WarehouseId = movement.WarehouseId,
+                Quantity = movement.Quantity,
+                ReasonCode = movement.ReasonCode,
+                CreatedByUserId = userId,
+                Timestamp = movement.CreatedAtUtc
+            }, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+        }
 
         StockMovement? created = await GetMovementWithDetailsAsync(movement.Id, cancellationToken).ConfigureAwait(false);
         StockMovementDto dto = Mapper.Map<StockMovementDto>(created!);

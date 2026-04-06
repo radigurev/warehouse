@@ -16,6 +16,11 @@
     "AccessTokenExpirationMinutes": 30,
     "RefreshTokenExpirationDays": 7
   },
+  "RabbitMQ": {
+    "Host": "localhost",
+    "Username": "warehouse",
+    "Password": "warehouse"
+  },
   "Kestrel": {
     "Endpoints": {
       "Http": {
