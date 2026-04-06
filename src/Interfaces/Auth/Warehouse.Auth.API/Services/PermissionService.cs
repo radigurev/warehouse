@@ -6,6 +6,7 @@ using Warehouse.Auth.DBModel;
 using Warehouse.Auth.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Auth;
 using Warehouse.ServiceModel.Requests.Auth;
+using Warehouse.ServiceModel.Responses;
 
 namespace Warehouse.Auth.API.Services;
 
@@ -33,16 +34,33 @@ public sealed class PermissionService : IPermissionService
     }
 
     /// <inheritdoc />
-    public async Task<Result<IReadOnlyList<PermissionDto>>> GetAllAsync(CancellationToken cancellationToken)
+    public async Task<Result<PaginatedResponse<PermissionDto>>> GetAllAsync(
+        PaginationParams pagination,
+        CancellationToken cancellationToken)
     {
-        List<Permission> permissions = await _context.Permissions
+        IQueryable<Permission> query = _context.Permissions
             .AsNoTracking()
-            .OrderBy(p => p.Resource).ThenBy(p => p.Action)
+            .OrderBy(p => p.Resource).ThenBy(p => p.Action);
+
+        int totalCount = await query.CountAsync(cancellationToken).ConfigureAwait(false);
+
+        List<Permission> permissions = await query
+            .Skip(pagination.Skip)
+            .Take(pagination.EffectivePageSize)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
         IReadOnlyList<PermissionDto> dtos = _mapper.Map<IReadOnlyList<PermissionDto>>(permissions);
-        return Result<IReadOnlyList<PermissionDto>>.Success(dtos);
+
+        PaginatedResponse<PermissionDto> response = new()
+        {
+            Items = dtos,
+            Page = pagination.Page,
+            PageSize = pagination.EffectivePageSize,
+            TotalCount = totalCount
+        };
+
+        return Result<PaginatedResponse<PermissionDto>>.Success(response);
     }
 
     /// <inheritdoc />

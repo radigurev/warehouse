@@ -1,6 +1,7 @@
 using Warehouse.Common.Models;
 using Warehouse.ServiceModel.DTOs.Inventory;
 using Warehouse.ServiceModel.Requests.Inventory;
+using Warehouse.ServiceModel.Responses;
 
 namespace Warehouse.Inventory.API.Interfaces.Products;
 
@@ -16,9 +17,9 @@ public interface IUnitOfMeasureService
     Task<Result<UnitOfMeasureDto>> GetByIdAsync(int id, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Lists all units of measure.
+    /// Gets a paginated list of units of measure.
     /// </summary>
-    Task<Result<IReadOnlyList<UnitOfMeasureDto>>> ListAsync(CancellationToken cancellationToken);
+    Task<Result<PaginatedResponse<UnitOfMeasureDto>>> ListAsync(PaginationParams pagination, CancellationToken cancellationToken);
 
     /// <summary>
     /// Creates a new unit of measure.

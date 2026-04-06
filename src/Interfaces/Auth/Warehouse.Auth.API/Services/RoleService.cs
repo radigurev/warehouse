@@ -6,6 +6,7 @@ using Warehouse.Auth.DBModel;
 using Warehouse.Auth.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Auth;
 using Warehouse.ServiceModel.Requests.Auth;
+using Warehouse.ServiceModel.Responses;
 
 namespace Warehouse.Auth.API.Services;
 
@@ -44,16 +45,33 @@ public sealed class RoleService : IRoleService
     }
 
     /// <inheritdoc />
-    public async Task<Result<IReadOnlyList<RoleDto>>> GetAllAsync(CancellationToken cancellationToken)
+    public async Task<Result<PaginatedResponse<RoleDto>>> GetAllAsync(
+        PaginationParams pagination,
+        CancellationToken cancellationToken)
     {
-        List<Role> roles = await _context.Roles
+        IQueryable<Role> query = _context.Roles
             .AsNoTracking()
-            .OrderBy(r => r.Name)
+            .OrderBy(r => r.Name);
+
+        int totalCount = await query.CountAsync(cancellationToken).ConfigureAwait(false);
+
+        List<Role> roles = await query
+            .Skip(pagination.Skip)
+            .Take(pagination.EffectivePageSize)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
         IReadOnlyList<RoleDto> dtos = _mapper.Map<IReadOnlyList<RoleDto>>(roles);
-        return Result<IReadOnlyList<RoleDto>>.Success(dtos);
+
+        PaginatedResponse<RoleDto> response = new()
+        {
+            Items = dtos,
+            Page = pagination.Page,
+            PageSize = pagination.EffectivePageSize,
+            TotalCount = totalCount
+        };
+
+        return Result<PaginatedResponse<RoleDto>>.Success(response);
     }
 
     /// <inheritdoc />

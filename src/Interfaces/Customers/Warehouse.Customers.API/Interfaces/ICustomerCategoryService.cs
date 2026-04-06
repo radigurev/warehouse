@@ -1,6 +1,7 @@
 using Warehouse.Common.Models;
 using Warehouse.ServiceModel.DTOs.Customers;
 using Warehouse.ServiceModel.Requests.Customers;
+using Warehouse.ServiceModel.Responses;
 
 namespace Warehouse.Customers.API.Interfaces;
 
@@ -16,9 +17,9 @@ public interface ICustomerCategoryService
     Task<Result<CustomerCategoryDto>> CreateAsync(CreateCategoryRequest request, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Lists all customer categories.
+    /// Gets a paginated list of customer categories.
     /// </summary>
-    Task<Result<IReadOnlyList<CustomerCategoryDto>>> GetAllAsync(CancellationToken cancellationToken);
+    Task<Result<PaginatedResponse<CustomerCategoryDto>>> GetAllAsync(PaginationParams pagination, CancellationToken cancellationToken);
 
     /// <summary>
     /// Gets a customer category by ID.

@@ -1,6 +1,7 @@
 using Warehouse.Common.Models;
 using Warehouse.ServiceModel.DTOs.Auth;
 using Warehouse.ServiceModel.Requests.Auth;
+using Warehouse.ServiceModel.Responses;
 
 namespace Warehouse.Auth.API.Interfaces;
 
@@ -15,9 +16,9 @@ public interface IRoleService
     Task<Result<RoleDetailDto>> GetByIdAsync(int id, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Gets all roles.
+    /// Gets a paginated list of roles.
     /// </summary>
-    Task<Result<IReadOnlyList<RoleDto>>> GetAllAsync(CancellationToken cancellationToken);
+    Task<Result<PaginatedResponse<RoleDto>>> GetAllAsync(PaginationParams pagination, CancellationToken cancellationToken);
 
     /// <summary>
     /// Creates a new role.

@@ -7,6 +7,7 @@ using Warehouse.Infrastructure.Controllers;
 using Warehouse.Inventory.API.Interfaces.Products;
 using Warehouse.ServiceModel.DTOs.Inventory;
 using Warehouse.ServiceModel.Requests.Inventory;
+using Warehouse.ServiceModel.Responses;
 
 namespace Warehouse.Inventory.API.Controllers;
 
@@ -48,15 +49,19 @@ public sealed class UnitsOfMeasureController : BaseApiController
     }
 
     /// <summary>
-    /// Lists all units of measure.
+    /// Gets a paginated list of units of measure.
     /// </summary>
     [HttpGet]
     [RequirePermission("units-of-measure:read")]
-    [ProducesResponseType(typeof(IReadOnlyList<UnitOfMeasureDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> ListUnitsAsync(CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(PaginatedResponse<UnitOfMeasureDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListUnitsAsync(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = PaginationParams.DefaultPageSize,
+        CancellationToken cancellationToken = default)
     {
-        Result<IReadOnlyList<UnitOfMeasureDto>> result = await _unitService
-            .ListAsync(cancellationToken);
+        PaginationParams pagination = new() { Page = page, PageSize = pageSize };
+        Result<PaginatedResponse<UnitOfMeasureDto>> result = await _unitService
+            .ListAsync(pagination, cancellationToken);
 
         return ToActionResult(result);
     }

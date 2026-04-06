@@ -41,7 +41,7 @@ public sealed class UsersController : BaseApiController
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetUsersAsync(
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20,
+        [FromQuery] int pageSize = PaginationParams.DefaultPageSize,
         [FromQuery] string? search = null,
         [FromQuery] bool includeInactive = false,
         CancellationToken cancellationToken = default)

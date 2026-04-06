@@ -6,6 +6,7 @@ using Warehouse.Infrastructure.Authorization;
 using Warehouse.Infrastructure.Controllers;
 using Warehouse.ServiceModel.DTOs.Auth;
 using Warehouse.ServiceModel.Requests.Auth;
+using Warehouse.ServiceModel.Responses;
 
 namespace Warehouse.Auth.API.Controllers;
 
@@ -28,14 +29,18 @@ public sealed class RolesController : BaseApiController
     }
 
     /// <summary>
-    /// Gets all roles.
+    /// Gets a paginated list of roles.
     /// </summary>
     [HttpGet]
     [RequirePermission("roles:read")]
-    [ProducesResponseType(typeof(IReadOnlyList<RoleDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAllRolesAsync(CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(PaginatedResponse<RoleDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAllRolesAsync(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = PaginationParams.DefaultPageSize,
+        CancellationToken cancellationToken = default)
     {
-        Result<IReadOnlyList<RoleDto>> result = await _roleService.GetAllAsync(cancellationToken);
+        PaginationParams pagination = new() { Page = page, PageSize = pageSize };
+        Result<PaginatedResponse<RoleDto>> result = await _roleService.GetAllAsync(pagination, cancellationToken);
         return ToActionResult(result);
     }
 

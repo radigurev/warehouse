@@ -58,7 +58,7 @@ public sealed class WarehousesController : BaseApiController
     [ProducesResponseType(typeof(PaginatedResponse<WarehouseDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListWarehousesAsync(
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20,
+        [FromQuery] int pageSize = PaginationParams.DefaultPageSize,
         CancellationToken cancellationToken = default)
     {
         Result<PaginatedResponse<WarehouseDto>> result = await _warehouseService

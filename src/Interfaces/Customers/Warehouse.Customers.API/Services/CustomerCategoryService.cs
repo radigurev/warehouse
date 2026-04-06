@@ -6,6 +6,7 @@ using Warehouse.Customers.DBModel;
 using Warehouse.Customers.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Customers;
 using Warehouse.ServiceModel.Requests.Customers;
+using Warehouse.ServiceModel.Responses;
 
 namespace Warehouse.Customers.API.Services;
 
@@ -47,16 +48,33 @@ public sealed class CustomerCategoryService : BaseCustomerEntityService, ICustom
     }
 
     /// <inheritdoc />
-    public async Task<Result<IReadOnlyList<CustomerCategoryDto>>> GetAllAsync(CancellationToken cancellationToken)
+    public async Task<Result<PaginatedResponse<CustomerCategoryDto>>> GetAllAsync(
+        PaginationParams pagination,
+        CancellationToken cancellationToken)
     {
-        List<CustomerCategory> categories = await Context.CustomerCategories
+        IQueryable<CustomerCategory> query = Context.CustomerCategories
             .AsNoTracking()
-            .OrderBy(c => c.Name)
+            .OrderBy(c => c.Name);
+
+        int totalCount = await query.CountAsync(cancellationToken).ConfigureAwait(false);
+
+        List<CustomerCategory> categories = await query
+            .Skip(pagination.Skip)
+            .Take(pagination.EffectivePageSize)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
         IReadOnlyList<CustomerCategoryDto> dtos = Mapper.Map<IReadOnlyList<CustomerCategoryDto>>(categories);
-        return Result<IReadOnlyList<CustomerCategoryDto>>.Success(dtos);
+
+        PaginatedResponse<CustomerCategoryDto> response = new()
+        {
+            Items = dtos,
+            Page = pagination.Page,
+            PageSize = pagination.EffectivePageSize,
+            TotalCount = totalCount
+        };
+
+        return Result<PaginatedResponse<CustomerCategoryDto>>.Success(response);
     }
 
     /// <inheritdoc />

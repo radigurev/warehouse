@@ -6,6 +6,7 @@ using Warehouse.Infrastructure.Authorization;
 using Warehouse.Infrastructure.Controllers;
 using Warehouse.ServiceModel.DTOs.Auth;
 using Warehouse.ServiceModel.Requests.Auth;
+using Warehouse.ServiceModel.Responses;
 
 namespace Warehouse.Auth.API.Controllers;
 
@@ -29,13 +30,17 @@ public sealed class PermissionsController : BaseApiController
     }
 
     /// <summary>
-    /// Gets all permissions.
+    /// Gets a paginated list of permissions.
     /// </summary>
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyList<PermissionDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAllPermissionsAsync(CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(PaginatedResponse<PermissionDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAllPermissionsAsync(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = PaginationParams.DefaultPageSize,
+        CancellationToken cancellationToken = default)
     {
-        Result<IReadOnlyList<PermissionDto>> result = await _permissionService.GetAllAsync(cancellationToken);
+        PaginationParams pagination = new() { Page = page, PageSize = pageSize };
+        Result<PaginatedResponse<PermissionDto>> result = await _permissionService.GetAllAsync(pagination, cancellationToken);
         return ToActionResult(result);
     }
 

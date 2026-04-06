@@ -1,6 +1,7 @@
 using Warehouse.Common.Models;
 using Warehouse.ServiceModel.DTOs.Auth;
 using Warehouse.ServiceModel.Requests.Auth;
+using Warehouse.ServiceModel.Responses;
 
 namespace Warehouse.Auth.API.Interfaces;
 
@@ -10,9 +11,9 @@ namespace Warehouse.Auth.API.Interfaces;
 public interface IPermissionService
 {
     /// <summary>
-    /// Gets all permissions.
+    /// Gets a paginated list of permissions.
     /// </summary>
-    Task<Result<IReadOnlyList<PermissionDto>>> GetAllAsync(CancellationToken cancellationToken);
+    Task<Result<PaginatedResponse<PermissionDto>>> GetAllAsync(PaginationParams pagination, CancellationToken cancellationToken);
 
     /// <summary>
     /// Creates a new permission.

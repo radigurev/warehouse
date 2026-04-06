@@ -7,6 +7,7 @@ using Warehouse.Inventory.DBModel;
 using Warehouse.Inventory.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Inventory;
 using Warehouse.ServiceModel.Requests.Inventory;
+using Warehouse.ServiceModel.Responses;
 
 namespace Warehouse.Inventory.API.Services.Products;
 
@@ -39,16 +40,33 @@ public sealed class UnitOfMeasureService : BaseInventoryEntityService, IUnitOfMe
     }
 
     /// <inheritdoc />
-    public async Task<Result<IReadOnlyList<UnitOfMeasureDto>>> ListAsync(CancellationToken cancellationToken)
+    public async Task<Result<PaginatedResponse<UnitOfMeasureDto>>> ListAsync(
+        PaginationParams pagination,
+        CancellationToken cancellationToken)
     {
-        List<UnitOfMeasure> units = await Context.UnitsOfMeasure
+        IQueryable<UnitOfMeasure> query = Context.UnitsOfMeasure
             .AsNoTracking()
-            .OrderBy(u => u.Name)
+            .OrderBy(u => u.Name);
+
+        int totalCount = await query.CountAsync(cancellationToken).ConfigureAwait(false);
+
+        List<UnitOfMeasure> units = await query
+            .Skip(pagination.Skip)
+            .Take(pagination.EffectivePageSize)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
         IReadOnlyList<UnitOfMeasureDto> dtos = Mapper.Map<IReadOnlyList<UnitOfMeasureDto>>(units);
-        return Result<IReadOnlyList<UnitOfMeasureDto>>.Success(dtos);
+
+        PaginatedResponse<UnitOfMeasureDto> response = new()
+        {
+            Items = dtos,
+            Page = pagination.Page,
+            PageSize = pagination.EffectivePageSize,
+            TotalCount = totalCount
+        };
+
+        return Result<PaginatedResponse<UnitOfMeasureDto>>.Success(response);
     }
 
     /// <inheritdoc />

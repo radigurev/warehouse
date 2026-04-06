@@ -7,6 +7,7 @@ using Warehouse.Infrastructure.Controllers;
 using Warehouse.Inventory.API.Interfaces.Products;
 using Warehouse.ServiceModel.DTOs.Inventory;
 using Warehouse.ServiceModel.Requests.Inventory;
+using Warehouse.ServiceModel.Responses;
 
 namespace Warehouse.Inventory.API.Controllers;
 
@@ -48,15 +49,19 @@ public sealed class ProductCategoriesController : BaseApiController
     }
 
     /// <summary>
-    /// Lists all product categories.
+    /// Gets a paginated list of product categories.
     /// </summary>
     [HttpGet]
     [RequirePermission("product-categories:read")]
-    [ProducesResponseType(typeof(IReadOnlyList<ProductCategoryDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> ListCategoriesAsync(CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(PaginatedResponse<ProductCategoryDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListCategoriesAsync(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = PaginationParams.DefaultPageSize,
+        CancellationToken cancellationToken = default)
     {
-        Result<IReadOnlyList<ProductCategoryDto>> result = await _categoryService
-            .ListAsync(cancellationToken);
+        PaginationParams pagination = new() { Page = page, PageSize = pageSize };
+        Result<PaginatedResponse<ProductCategoryDto>> result = await _categoryService
+            .ListAsync(pagination, cancellationToken);
 
         return ToActionResult(result);
     }

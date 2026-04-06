@@ -7,6 +7,7 @@ using Warehouse.Infrastructure.Authorization;
 using Warehouse.Infrastructure.Controllers;
 using Warehouse.ServiceModel.DTOs.Customers;
 using Warehouse.ServiceModel.Requests.Customers;
+using Warehouse.ServiceModel.Responses;
 
 namespace Warehouse.Customers.API.Controllers;
 
@@ -48,15 +49,19 @@ public sealed class CustomerCategoriesController : BaseApiController
     }
 
     /// <summary>
-    /// Lists all customer categories.
+    /// Gets a paginated list of customer categories.
     /// </summary>
     [HttpGet]
     [RequirePermission("customers:read")]
-    [ProducesResponseType(typeof(IReadOnlyList<CustomerCategoryDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetCategoriesAsync(CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(PaginatedResponse<CustomerCategoryDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetCategoriesAsync(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = PaginationParams.DefaultPageSize,
+        CancellationToken cancellationToken = default)
     {
-        Result<IReadOnlyList<CustomerCategoryDto>> result = await _categoryService
-            .GetAllAsync(cancellationToken);
+        PaginationParams pagination = new() { Page = page, PageSize = pageSize };
+        Result<PaginatedResponse<CustomerCategoryDto>> result = await _categoryService
+            .GetAllAsync(pagination, cancellationToken);
 
         return ToActionResult(result);
     }

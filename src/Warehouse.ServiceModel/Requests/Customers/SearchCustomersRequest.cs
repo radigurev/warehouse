@@ -48,7 +48,7 @@ public sealed record SearchCustomersRequest
     /// <summary>
     /// Gets the number of items per page. Defaults to 20.
     /// </summary>
-    public int PageSize { get; init; } = 20;
+    public int PageSize { get; init; } = 25;
 
     /// <summary>
     /// Gets the generic filter expression string. Optional.

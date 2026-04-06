@@ -7,6 +7,7 @@ using Warehouse.Inventory.DBModel;
 using Warehouse.Inventory.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Inventory;
 using Warehouse.ServiceModel.Requests.Inventory;
+using Warehouse.ServiceModel.Responses;
 
 namespace Warehouse.Inventory.API.Services.Products;
 
@@ -40,17 +41,34 @@ public sealed class ProductCategoryService : BaseInventoryEntityService, IProduc
     }
 
     /// <inheritdoc />
-    public async Task<Result<IReadOnlyList<ProductCategoryDto>>> ListAsync(CancellationToken cancellationToken)
+    public async Task<Result<PaginatedResponse<ProductCategoryDto>>> ListAsync(
+        PaginationParams pagination,
+        CancellationToken cancellationToken)
     {
-        List<ProductCategory> categories = await Context.ProductCategories
+        IQueryable<ProductCategory> query = Context.ProductCategories
             .AsNoTracking()
             .Include(c => c.ParentCategory)
-            .OrderBy(c => c.Name)
+            .OrderBy(c => c.Name);
+
+        int totalCount = await query.CountAsync(cancellationToken).ConfigureAwait(false);
+
+        List<ProductCategory> categories = await query
+            .Skip(pagination.Skip)
+            .Take(pagination.EffectivePageSize)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
         IReadOnlyList<ProductCategoryDto> dtos = Mapper.Map<IReadOnlyList<ProductCategoryDto>>(categories);
-        return Result<IReadOnlyList<ProductCategoryDto>>.Success(dtos);
+
+        PaginatedResponse<ProductCategoryDto> response = new()
+        {
+            Items = dtos,
+            Page = pagination.Page,
+            PageSize = pagination.EffectivePageSize,
+            TotalCount = totalCount
+        };
+
+        return Result<PaginatedResponse<ProductCategoryDto>>.Success(response);
     }
 
     /// <inheritdoc />

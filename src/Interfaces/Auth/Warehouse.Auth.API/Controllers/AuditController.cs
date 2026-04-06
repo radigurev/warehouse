@@ -39,7 +39,7 @@ public sealed class AuditController : BaseApiController
         [FromQuery] DateTime? fromDate = null,
         [FromQuery] DateTime? toDate = null,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20,
+        [FromQuery] int pageSize = PaginationParams.DefaultPageSize,
         CancellationToken cancellationToken = default)
     {
         Result<PaginatedResponse<AuditLogDto>> result = await _auditService
@@ -59,7 +59,7 @@ public sealed class AuditController : BaseApiController
         [FromQuery] DateTime? fromDate = null,
         [FromQuery] DateTime? toDate = null,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20,
+        [FromQuery] int pageSize = PaginationParams.DefaultPageSize,
         CancellationToken cancellationToken = default)
     {
         Result<PaginatedResponse<AuditLogDto>> result = await _auditService
