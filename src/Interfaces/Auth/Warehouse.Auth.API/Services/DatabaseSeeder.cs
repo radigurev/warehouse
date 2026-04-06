@@ -20,7 +20,22 @@ public sealed class DatabaseSeeder
         ["roles", "read"], ["roles", "write"], ["roles", "update"], ["roles", "delete"],
         ["audit", "read"],
         ["customers", "read"], ["customers", "write"], ["customers", "update"], ["customers", "delete"],
-        ["customer-categories", "read"], ["customer-categories", "write"], ["customer-categories", "update"], ["customer-categories", "delete"]
+        ["customer-categories", "read"], ["customer-categories", "write"], ["customer-categories", "update"], ["customer-categories", "delete"],
+        ["products", "read"], ["products", "create"], ["products", "update"], ["products", "delete"],
+        ["product-categories", "read"], ["product-categories", "create"], ["product-categories", "update"], ["product-categories", "delete"],
+        ["units-of-measure", "read"], ["units-of-measure", "create"], ["units-of-measure", "update"], ["units-of-measure", "delete"],
+        ["bom", "read"], ["bom", "create"], ["bom", "update"], ["bom", "delete"],
+        ["product-accessories", "read"], ["product-accessories", "create"], ["product-accessories", "delete"],
+        ["product-substitutes", "read"], ["product-substitutes", "create"], ["product-substitutes", "delete"],
+        ["warehouses", "read"], ["warehouses", "create"], ["warehouses", "update"], ["warehouses", "delete"],
+        ["zones", "read"], ["zones", "create"], ["zones", "update"], ["zones", "delete"],
+        ["storage-locations", "read"], ["storage-locations", "create"], ["storage-locations", "update"], ["storage-locations", "delete"],
+        ["stock-levels", "read"],
+        ["stock-movements", "read"], ["stock-movements", "create"],
+        ["batches", "read"], ["batches", "create"], ["batches", "update"], ["batches", "delete"],
+        ["inventory-adjustments", "read"], ["inventory-adjustments", "create"], ["inventory-adjustments", "approve"], ["inventory-adjustments", "apply"],
+        ["warehouse-transfers", "read"], ["warehouse-transfers", "create"], ["warehouse-transfers", "update"],
+        ["stocktake", "read"], ["stocktake", "create"], ["stocktake", "update"], ["stocktake", "finalize"]
     ];
 
     /// <summary>

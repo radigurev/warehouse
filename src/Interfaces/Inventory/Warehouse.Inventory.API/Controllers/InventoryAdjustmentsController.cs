@@ -16,7 +16,7 @@ namespace Warehouse.Inventory.API.Controllers;
 /// <para>See <see cref="IInventoryAdjustmentService"/>.</para>
 /// </summary>
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/inventory-adjustments")]
+[Route("api/v{version:apiVersion}/adjustments")]
 [Authorize]
 public sealed class InventoryAdjustmentsController : BaseApiController
 {

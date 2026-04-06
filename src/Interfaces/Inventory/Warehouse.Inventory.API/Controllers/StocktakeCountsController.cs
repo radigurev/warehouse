@@ -15,7 +15,7 @@ namespace Warehouse.Inventory.API.Controllers;
 /// <para>See <see cref="IStocktakeCountService"/>.</para>
 /// </summary>
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/stocktake-sessions/{sessionId:int}/counts")]
+[Route("api/v{version:apiVersion}/stocktake/{sessionId:int}/counts")]
 [Authorize]
 public sealed class StocktakeCountsController : BaseApiController
 {

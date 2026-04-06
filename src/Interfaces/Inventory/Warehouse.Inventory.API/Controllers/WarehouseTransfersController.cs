@@ -16,7 +16,7 @@ namespace Warehouse.Inventory.API.Controllers;
 /// <para>See <see cref="IWarehouseTransferService"/>.</para>
 /// </summary>
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/warehouse-transfers")]
+[Route("api/v{version:apiVersion}/transfers")]
 [Authorize]
 public sealed class WarehouseTransfersController : BaseApiController
 {
