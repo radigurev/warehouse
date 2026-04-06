@@ -1,0 +1,213 @@
+services:
+  loki:
+    image: grafana/loki:3.4.2
+    container_name: warehouse-loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./docker/loki/loki-config.yml:/etc/loki/local-config.yaml
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.5.2
+    container_name: warehouse-grafana
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: warehouse-jaeger
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "16686:16686"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: warehouse-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:4.1-management-alpine
+    container_name: warehouse-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=warehouse
+      - RABBITMQ_DEFAULT_PASS=warehouse
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    restart: unless-stopped
+
+  # --- Database ---
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: warehouse-sqlserver
+    ports:
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=Warehouse@Dev123
+      - MSSQL_PID=Developer
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    restart: unless-stopped
+
+  # --- Backend APIs ---
+
+  auth-api:
+    build:
+      context: .
+      dockerfile: docker/dotnet.Dockerfile
+      args:
+        PROJECT_PATH: Interfaces/Auth/Warehouse.Auth.API/Warehouse.Auth.API.csproj
+        ASSEMBLY_NAME: Warehouse.Auth.API.dll
+    container_name: warehouse-auth-api
+    ports:
+      - "5001:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__WarehouseDb=Server=sqlserver;Database=Warehouse;User Id=sa;Password=Warehouse@Dev123;TrustServerCertificate=True
+      - ConnectionStrings__Redis=redis:6379
+      - Jwt__SecretKey=WarehouseDevSecretKey_MinLength32!
+      - Jwt__Issuer=Warehouse.Auth.API
+      - Jwt__Audience=Warehouse
+      - Jwt__AccessTokenExpirationMinutes=30
+      - Jwt__RefreshTokenExpirationDays=7
+      - OpenTelemetry__OtlpEndpoint=http://jaeger:4317
+      - RabbitMQ__Host=rabbitmq
+      - LOKI_ENDPOINT=http://loki:3100
+    depends_on:
+      - sqlserver
+      - redis
+      - loki
+      - jaeger
+    restart: unless-stopped
+
+  customers-api:
+    build:
+      context: .
+      dockerfile: docker/dotnet.Dockerfile
+      args:
+        PROJECT_PATH: Interfaces/Customers/Warehouse.Customers.API/Warehouse.Customers.API.csproj
+        ASSEMBLY_NAME: Warehouse.Customers.API.dll
+    container_name: warehouse-customers-api
+    ports:
+      - "5002:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__WarehouseDb=Server=sqlserver;Database=Warehouse;User Id=sa;Password=Warehouse@Dev123;TrustServerCertificate=True
+      - ConnectionStrings__Redis=redis:6379
+      - Jwt__SecretKey=WarehouseDevSecretKey_MinLength32!
+      - Jwt__Issuer=Warehouse.Auth.API
+      - Jwt__Audience=Warehouse
+      - Jwt__AccessTokenExpirationMinutes=30
+      - Jwt__RefreshTokenExpirationDays=7
+      - OpenTelemetry__OtlpEndpoint=http://jaeger:4317
+      - RabbitMQ__Host=rabbitmq
+      - LOKI_ENDPOINT=http://loki:3100
+    depends_on:
+      - sqlserver
+      - redis
+      - loki
+      - jaeger
+    restart: unless-stopped
+
+  inventory-api:
+    build:
+      context: .
+      dockerfile: docker/dotnet.Dockerfile
+      args:
+        PROJECT_PATH: Interfaces/Inventory/Warehouse.Inventory.API/Warehouse.Inventory.API.csproj
+        ASSEMBLY_NAME: Warehouse.Inventory.API.dll
+    container_name: warehouse-inventory-api
+    ports:
+      - "5003:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__WarehouseDb=Server=sqlserver;Database=Warehouse;User Id=sa;Password=Warehouse@Dev123;TrustServerCertificate=True
+      - ConnectionStrings__Redis=redis:6379
+      - Jwt__SecretKey=WarehouseDevSecretKey_MinLength32!
+      - Jwt__Issuer=Warehouse.Auth.API
+      - Jwt__Audience=Warehouse
+      - Jwt__AccessTokenExpirationMinutes=30
+      - Jwt__RefreshTokenExpirationDays=7
+      - OpenTelemetry__OtlpEndpoint=http://jaeger:4317
+      - RabbitMQ__Host=rabbitmq
+      - LOKI_ENDPOINT=http://loki:3100
+    depends_on:
+      - sqlserver
+      - redis
+      - loki
+      - jaeger
+    restart: unless-stopped
+
+  gateway:
+    build:
+      context: .
+      dockerfile: docker/dotnet.Dockerfile
+      args:
+        PROJECT_PATH: Gateway/Warehouse.Gateway/Warehouse.Gateway.csproj
+        ASSEMBLY_NAME: Warehouse.Gateway.dll
+    container_name: warehouse-gateway
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - OpenTelemetry__OtlpEndpoint=http://jaeger:4317
+      - ReverseProxy__Clusters__auth-cluster__Destinations__auth-api__Address=http://auth-api:8080
+      - ReverseProxy__Clusters__customers-cluster__Destinations__customers-api__Address=http://customers-api:8080
+      - ReverseProxy__Clusters__inventory-cluster__Destinations__inventory-api__Address=http://inventory-api:8080
+      - HealthChecks__AuthApi=http://auth-api:8080
+      - HealthChecks__CustomersApi=http://customers-api:8080
+      - HealthChecks__InventoryApi=http://inventory-api:8080
+      - LOKI_ENDPOINT=http://loki:3100
+    depends_on:
+      - auth-api
+      - customers-api
+      - inventory-api
+      - jaeger
+    restart: unless-stopped
+
+  # --- Frontend ---
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+    container_name: warehouse-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - gateway
+    restart: unless-stopped
+
+volumes:
+  loki-data:
+  grafana-data:
+  redis-data:
+  rabbitmq-data:
+  sqlserver-data:
