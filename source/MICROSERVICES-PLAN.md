@@ -525,15 +525,15 @@ Inventory: Stock.BelowReorderPoint
 
 | # | Component | Technology | Priority | Status |
 |---|---|---|---|---|
-| I1 | **API Gateway** | YARP 2.3.0 | P1 | **Done** — port 5000, 22 routes, health aggregation |
+| I1 | **API Gateway** | YARP 2.3.0 | P1 | **Done** — port 5000, 22 routes, health aggregation, rate limiting (200 req/min per IP) |
 | I2 | **Correlation IDs** | Custom middleware (Warehouse.Infrastructure) | P1 | **Done** — generate/propagate X-Correlation-ID, NLog enrichment |
-| I3 | **Centralized Logging** | Loki + Grafana | P1 | **Blocked** — NLog targets ready; needs Docker/Podman for Loki + Grafana containers |
-| I4 | **Distributed Tracing** | OpenTelemetry → Jaeger | P1 | **Blocked** — needs Docker/Podman for Jaeger container |
-| I5 | **Polly Resilience** | Polly 8.x / Microsoft.Extensions.Http.Resilience | P1 | Not started — no inter-service HttpClients yet |
-| I6 | **Distributed Cache** | Redis (StackExchange.Redis) | P1 | **Blocked** — needs Docker/Podman for Redis container |
-| I7 | **Message Broker** | RabbitMQ (MassTransit) | P1 | **Blocked** — needs Docker/Podman for RabbitMQ container |
-| I8 | **Rate Limiting** | ASP.NET Core RateLimiting (at gateway) | P2 | Not started |
-| I9 | **Feature Flags** | Microsoft.FeatureManagement | P2 | Not started |
+| I3 | **Centralized Logging** | NLog → Loki 3.4.2 + Grafana 11.5.2 | P1 | **Done** — all services push to Loki; Grafana at localhost:3001 |
+| I4 | **Distributed Tracing** | OpenTelemetry → Jaeger | P1 | **Done** — auto-instrumentation (ASP.NET Core, HttpClient, SQL); Jaeger at localhost:16686 |
+| I5 | **Polly Resilience** | Microsoft.Extensions.Http.Resilience 9.x | P1 | **Ready** — `AddWarehouseHttpClient<T,TImpl>()` available; no inter-service HttpClients yet (Phase 2) |
+| I6 | **Distributed Cache** | Redis 7.4 (StackExchange.Redis) | P1 | **Done** — caching permissions, categories, UoM in Auth/Customers/Inventory |
+| I7 | **Message Broker** | RabbitMQ 4.1 (MassTransit 8.x) | P1 | **Done** — 4 domain events published (StockMovement, Adjustment, Transfer, Customer); management UI at localhost:15672 |
+| I8 | **Rate Limiting** | ASP.NET Core RateLimiting (at gateway) | P2 | **Done** — global per-IP (200/min) + named "fixed" policy (100/min) |
+| I9 | **Feature Flags** | Microsoft.FeatureManagement 4.x | P2 | **Done** — gates database seeding in Auth.API; `FeatureFlags.cs` constants in Infrastructure |
 
 ---
 
@@ -632,13 +632,13 @@ These items should be addressed before or during Phase 2 to ensure the foundatio
 | 3 | Inventory | Inventory Operations | SDD-INV-001..004 | Done | Partial | — | **Implemented** |
 | I1 | Gateway (YARP) | Cross-cutting | — | Done | — | — | **Implemented** |
 | I2 | Correlation IDs | Cross-cutting | — | Done | — | — | **Implemented** |
-| I3 | Centralized Logging | Cross-cutting | — | — | — | — | Blocked (needs containers) |
-| I4 | Distributed Tracing | Cross-cutting | — | — | — | — | Blocked (needs containers) |
-| I5 | Polly Resilience | Cross-cutting | — | — | — | — | Not started |
-| I6 | Redis (Distributed Cache) | Cross-cutting | — | — | — | — | Blocked (needs containers) |
-| I7 | RabbitMQ (Message Broker) | Cross-cutting | — | — | — | — | Blocked (needs containers) |
-| I8 | Rate Limiting | Cross-cutting | — | — | — | — | Not started |
-| I9 | Feature Flags | Cross-cutting | — | — | — | — | Not started |
+| I3 | Centralized Logging | Cross-cutting | — | Done | — | — | **Implemented** (Loki + Grafana) |
+| I4 | Distributed Tracing | Cross-cutting | — | Done | — | — | **Implemented** (OpenTelemetry → Jaeger) |
+| I5 | Polly Resilience | Cross-cutting | — | Done | — | — | **Ready** (extension method; no consumers until Phase 2) |
+| I6 | Redis (Distributed Cache) | Cross-cutting | — | Done | — | — | **Implemented** (caching in Auth, Customers, Inventory) |
+| I7 | RabbitMQ (Message Broker) | Cross-cutting | — | Done | — | — | **Implemented** (4 events published from Customers, Inventory) |
+| I8 | Rate Limiting | Cross-cutting | — | Done | — | — | **Implemented** (per-IP on Gateway) |
+| I9 | Feature Flags | Cross-cutting | — | Done | — | — | **Implemented** (gates Auth seeder) |
 | 4 | Purchasing | Procurement Operations | — | — | — | — | Not started |
 | 5 | Fulfillment | Fulfillment Operations | — | — | — | — | Not started |
 | 6 | Production | Production Operations | — | — | — | — | Not started |

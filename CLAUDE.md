@@ -327,8 +327,9 @@ Warehouse/
 │   ├── Warehouse.GenericFiltering/                ← Reusable IQueryable dynamic filter library
 │   ├── Warehouse.Mapping/                         ← AutoMapper profiles
 │   │   └── Profiles/
-│   └── Warehouse.ServiceModel/                    ← DTOs, request/response contracts
+│   └── Warehouse.ServiceModel/                    ← DTOs, request/response contracts, event contracts
 │       ├── DTOs/
+│       ├── Events/                                ← MassTransit domain event records
 │       ├── Requests/
 │       └── Responses/
 ├── .claude/
@@ -491,76 +492,105 @@ None yet. Will be added as needed (e.g., Hosted Services for async processing).
 
 ---
 
-## 7.1 Infrastructure Roadmap
+## 7.1 Infrastructure (Phase 1.5 — Implemented)
 
-Infrastructure capabilities required as the service count grows. These are **Phase 2 prerequisites** — implement before Purchasing/Fulfillment services.
+All Phase 1.5 infrastructure is implemented and active. Docker Compose manages all infrastructure containers via `docker-compose.infrastructure.yml`.
 
-| # | Concern | Technology | Current State | Priority |
+| # | Concern | Technology | Status | Mandatory Rules |
 |---|---|---|---|---|
-| 1 | **API Gateway** | YARP 2.3.0 | Implemented (`Warehouse.Gateway`, port 5000) | Done |
-| 2 | **Health Checks** | AspNetCore.Diagnostics.HealthChecks | Implemented (liveness + readiness per service) | Done |
-| 3 | **Resilience** | Polly 8.x / Microsoft.Extensions.Http.Resilience | Package on Customers.API only, not configured | P1 |
-| 4 | **Centralized Logging** | Seq (dev) or ELK (prod) + Correlation IDs | NLog per service, no aggregation sink | P1 |
-| 5 | **Distributed Tracing** | OpenTelemetry → Jaeger/Zipkin | Not started | P1 |
-| 6 | **API Documentation** | Swashbuckle.AspNetCore | Implemented per service | Done |
-| 7 | **Distributed Cache** | Redis (StackExchange.Redis) | Not started | P1 |
-| 8 | **Message Broker** | RabbitMQ (MassTransit) | Not started | P1 |
-| 9 | **Rate Limiting** | AspNetCore.RateLimiting (built-in .NET 8) | Not started | P2 |
-| 10 | **Feature Flags** | Microsoft.FeatureManagement | Not started | P2 |
+| 1 | **API Gateway** | YARP 2.3.0 | Done | All frontend traffic routes through port 5000 |
+| 2 | **Health Checks** | AspNetCore.Diagnostics.HealthChecks | Done | Every service: `/health/live` + `/health/ready` |
+| 3 | **Correlation IDs** | Custom middleware (`Warehouse.Infrastructure`) | Done | Auto-generated `X-Correlation-ID` on every request |
+| 4 | **Centralized Logging** | NLog → Loki + Grafana | Done | All services push to Loki; Grafana at `localhost:3001` |
+| 5 | **Distributed Tracing** | OpenTelemetry → Jaeger | Done | Auto-instrumentation on ASP.NET Core, HttpClient, SQL; Jaeger at `localhost:16686` |
+| 6 | **Resilience (Polly)** | Microsoft.Extensions.Http.Resilience 9.x | Ready | `AddWarehouseHttpClient<T,TImpl>()` — use for ALL inter-service HTTP calls (Phase 2+) |
+| 7 | **Distributed Cache** | Redis 7.4 (StackExchange.Redis) | Active | `IDistributedCache` registered in Auth, Customers, Inventory. Cache lookup data. |
+| 8 | **Message Broker** | RabbitMQ 4.1 (MassTransit 8.x) | Active | `IPublishEndpoint` registered in Customers, Inventory. Events published on state changes. |
+| 9 | **Rate Limiting** | ASP.NET Core RateLimiting | Done | Global per-IP limiter on Gateway (200 req/min) |
+| 10 | **Feature Flags** | Microsoft.FeatureManagement 4.x | Active | `IFeatureManager` registered in Auth. Gates database seeding. |
+| 11 | **API Documentation** | Swashbuckle.AspNetCore | Done | Swagger UI per service in Development |
 
-### API Gateway (Implemented)
+### Docker Compose (`docker-compose.infrastructure.yml`)
 
-Single entry point for the frontend on port 5000. Routes all `/api/v1/*` requests to the correct backend service (Auth on 5001, Customers on 5002, Inventory on 5003) via YARP reverse proxy. The gateway does NOT contain business logic — it only routes requests. Rate limiting and response aggregation are planned for Phase 2. The Vue SPA Vite dev proxy points to `http://localhost:5000` for all `/api` calls.
-
-### Resilience (Polly)
-
-Required on ALL outbound typed HttpClients between services. Configure retry (exponential backoff), circuit breaker, and timeout policies. When implementing inter-service calls in Phase 2 (e.g., Purchasing calls Inventory to create stock movements), every `HttpClient` registration MUST include Polly policies.
-
-### Centralized Logging
-
-Current NLog writes per-process log files which become unusable with multiple service instances. Add:
-1. **Correlation ID middleware** — generate/propagate `X-Correlation-ID` header across all inter-service calls
-2. **Log sink** — Seq (for development/small deployments) or ELK stack (Elasticsearch + Logstash + Kibana) for production
-3. **Structured fields** — all log entries MUST include `CorrelationId`, `ServiceName`, `UserId`
-
-### Distributed Tracing
-
-OpenTelemetry SDK integrated into each service, exporting to Jaeger or Zipkin. Essential for debugging requests that span multiple services (e.g., a goods receiving call that touches Auth → Purchasing → Inventory). Add via `Warehouse.Infrastructure` shared extension methods.
-
-### Distributed Cache (Redis)
-
-Redis for distributed caching, rate-limiting backend, and pub/sub. Cache frequently-read data (permissions, product catalog, UoM lists, categories) to reduce SQL Server load. Use `IDistributedCache` for standard caching, `IConnectionMultiplexer` only for pub/sub and distributed locks. Cache keys: `{service}:{entity}:{id}`. Add via `Warehouse.Infrastructure` shared extension methods.
-
-### Message Broker (RabbitMQ)
-
-RabbitMQ with **MassTransit** as the abstraction layer for event-driven inter-service communication. Required when Phase 2 introduces workflows that span services (goods receiving → stock movement, dispatch → stock deduction). Event contracts in `Warehouse.ServiceModel/Events/`. Transactional outbox via MassTransit + EF Core to prevent dual-write problems. Event naming: `{Domain}.{Entity}.{PastTenseVerb}`.
-
-### Rate Limiting
-
-Apply at the API Gateway level using .NET 8 built-in `AspNetCore.RateLimiting` with Redis-backed counters. Fixed window or sliding window per client/IP. Protects against abuse, runaway frontend bugs, and accidental DDoS.
-
-### Feature Flags
-
-`Microsoft.FeatureManagement` for gradual feature rollouts. Enables A/B testing, kill switches for new behavior, and per-tenant feature gating. Add when major new features are deployed (Phase 2+).
-
-### Implementation Order
-
+```bash
+docker compose -f docker-compose.infrastructure.yml up -d
 ```
-Phase 1.5 prerequisites (before Phase 2):
-  1. API Gateway (YARP)
-  2. Redis (distributed cache + rate-limiting backend)
-  3. Correlation ID middleware
-  4. Centralized Logging (Seq sink)
-  5. Distributed Tracing (OpenTelemetry → Jaeger)
-  6. Polly Resilience on all inter-service HttpClients
 
-Phase 2 (with first inter-service workflows):
-  7. RabbitMQ + MassTransit (event-driven messaging)
+| Container | Port | UI |
+|---|---|---|
+| `warehouse-loki` | 3100 | — |
+| `warehouse-grafana` | 3001 | http://localhost:3001 (admin/admin) |
+| `warehouse-jaeger` | 4317, 16686 | http://localhost:16686 |
+| `warehouse-redis` | 6379 | — |
+| `warehouse-rabbitmq` | 5672, 15672 | http://localhost:15672 (warehouse/warehouse) |
+| `warehouse-sqlserver` | 1433 | sa / Warehouse@Dev123 |
+| `warehouse-auth-api` | 5001 | — |
+| `warehouse-customers-api` | 5002 | — |
+| `warehouse-inventory-api` | 5003 | — |
+| `warehouse-gateway` | 5000 | — |
+| `warehouse-frontend` | 3000 | http://localhost:3000 |
 
-Phase 2+ (as services stabilize):
-  8. Rate Limiting (at gateway, Redis-backed)
-  9. Feature Flags
-```
+### 7.1.1 Mandatory Infrastructure Rules for New Development
+
+**These rules are MANDATORY. Violating them will create technical debt that blocks Phase 2.**
+
+#### Redis Caching
+
+-   **When to cache:** All lookup/reference data services (categories, UoM, permissions, roles) MUST cache their list endpoints via `IDistributedCache`.
+-   **Pattern:** Cache the full unpaginated DTO list as a single JSON entry. Paginate from the cached list in memory. Invalidate on any write (create/update/delete).
+-   **Cache key convention:** `{service}:{entity}:all` (e.g., `auth:permissions:all`, `inventory:product-categories:all`)
+-   **TTL:** Permissions = 5 min, categories/UoM = 30 min. Transactional data (stock levels, movements) MUST NOT be cached.
+-   **Extension method:** `services.AddWarehouseRedisCache(configuration)` — already called in Auth, Customers, Inventory `Program.cs`.
+-   **Config key:** `ConnectionStrings:Redis` (defaults to `localhost:6379`)
+
+| Service | Cache Key | TTL |
+|---|---|---|
+| PermissionService | `auth:permissions:all` | 5 min |
+| ProductCategoryService | `inventory:product-categories:all` | 30 min |
+| UnitOfMeasureService | `inventory:units-of-measure:all` | 30 min |
+| CustomerCategoryService | `customers:customer-categories:all` | 30 min |
+
+#### MassTransit Event Publishing
+
+-   **When to publish:** All operations that change material state (movements, adjustments, transfers) and key business events (customer created) MUST publish a domain event via `IPublishEndpoint`.
+-   **Event contracts:** Define as `sealed record` in `src/Warehouse.ServiceModel/Events/`. Use `required` properties.
+-   **Event naming:** `{Entity}{PastTenseVerb}Event` (e.g., `StockMovementRecordedEvent`, `CustomerCreatedEvent`)
+-   **Fire-and-forget:** Wrap `_publishEndpoint.Publish(...)` in try/catch — RabbitMQ unavailability MUST NOT break the main operation.
+-   **Extension method:** `services.AddWarehouseMessageBus(configuration)` — already called in Customers, Inventory `Program.cs`. Add to new services that publish events.
+-   **Config keys:** `RabbitMQ:Host`, `RabbitMQ:Username`, `RabbitMQ:Password`
+-   **Testing:** Use `services.AddMassTransitTestHarness()` in integration test `ConfigureTestServices` to avoid real RabbitMQ connections.
+
+| Event | Published From | After |
+|---|---|---|
+| `StockMovementRecordedEvent` | `StockMovementService.RecordAsync` | SaveChangesAsync |
+| `InventoryAdjustmentAppliedEvent` | `InventoryAdjustmentService.ApplyAsync` | CommitAsync |
+| `WarehouseTransferCompletedEvent` | `WarehouseTransferService.CompleteAsync` | CommitAsync |
+| `CustomerCreatedEvent` | `CustomerService.CreateAsync` | SaveChangesAsync |
+
+#### Polly Resilience (Phase 2 — when inter-service HTTP calls are introduced)
+
+-   **When to use:** Every typed `HttpClient` that calls another microservice MUST use `AddWarehouseHttpClient<TClient, TImplementation>(baseAddress)`.
+-   **What it includes:** Retry (3 attempts, exponential backoff + jitter), circuit breaker (5 min throughput, 15s break), 10s attempt timeout, 30s total timeout, correlation ID propagation.
+-   **Current state:** No inter-service HTTP calls exist yet. Authentication uses JWT claims (no HTTP call to Auth.API). First use case: Phase 2 when Purchasing/Fulfillment call Inventory.
+-   **Extension method:** `services.AddWarehouseHttpClient<TClient, TImpl>(baseAddress)` in `Warehouse.Infrastructure`.
+
+#### Feature Flags
+
+-   **When to use:** Gate any behavior that should be toggleable per environment: database seeding, new features during rollout, experimental endpoints.
+-   **Flag constants:** Define in `src/Warehouse.Infrastructure/Configuration/FeatureFlags.cs` — never use magic strings.
+-   **Config section:** `FeatureManagement` in `appsettings.json`. Flags default to `false` if not present — always add them to templates with explicit `true`/`false`.
+-   **Extension method:** `services.AddWarehouseFeatureFlags()` — already called in Auth `Program.cs`. Add to new services that consume flags.
+-   **Inject:** `IFeatureManager` into any service that needs flag checks.
+
+| Flag | Service | Purpose | Default |
+|---|---|---|---|
+| `EnableDatabaseSeeding` | Auth.API | Gates entire `DatabaseSeeder.SeedAsync()` | `true` |
+| `EnableSeedDefaultAdmin` | Auth.API | Gates default admin user creation | `true` |
+
+#### Rate Limiting
+
+-   Active on the Gateway. Global per-IP: 200 req/min. Named policy `"fixed"`: 100 req/min (for specific route assignment).
+-   Returns `429 Too Many Requests` when exceeded.
 
 ---
 
@@ -570,14 +600,31 @@ Phase 2+ (as services stabilize):
 |---|---|---|---|
 | 1 | `Nullable` enabled in `.csproj` | Default template setting | Review — may disable if not desired |
 | 2 | `ImplicitUsings` enabled | Default template setting | Review — may disable for explicit control |
-| 3 | Polly only on Customers.API | Auth.API has no outbound HTTP clients | Add Polly to Auth.API when it needs typed HttpClients |
-| 4 | Mapping project references both DBModel projects | Shared AutoMapper profiles | Split into per-domain mapping if isolation becomes critical |
+| 3 | Mapping project references both DBModel projects | Shared AutoMapper profiles | Split into per-domain mapping if isolation becomes critical |
+| 4 | MassTransit events are fire-and-forget (try/catch) | No outbox pattern yet | Replace with MassTransit transactional outbox when Phase 2 workflows require guaranteed delivery |
 
 ---
 
 ## 9. Configuration Keys
 
-No custom configuration yet. Will be populated as `appsettings.json` grows.
+| Key | Used By | Default | Description |
+|---|---|---|---|
+| `ConnectionStrings:WarehouseDb` | Auth, Customers, Inventory | — | SQL Server connection string |
+| `ConnectionStrings:Redis` | Auth, Customers, Inventory | `localhost:6379` | Redis distributed cache |
+| `Jwt:SecretKey` | All APIs | — | HMAC-SHA256 signing key (min 32 chars) |
+| `Jwt:Issuer` | All APIs | `Warehouse.Auth.API` | JWT token issuer |
+| `Jwt:Audience` | All APIs | `Warehouse` | JWT token audience |
+| `Jwt:AccessTokenExpirationMinutes` | Auth | `30` | Access token lifetime |
+| `Jwt:RefreshTokenExpirationDays` | Auth | `7` | Refresh token lifetime |
+| `RabbitMQ:Host` | Customers, Inventory | `localhost` | RabbitMQ host |
+| `RabbitMQ:Username` | Customers, Inventory | `warehouse` | RabbitMQ credentials |
+| `RabbitMQ:Password` | Customers, Inventory | `warehouse` | RabbitMQ credentials |
+| `OpenTelemetry:OtlpEndpoint` | All APIs, Gateway | `http://localhost:4317` | Jaeger OTLP endpoint |
+| `FeatureManagement:EnableDatabaseSeeding` | Auth | `true` | Gate database seeder |
+| `FeatureManagement:EnableSeedDefaultAdmin` | Auth | `true` | Gate admin user seed |
+| `HealthChecks:AuthApi` | Gateway | `http://localhost:5001` | Auth health check URL (overridden in Docker) |
+| `HealthChecks:CustomersApi` | Gateway | `http://localhost:5002` | Customers health check URL |
+| `HealthChecks:InventoryApi` | Gateway | `http://localhost:5003` | Inventory health check URL |
 
 ---
 
@@ -631,6 +678,9 @@ Describe proposed changes. Live in `docs/changes/`.
 | EF Core config | `{Entity}Configuration` | `InventoryItemConfiguration` |
 | DB entity | `{Entity}` (no suffix) | `InventoryItem` |
 | Test class | `{ClassUnderTest}Tests` | `InventoryServiceTests` |
+| Domain event | `{Entity}{PastTenseVerb}Event` | `StockMovementRecordedEvent` |
+| Feature flag constant | `Enable{Feature}` | `EnableDatabaseSeeding` |
+| Cache key | `{service}:{entity}:all` | `inventory:product-categories:all` |
 
 ---
 
@@ -658,5 +708,10 @@ Describe proposed changes. Live in `docs/changes/`.
 | AutoMapper profiles | `src/Warehouse.Mapping/Profiles/` |
 | Shared enums | `src/Warehouse.Common/Enums/` |
 | Extensions | `src/Warehouse.Common/Extensions/` |
+| Event contracts | `src/Warehouse.ServiceModel/Events/` |
+| Feature flag constants | `src/Warehouse.Infrastructure/Configuration/FeatureFlags.cs` |
+| Infrastructure extensions | `src/Warehouse.Infrastructure/Extensions/ServiceCollectionExtensions.cs` |
+| Docker Compose | `docker-compose.infrastructure.yml` |
+| Docker configs | `docker/` (loki, grafana, nginx) |
 | SDD specs | `docs/` |
 | Change template | `docs/changes/_TEMPLATE.md` |
