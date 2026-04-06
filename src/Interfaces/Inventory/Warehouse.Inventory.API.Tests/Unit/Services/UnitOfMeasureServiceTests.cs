@@ -1,4 +1,6 @@
 using FluentAssertions;
+using Microsoft.Extensions.Caching.Distributed;
+using Moq;
 using Warehouse.Common.Models;
 using Warehouse.Inventory.API.Services.Products;
 using Warehouse.Inventory.API.Tests.Fixtures;
@@ -16,13 +18,15 @@ namespace Warehouse.Inventory.API.Tests.Unit.Services;
 [Category("SDD-INV-001")]
 public sealed class UnitOfMeasureServiceTests : InventoryTestBase
 {
+    private Mock<IDistributedCache> _mockCache = null!;
     private UnitOfMeasureService _sut = null!;
 
     [SetUp]
     public override void SetUp()
     {
         base.SetUp();
-        _sut = new UnitOfMeasureService(Context, Mapper);
+        _mockCache = new Mock<IDistributedCache>();
+        _sut = new UnitOfMeasureService(Context, Mapper, _mockCache.Object);
     }
 
     [Test]

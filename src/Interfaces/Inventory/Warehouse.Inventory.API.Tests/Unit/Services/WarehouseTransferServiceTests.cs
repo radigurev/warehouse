@@ -1,4 +1,6 @@
 using FluentAssertions;
+using MassTransit;
+using Moq;
 using Warehouse.Common.Models;
 using Warehouse.Inventory.API.Services.Warehouse;
 using Warehouse.Inventory.API.Tests.Fixtures;
@@ -16,13 +18,15 @@ namespace Warehouse.Inventory.API.Tests.Unit.Services;
 [Category("SDD-INV-003")]
 public sealed class WarehouseTransferServiceTests : InventoryTestBase
 {
+    private Mock<IPublishEndpoint> _mockPublishEndpoint = null!;
     private WarehouseTransferService _sut = null!;
 
     [SetUp]
     public override void SetUp()
     {
         base.SetUp();
-        _sut = new WarehouseTransferService(Context, Mapper);
+        _mockPublishEndpoint = new Mock<IPublishEndpoint>();
+        _sut = new WarehouseTransferService(Context, Mapper, _mockPublishEndpoint.Object);
     }
 
     [Test]

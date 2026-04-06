@@ -1,5 +1,7 @@
 using FluentAssertions;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using Warehouse.Common.Enums;
 using Warehouse.Common.Models;
 using Warehouse.Inventory.API.Services.Stock;
@@ -19,13 +21,15 @@ namespace Warehouse.Inventory.API.Tests.Unit.Services;
 [Category("SDD-INV-002")]
 public sealed class StockMovementServiceTests : InventoryTestBase
 {
+    private Mock<IPublishEndpoint> _mockPublishEndpoint = null!;
     private StockMovementService _sut = null!;
 
     [SetUp]
     public override void SetUp()
     {
         base.SetUp();
-        _sut = new StockMovementService(Context, Mapper);
+        _mockPublishEndpoint = new Mock<IPublishEndpoint>();
+        _sut = new StockMovementService(Context, Mapper, _mockPublishEndpoint.Object);
     }
 
     [Test]

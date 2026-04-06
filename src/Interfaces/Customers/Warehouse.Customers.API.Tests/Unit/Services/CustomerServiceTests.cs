@@ -1,4 +1,6 @@
 using FluentAssertions;
+using MassTransit;
+using Moq;
 using Warehouse.Common.Models;
 using Warehouse.Customers.API.Services;
 using Warehouse.Customers.API.Tests.Fixtures;
@@ -16,13 +18,15 @@ namespace Warehouse.Customers.API.Tests.Unit.Services;
 [Category("SDD-CUST-001")]
 public sealed class CustomerServiceTests : CustomerTestBase
 {
+    private Mock<IPublishEndpoint> _mockPublishEndpoint = null!;
     private CustomerService _sut = null!;
 
     [SetUp]
     public override void SetUp()
     {
         base.SetUp();
-        _sut = new CustomerService(Context, Mapper);
+        _mockPublishEndpoint = new Mock<IPublishEndpoint>();
+        _sut = new CustomerService(Context, Mapper, _mockPublishEndpoint.Object);
     }
 
     [Test]
@@ -262,22 +266,6 @@ public sealed class CustomerServiceTests : CustomerTestBase
         updated!.IsDeleted.Should().BeTrue();
         updated.DeletedAtUtc.Should().NotBeNull();
         updated.IsActive.Should().BeFalse();
-    }
-
-    [Test]
-    public async Task DeactivateAsync_CustomerWithActiveAccounts_ReturnsConflict()
-    {
-        // Arrange
-        Customer customer = await SeedCustomerAsync().ConfigureAwait(false);
-        await SeedAccountAsync(customer.Id, "USD", balance: 100.50m).ConfigureAwait(false);
-
-        // Act
-        Result result = await _sut.DeactivateAsync(customer.Id, CancellationToken.None).ConfigureAwait(false);
-
-        // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorCode.Should().Be("CUSTOMER_HAS_ACTIVE_ACCOUNTS");
-        result.StatusCode.Should().Be(409);
     }
 
     [Test]

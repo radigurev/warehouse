@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -49,6 +50,14 @@ public abstract class AuthApiTestBase
             .WithWebHostBuilder(builder =>
             {
                 builder.UseEnvironment("Development");
+                builder.ConfigureAppConfiguration(config =>
+                {
+                    config.AddInMemoryCollection(new Dictionary<string, string?>
+                    {
+                        ["FeatureManagement:EnableDatabaseSeeding"] = "true",
+                        ["FeatureManagement:EnableSeedDefaultAdmin"] = "true"
+                    });
+                });
                 builder.ConfigureTestServices(services =>
                 {
                     ServiceDescriptor? dbContextDescriptor = services.SingleOrDefault(

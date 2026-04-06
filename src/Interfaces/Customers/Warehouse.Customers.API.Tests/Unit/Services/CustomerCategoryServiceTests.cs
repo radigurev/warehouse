@@ -1,5 +1,7 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
+using Moq;
 using Warehouse.Common.Models;
 using Warehouse.Customers.API.Services;
 using Warehouse.Customers.API.Tests.Fixtures;
@@ -16,13 +18,15 @@ namespace Warehouse.Customers.API.Tests.Unit.Services;
 [Category("SDD-CUST-001")]
 public sealed class CustomerCategoryServiceTests : CustomerTestBase
 {
+    private Mock<IDistributedCache> _mockCache = null!;
     private CustomerCategoryService _sut = null!;
 
     [SetUp]
     public override void SetUp()
     {
         base.SetUp();
-        _sut = new CustomerCategoryService(Context, Mapper);
+        _mockCache = new Mock<IDistributedCache>();
+        _sut = new CustomerCategoryService(Context, Mapper, _mockCache.Object);
     }
 
     [Test]
