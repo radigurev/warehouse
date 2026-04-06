@@ -82,8 +82,19 @@ CLAUDE.md > persona-database > persona-dotnet8-microservices > csharp-persona > 
 | NLog.Web.AspNetCore | 5.4.0 | Auth.API, Customers.API, Inventory.API, Gateway |
 | AspNetCore.HealthChecks.SqlServer | 8.0.2 | Auth.API, Customers.API, Inventory.API, Infrastructure |
 | BCrypt.Net-Next | 4.0.3 | Auth.API |
-| Polly | 8.5.2 | Customers.API |
-| Microsoft.Extensions.Http.Polly | 8.0.12 | Customers.API |
+| NLog | 5.4.0 | Infrastructure |
+| NLog.Targets.Loki | 2.5.0 | Auth.API, Customers.API, Inventory.API, Gateway |
+| OpenTelemetry.Extensions.Hosting | 1.11.2 | Infrastructure |
+| OpenTelemetry.Instrumentation.AspNetCore | 1.11.1 | Infrastructure |
+| OpenTelemetry.Instrumentation.Http | 1.11.1 | Infrastructure |
+| OpenTelemetry.Instrumentation.SqlClient | 1.11.0-beta.1 | Infrastructure |
+| OpenTelemetry.Exporter.OpenTelemetryProtocol | 1.11.2 | Infrastructure |
+| Microsoft.Extensions.Http.Resilience | 9.0.0 | Infrastructure |
+| Microsoft.Extensions.Caching.StackExchangeRedis | 8.0.12 | Infrastructure |
+| AspNetCore.HealthChecks.Redis | 8.0.1 | Infrastructure |
+| MassTransit.RabbitMQ | 8.3.7 | Infrastructure |
+| MassTransit.EntityFrameworkCore | 8.3.7 | Infrastructure |
+| Microsoft.FeatureManagement.AspNetCore | 4.0.0 | Infrastructure |
 | NUnit | 3.13.3 | Auth.API.Tests, Customers.API.Tests, Inventory.API.Tests |
 | FluentAssertions | 6.12.2 | Auth.API.Tests, Customers.API.Tests, Inventory.API.Tests |
 | Moq | 4.20.72 | Customers.API.Tests, Inventory.API.Tests |
