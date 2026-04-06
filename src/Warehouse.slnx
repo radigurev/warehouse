@@ -25,4 +25,7 @@
   <Project Path="Warehouse.Infrastructure/Warehouse.Infrastructure.csproj" />
   <Project Path="Warehouse.Mapping/Warehouse.Mapping.csproj" />
   <Project Path="Warehouse.ServiceModel/Warehouse.ServiceModel.csproj" />
+  <Folder Name="/Gateway/">
+    <Project Path="Gateway/Warehouse.Gateway/Warehouse.Gateway.csproj" />
+  </Folder>
 </Solution>

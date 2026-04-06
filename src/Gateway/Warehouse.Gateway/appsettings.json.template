@@ -1,0 +1,176 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning",
+      "Yarp": "Information"
+    }
+  },
+  "AllowedHosts": "*",
+  "Kestrel": {
+    "Endpoints": {
+      "Http": {
+        "Url": "http://localhost:5000"
+      }
+    }
+  },
+  "ReverseProxy": {
+    "Routes": {
+      "auth-route": {
+        "ClusterId": "auth-cluster",
+        "Match": {
+          "Path": "/api/v1/auth/{**catch-all}"
+        }
+      },
+      "users-route": {
+        "ClusterId": "auth-cluster",
+        "Match": {
+          "Path": "/api/v1/users/{**catch-all}"
+        }
+      },
+      "roles-route": {
+        "ClusterId": "auth-cluster",
+        "Match": {
+          "Path": "/api/v1/roles/{**catch-all}"
+        }
+      },
+      "permissions-route": {
+        "ClusterId": "auth-cluster",
+        "Match": {
+          "Path": "/api/v1/permissions/{**catch-all}"
+        }
+      },
+      "audit-route": {
+        "ClusterId": "auth-cluster",
+        "Match": {
+          "Path": "/api/v1/audit/{**catch-all}"
+        }
+      },
+      "customers-route": {
+        "ClusterId": "customers-cluster",
+        "Match": {
+          "Path": "/api/v1/customers/{**catch-all}"
+        }
+      },
+      "customer-categories-route": {
+        "ClusterId": "customers-cluster",
+        "Match": {
+          "Path": "/api/v1/customer-categories/{**catch-all}"
+        }
+      },
+      "products-route": {
+        "ClusterId": "inventory-cluster",
+        "Match": {
+          "Path": "/api/v1/products/{**catch-all}"
+        }
+      },
+      "product-categories-route": {
+        "ClusterId": "inventory-cluster",
+        "Match": {
+          "Path": "/api/v1/product-categories/{**catch-all}"
+        }
+      },
+      "units-of-measure-route": {
+        "ClusterId": "inventory-cluster",
+        "Match": {
+          "Path": "/api/v1/units-of-measure/{**catch-all}"
+        }
+      },
+      "product-accessories-route": {
+        "ClusterId": "inventory-cluster",
+        "Match": {
+          "Path": "/api/v1/product-accessories/{**catch-all}"
+        }
+      },
+      "product-substitutes-route": {
+        "ClusterId": "inventory-cluster",
+        "Match": {
+          "Path": "/api/v1/product-substitutes/{**catch-all}"
+        }
+      },
+      "bom-route": {
+        "ClusterId": "inventory-cluster",
+        "Match": {
+          "Path": "/api/v1/bom/{**catch-all}"
+        }
+      },
+      "warehouses-route": {
+        "ClusterId": "inventory-cluster",
+        "Match": {
+          "Path": "/api/v1/warehouses/{**catch-all}"
+        }
+      },
+      "zones-route": {
+        "ClusterId": "inventory-cluster",
+        "Match": {
+          "Path": "/api/v1/zones/{**catch-all}"
+        }
+      },
+      "storage-locations-route": {
+        "ClusterId": "inventory-cluster",
+        "Match": {
+          "Path": "/api/v1/storage-locations/{**catch-all}"
+        }
+      },
+      "stock-levels-route": {
+        "ClusterId": "inventory-cluster",
+        "Match": {
+          "Path": "/api/v1/stock-levels/{**catch-all}"
+        }
+      },
+      "stock-movements-route": {
+        "ClusterId": "inventory-cluster",
+        "Match": {
+          "Path": "/api/v1/stock-movements/{**catch-all}"
+        }
+      },
+      "batches-route": {
+        "ClusterId": "inventory-cluster",
+        "Match": {
+          "Path": "/api/v1/batches/{**catch-all}"
+        }
+      },
+      "adjustments-route": {
+        "ClusterId": "inventory-cluster",
+        "Match": {
+          "Path": "/api/v1/adjustments/{**catch-all}"
+        }
+      },
+      "transfers-route": {
+        "ClusterId": "inventory-cluster",
+        "Match": {
+          "Path": "/api/v1/transfers/{**catch-all}"
+        }
+      },
+      "stocktake-route": {
+        "ClusterId": "inventory-cluster",
+        "Match": {
+          "Path": "/api/v1/stocktake/{**catch-all}"
+        }
+      }
+    },
+    "Clusters": {
+      "auth-cluster": {
+        "Destinations": {
+          "auth-api": {
+            "Address": "<AUTH_API_URL>"
+          }
+        }
+      },
+      "customers-cluster": {
+        "Destinations": {
+          "customers-api": {
+            "Address": "<CUSTOMERS_API_URL>"
+          }
+        }
+      },
+      "inventory-cluster": {
+        "Destinations": {
+          "inventory-api": {
+            "Address": "<INVENTORY_API_URL>"
+          }
+        }
+      }
+    }
+  }
+}
