@@ -79,7 +79,7 @@ CLAUDE.md > persona-database > persona-dotnet8-microservices > csharp-persona > 
 | Asp.Versioning.Mvc.ApiExplorer | 8.1.0 | Auth.API, Customers.API, Inventory.API, Infrastructure |
 | Swashbuckle.AspNetCore | 6.6.2 | Auth.API, Customers.API, Inventory.API, Infrastructure |
 | Microsoft.AspNetCore.Authentication.JwtBearer | 8.0.12 | Auth.API, Customers.API, Inventory.API, Infrastructure |
-| NLog.Web.AspNetCore | 5.4.0 | Auth.API, Customers.API, Inventory.API |
+| NLog.Web.AspNetCore | 5.4.0 | Auth.API, Customers.API, Inventory.API, Gateway |
 | AspNetCore.HealthChecks.SqlServer | 8.0.2 | Auth.API, Customers.API, Inventory.API, Infrastructure |
 | BCrypt.Net-Next | 4.0.3 | Auth.API |
 | Polly | 8.5.2 | Customers.API |
@@ -92,6 +92,8 @@ CLAUDE.md > persona-database > persona-dotnet8-microservices > csharp-persona > 
 | NUnit3TestAdapter | 4.2.1 | Auth.API.Tests, Customers.API.Tests, Inventory.API.Tests |
 | NUnit.Analyzers | 3.6.1 | Auth.API.Tests, Customers.API.Tests, Inventory.API.Tests |
 | coverlet.collector | 6.0.0 | Auth.API.Tests, Customers.API.Tests, Inventory.API.Tests |
+| Yarp.ReverseProxy | 2.3.0 | Gateway |
+| AspNetCore.HealthChecks.Uris | 9.0.0 | Gateway |
 
 ---
 
@@ -320,6 +322,8 @@ Warehouse/
 │   │   ├── Enums/
 │   │   ├── Extensions/
 │   │   └── Helpers/
+│   ├── Gateway/
+│   │   └── Warehouse.Gateway/                     ← YARP API Gateway (port 5000), routes to backend services
 │   ├── Warehouse.GenericFiltering/                ← Reusable IQueryable dynamic filter library
 │   ├── Warehouse.Mapping/                         ← AutoMapper profiles
 │   │   └── Profiles/
@@ -376,6 +380,8 @@ Warehouse.Inventory.API
 Warehouse.Inventory.API.Tests
   ├── Warehouse.Inventory.API
   └── Warehouse.Mapping
+
+Warehouse.Gateway (standalone — no project references)
 ```
 
 ---
@@ -437,6 +443,10 @@ Warehouse.Inventory.API.Tests
 
 ## 4. API Endpoints
 
+### Gateway (`Warehouse.Gateway` — port 5000)
+
+YARP reverse proxy. Routes all `/api/v1/*` requests to backend services. Exposes `/health` for downstream service reachability checks.
+
 ### Auth API (`Warehouse.Auth.API` — port 5001)
 
 See `docs/infrastructure/SDD-AUTH-001-authentication-and-authorization.md` for full endpoint documentation.
@@ -487,18 +497,20 @@ Infrastructure capabilities required as the service count grows. These are **Pha
 
 | # | Concern | Technology | Current State | Priority |
 |---|---|---|---|---|
-| 1 | **API Gateway** | YARP (preferred) or Ocelot | Not started | P1 |
+| 1 | **API Gateway** | YARP 2.3.0 | Implemented (`Warehouse.Gateway`, port 5000) | Done |
 | 2 | **Health Checks** | AspNetCore.Diagnostics.HealthChecks | Implemented (liveness + readiness per service) | Done |
 | 3 | **Resilience** | Polly 8.x / Microsoft.Extensions.Http.Resilience | Package on Customers.API only, not configured | P1 |
 | 4 | **Centralized Logging** | Seq (dev) or ELK (prod) + Correlation IDs | NLog per service, no aggregation sink | P1 |
 | 5 | **Distributed Tracing** | OpenTelemetry → Jaeger/Zipkin | Not started | P1 |
 | 6 | **API Documentation** | Swashbuckle.AspNetCore | Implemented per service | Done |
-| 7 | **Rate Limiting** | AspNetCore.RateLimiting (built-in .NET 8) | Not started | P2 |
-| 8 | **Feature Flags** | Microsoft.FeatureManagement | Not started | P2 |
+| 7 | **Distributed Cache** | Redis (StackExchange.Redis) | Not started | P1 |
+| 8 | **Message Broker** | RabbitMQ (MassTransit) | Not started | P1 |
+| 9 | **Rate Limiting** | AspNetCore.RateLimiting (built-in .NET 8) | Not started | P2 |
+| 10 | **Feature Flags** | Microsoft.FeatureManagement | Not started | P2 |
 
-### API Gateway
+### API Gateway (Implemented)
 
-Single entry point for the frontend. Handles routing, rate limiting, and response aggregation so the Vue SPA hits one URL instead of N service URLs. Implement as `Warehouse.Gateway` project using YARP (Yet Another Reverse Proxy). The gateway does NOT contain business logic — it only routes, rate-limits, and optionally aggregates responses.
+Single entry point for the frontend on port 5000. Routes all `/api/v1/*` requests to the correct backend service (Auth on 5001, Customers on 5002, Inventory on 5003) via YARP reverse proxy. The gateway does NOT contain business logic — it only routes requests. Rate limiting and response aggregation are planned for Phase 2. The Vue SPA Vite dev proxy points to `http://localhost:5000` for all `/api` calls.
 
 ### Resilience (Polly)
 
@@ -515,9 +527,17 @@ Current NLog writes per-process log files which become unusable with multiple se
 
 OpenTelemetry SDK integrated into each service, exporting to Jaeger or Zipkin. Essential for debugging requests that span multiple services (e.g., a goods receiving call that touches Auth → Purchasing → Inventory). Add via `Warehouse.Infrastructure` shared extension methods.
 
+### Distributed Cache (Redis)
+
+Redis for distributed caching, rate-limiting backend, and pub/sub. Cache frequently-read data (permissions, product catalog, UoM lists, categories) to reduce SQL Server load. Use `IDistributedCache` for standard caching, `IConnectionMultiplexer` only for pub/sub and distributed locks. Cache keys: `{service}:{entity}:{id}`. Add via `Warehouse.Infrastructure` shared extension methods.
+
+### Message Broker (RabbitMQ)
+
+RabbitMQ with **MassTransit** as the abstraction layer for event-driven inter-service communication. Required when Phase 2 introduces workflows that span services (goods receiving → stock movement, dispatch → stock deduction). Event contracts in `Warehouse.ServiceModel/Events/`. Transactional outbox via MassTransit + EF Core to prevent dual-write problems. Event naming: `{Domain}.{Entity}.{PastTenseVerb}`.
+
 ### Rate Limiting
 
-Apply at the API Gateway level using .NET 8 built-in `AspNetCore.RateLimiting`. Fixed window or sliding window per client/IP. Protects against abuse, runaway frontend bugs, and accidental DDoS.
+Apply at the API Gateway level using .NET 8 built-in `AspNetCore.RateLimiting` with Redis-backed counters. Fixed window or sliding window per client/IP. Protects against abuse, runaway frontend bugs, and accidental DDoS.
 
 ### Feature Flags
 
@@ -526,16 +546,20 @@ Apply at the API Gateway level using .NET 8 built-in `AspNetCore.RateLimiting`. 
 ### Implementation Order
 
 ```
-Phase 2 prerequisites:
+Phase 1.5 prerequisites (before Phase 2):
   1. API Gateway (YARP)
-  2. Correlation ID middleware
-  3. Centralized Logging (Seq sink)
-  4. Distributed Tracing (OpenTelemetry → Jaeger)
-  5. Polly Resilience on all inter-service HttpClients
+  2. Redis (distributed cache + rate-limiting backend)
+  3. Correlation ID middleware
+  4. Centralized Logging (Seq sink)
+  5. Distributed Tracing (OpenTelemetry → Jaeger)
+  6. Polly Resilience on all inter-service HttpClients
 
-Phase 2+:
-  6. Rate Limiting (at gateway)
-  7. Feature Flags
+Phase 2 (with first inter-service workflows):
+  7. RabbitMQ + MassTransit (event-driven messaging)
+
+Phase 2+ (as services stabilize):
+  8. Rate Limiting (at gateway, Redis-backed)
+  9. Feature Flags
 ```
 
 ---
@@ -615,6 +639,7 @@ Describe proposed changes. Live in `docs/changes/`.
 | Purpose | Path |
 |---|---|
 | Solution file | `src/Warehouse.slnx` |
+| API Gateway | `src/Gateway/Warehouse.Gateway/` |
 | Auth API | `src/Interfaces/Auth/Warehouse.Auth.API/` |
 | Auth API tests | `src/Interfaces/Auth/Warehouse.Auth.API.Tests/` |
 | Auth DB models | `src/Databases/Warehouse.Auth.DBModel/Models/` |

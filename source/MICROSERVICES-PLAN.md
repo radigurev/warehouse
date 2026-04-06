@@ -44,11 +44,13 @@ The original 9-service plan (2026-04-02) was restructured to comply with ISA-95 
 
 | Decision | Choice | Rationale |
 |---|---|---|
-| Communication | Direct HTTP (typed HttpClient + Polly) | No event-driven needs yet; simple and debuggable |
+| Communication (sync) | Direct HTTP (typed HttpClient + Polly) | Synchronous inter-service calls; simple and debuggable |
+| Communication (async) | RabbitMQ (Phase 2) | Event-driven messaging for decoupled inter-service workflows |
 | Database | Shared SQL Server, schema-per-service | Single source of truth; schemas provide logical isolation |
 | DB schema strategy | Schema-per-service (`auth.*`, `inventory.*`, `purchasing.*`, etc.) | Clear ownership, cross-schema FKs, single backup |
 | DBModel | Separate DbContext per domain | Cross-context references via plain FK columns, no EF navigation across boundaries |
-| Message bus | Not needed | Internal app, no fan-out events; can add later |
+| Message broker | RabbitMQ (Phase 2) | Decouple inter-service events; avoid synchronous chains for operations like goods receiving |
+| Distributed cache | Redis (Phase 1.5) | Caching, rate-limiting backend, session store, pub/sub for real-time updates |
 | Auth | Self-issued JWT (short-lived access + refresh tokens) | No external IdP needed; OAuth2 can be layered later |
 | API gateway | YARP (Phase 1.5) | Single entry point for Vue SPA; routing, rate limiting, health aggregation |
 | Frontend | Vue.js 3 SPA (Vuetify + TypeScript + Pinia) | Single frontend calling all backend services via Vite proxy |
@@ -196,6 +198,67 @@ These cross-cutting infrastructure capabilities MUST be in place before adding i
 | **Bulkhead** | Max concurrent calls per downstream service |
 
 All inter-service `HttpClient` registrations MUST include the standard Polly policy pipeline. Shared via `Warehouse.Infrastructure` extension methods.
+
+---
+
+#### Distributed Cache — Redis
+**Technology:** Redis (StackExchange.Redis / Microsoft.Extensions.Caching.StackExchangeRedis)
+**Priority:** P1
+
+| Feature | Description |
+|---|---|
+| **Response caching** | Cache frequently-read, rarely-changed data: product catalog, permission lookups, UoM lists, customer categories |
+| **Rate limiting backend** | Redis-backed sliding window counters for gateway rate limiting (shared state across gateway instances) |
+| **Session / token store** | Optional: faster refresh token validation than SQL round-trips |
+| **Pub/sub** | Real-time cache invalidation across service instances (e.g., permission change broadcasts) |
+| **Distributed locks** | Prevent concurrent operations on the same resource (e.g., two concurrent adjustment applies on the same stock level) |
+
+**Rationale:** Without a distributed cache, every permission check and product lookup hits SQL Server. As service count and traffic grow, this becomes a bottleneck. Redis provides sub-millisecond reads, shared state for rate limiting, and pub/sub for cache invalidation.
+
+**Integration pattern:**
+- Add `IDistributedCache` registration via `Warehouse.Infrastructure` shared extension methods
+- Services use `IDistributedCache` (not `IConnectionMultiplexer` directly) for standard caching
+- Use `IConnectionMultiplexer` only for pub/sub and distributed locks
+- Cache keys follow convention: `{service}:{entity}:{id}` (e.g., `auth:permissions:user:42`)
+- TTL defaults: permission lookups 5 min, product catalog 15 min, UoM/categories 30 min
+
+---
+
+#### Message Broker — RabbitMQ
+**Technology:** RabbitMQ (MassTransit as the abstraction layer)
+**Priority:** P1 (Phase 2 — before first inter-service workflow)
+
+| Feature | Description |
+|---|---|
+| **Domain events** | Publish events when operations complete: `GoodsReceived`, `OrderDispatched`, `StockAdjusted`, `TransferCompleted` |
+| **Event consumers** | Services subscribe to events they care about (e.g., Inventory consumes `GoodsReceived` from Purchasing to create stock movements) |
+| **Saga / state machine** | MassTransit sagas for multi-step workflows (e.g., goods receiving: validate PO → create batch → record stock movement → update PO status) |
+| **Retry / dead letter** | Automatic retry with exponential backoff; dead-letter queue for poison messages |
+| **Outbox pattern** | Transactional outbox to guarantee event publication alongside database writes (no dual-write problem) |
+
+**Rationale:** Phase 2 introduces the first inter-service workflows. Goods receiving in Purchasing needs to create stock movements in Inventory. Fulfillment dispatching needs to deduct stock. Doing all of this synchronously with HTTP creates tight coupling, cascading failures, and long request chains. RabbitMQ decouples producers from consumers, enables retry/dead-letter handling, and allows services to evolve independently.
+
+**Event naming convention:** `{Domain}.{Entity}.{PastTenseVerb}` (e.g., `Purchasing.GoodsReceipt.Completed`, `Fulfillment.Shipment.Dispatched`, `Inventory.Stock.Adjusted`)
+
+**Integration pattern:**
+- MassTransit as the abstraction layer (supports RabbitMQ, Azure Service Bus, Amazon SQS — swap without code changes)
+- Each service has its own exchange and queue (auto-configured by MassTransit)
+- Event contracts defined in `Warehouse.ServiceModel/Events/` (shared across services)
+- Transactional outbox via MassTransit + EF Core (`AddEntityFrameworkOutbox`)
+- Consumers registered in each service's `Program.cs` via MassTransit DI
+
+**Key Phase 2 event flows:**
+```
+Purchasing: GoodsReceipt.Completed
+  → Inventory: Create StockMovement (Receipt) + Create/Update Batch
+  → Quality: Create Inspection Order (if inspection required)
+
+Fulfillment: Shipment.Dispatched
+  → Inventory: Create StockMovement (Shipment) + Release reservation
+
+Inventory: Stock.BelowReorderPoint
+  → Planning: Suggest Purchase Order (if auto-reorder enabled)
+```
 
 ---
 
@@ -467,8 +530,10 @@ All inter-service `HttpClient` registrations MUST include the standard Polly pol
 | I3 | **Centralized Logging** | Seq (dev) / ELK (prod) | P1 | Not started |
 | I4 | **Distributed Tracing** | OpenTelemetry → Jaeger | P1 | Not started |
 | I5 | **Polly Resilience** | Polly 8.x / Microsoft.Extensions.Http.Resilience | P1 | Package only (Customers.API) |
-| I6 | **Rate Limiting** | ASP.NET Core RateLimiting (at gateway) | P2 | Not started |
-| I7 | **Feature Flags** | Microsoft.FeatureManagement | P2 | Not started |
+| I6 | **Distributed Cache** | Redis (StackExchange.Redis) | P1 | Not started |
+| I7 | **Message Broker** | RabbitMQ (MassTransit) | P1 | Not started |
+| I8 | **Rate Limiting** | ASP.NET Core RateLimiting (at gateway) | P2 | Not started |
+| I9 | **Feature Flags** | Microsoft.FeatureManagement | P2 | Not started |
 
 ---
 
@@ -570,8 +635,10 @@ These items should be addressed before or during Phase 2 to ensure the foundatio
 | I3 | Centralized Logging | Cross-cutting | — | — | — | — | Not started |
 | I4 | Distributed Tracing | Cross-cutting | — | — | — | — | Not started |
 | I5 | Polly Resilience | Cross-cutting | — | Package only | — | — | Not started |
-| I6 | Rate Limiting | Cross-cutting | — | — | — | — | Not started |
-| I7 | Feature Flags | Cross-cutting | — | — | — | — | Not started |
+| I6 | Redis (Distributed Cache) | Cross-cutting | — | — | — | — | Not started |
+| I7 | RabbitMQ (Message Broker) | Cross-cutting | — | — | — | — | Not started |
+| I8 | Rate Limiting | Cross-cutting | — | — | — | — | Not started |
+| I9 | Feature Flags | Cross-cutting | — | — | — | — | Not started |
 | 4 | Purchasing | Procurement Operations | — | — | — | — | Not started |
 | 5 | Fulfillment | Fulfillment Operations | — | — | — | — | Not started |
 | 6 | Production | Production Operations | — | — | — | — | Not started |

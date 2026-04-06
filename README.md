@@ -166,22 +166,28 @@ Infrastructure items required as the service count grows and Docker/orchestratio
 | 4 | **Centralized Logging** | Seq (preferred for dev) or ELK stack (Elasticsearch + Logstash + Kibana) | NLog with structured templates per service, but no aggregation sink or correlation IDs | P1 | Before Phase 2. Multiple service instances make per-process log files unusable. Need a sink + correlation IDs across requests. |
 | 5 | **Distributed Tracing** | OpenTelemetry SDK → Jaeger or Zipkin | Not started | P1 | Before Phase 2. Without this, debugging a request that spans Auth → Inventory → Purchasing is a nightmare. |
 | 6 | **API Documentation** | Swashbuckle.AspNetCore (Swagger) | Implemented per service with JWT Bearer security definition | Done | — |
-| 7 | **Rate Limiting** | AspNetCore.RateLimiting (built-in .NET 8) | Not started | P2 | Apply at API Gateway level. Fixed window or sliding window per client/IP. Protects against abuse and runaway frontend bugs. |
-| 8 | **Feature Flags** | Microsoft.FeatureManagement or LaunchDarkly | Not started | P2 | Before major feature rollouts (Phase 2+). Enables gradual rollouts, A/B testing, and kill switches for new behavior. |
+| 7 | **Distributed Cache** | Redis (StackExchange.Redis) | Not started | P1 | Before Phase 2. Caching (permissions, product catalog, UoM), rate-limiting backend (shared counters), pub/sub for cache invalidation, distributed locks. |
+| 8 | **Message Broker** | RabbitMQ + MassTransit | Not started | P1 | Phase 2 start. Event-driven inter-service communication. Decouples workflows like goods receiving → stock movement. Transactional outbox via EF Core. |
+| 9 | **Rate Limiting** | AspNetCore.RateLimiting (built-in .NET 8) | Not started | P2 | Apply at API Gateway level with Redis-backed counters. Fixed window or sliding window per client/IP. |
+| 10 | **Feature Flags** | Microsoft.FeatureManagement | Not started | P2 | Before major feature rollouts (Phase 2+). Enables gradual rollouts, A/B testing, and kill switches for new behavior. |
 
 ### Implementation Order
 
 ```
-Phase 2 prerequisites (before Purchasing/Fulfillment):
+Phase 1.5 prerequisites (before Purchasing/Fulfillment):
   1. API Gateway (YARP) — unifies N service URLs into one
-  2. Correlation IDs — request tracking across services
-  3. Centralized Logging (Seq) — aggregated logs with correlation
-  4. Distributed Tracing (OpenTelemetry → Jaeger) — cross-service visibility
-  5. Polly Resilience — retry/circuit-breaker on all inter-service calls
+  2. Redis — distributed cache + rate-limiting backend
+  3. Correlation IDs — request tracking across services
+  4. Centralized Logging (Seq) — aggregated logs with correlation
+  5. Distributed Tracing (OpenTelemetry → Jaeger) — cross-service visibility
+  6. Polly Resilience — retry/circuit-breaker on all inter-service calls
+
+Phase 2 (with first inter-service workflows):
+  7. RabbitMQ + MassTransit — event-driven messaging
 
 Phase 2+ (as services stabilize):
-  6. Rate Limiting — at gateway level
-  7. Feature Flags — for gradual feature rollouts
+  8. Rate Limiting — at gateway, Redis-backed
+  9. Feature Flags — for gradual feature rollouts
 ```
 
 ## Documentation
