@@ -114,8 +114,8 @@ The original 9-service plan (2026-04-02) was restructured to comply with ISA-95 
 | Variance reports | Count variance analysis | Done |
 
 **ISA-95 compliance items to address in existing code:**
-- [ ] Add `RequiresBatchTracking` flag on Product to enforce Material Lot chain for traceable materials
-- [ ] Consider renaming `PurchaseReceipt` → `Receipt` and `SalesDispatch` → `Shipment` on `StockMovementReason` to align with ISA-95 base terminology
+- [x] Add `RequiresBatchTracking` flag on Product to enforce Material Lot chain for traceable materials
+- [x] Rename `PurchaseReceipt` → `Receipt`, `SalesDispatch` → `Shipment`, `StocktakeCorrection` → `CountAdjustment`, `ProductionReceipt` → `ProductionOutput` on `StockMovementReason`; enforce enum type (no free-text); add `StockMovementReferenceType` enum
 
 ---
 
