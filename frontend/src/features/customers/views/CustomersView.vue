@@ -8,14 +8,19 @@
     </div>
 
     <v-card class="view-list-card">
-      <v-data-table
+      <v-data-table-server
         :headers="vm.headers"
         :items="vm.filteredItems"
+        :items-length="vm.totalCount"
         :loading="vm.loading"
         :density="vm.layout.vuetifyDensity"
-        :items-per-page="-1"
+        :page="vm.searchParams.page"
+        :items-per-page="vm.searchParams.pageSize"
+        :items-per-page-options="[10, 25, 50, 100]"
         fixed-header
         hover
+        @update:page="vm.handlePageChange"
+        @update:items-per-page="vm.handlePageSizeChange"
       >
         <template #header.name="{ column }">
           <div class="d-inline-flex align-center">
@@ -52,10 +57,19 @@
           <ActionChip v-if="item.isActive" :label="vm.t('customers.deactivate')" icon="mdi-account-off" color="error" :compact="vm.layout.isCompact" @click="vm.openDeactivateDialog(item)" />
           <ActionChip v-else :label="vm.t('customers.reactivate')" icon="mdi-account-check" color="success" :compact="vm.layout.isCompact" @click="vm.handleReactivate(item)" />
         </template>
-      </v-data-table>
+
+        <template #tfoot>
+          <tr>
+            <td :colspan="vm.headers.length" class="text-center text-caption text-medium-emphasis py-1">
+              {{ vm.t('common.pageInfo', { page: vm.searchParams.page, pages: vm.totalPages, total: vm.totalCount }) }}
+            </td>
+          </tr>
+        </template>
+      </v-data-table-server>
     </v-card>
 
     <CustomerFormDialog v-model="vm.showFormDialog" :customer="vm.selectedCustomer" @saved="vm.loadCustomers" />
+    <CustomerDetailDialog v-model="vm.showDetailDialog" :customer-id="vm.selectedCustomer?.id ?? null" />
     <ConfirmDialog
       v-model="vm.showDeactivateDialog"
       :title="vm.t('customers.deactivate')"
@@ -77,6 +91,7 @@ import ActionChip from '@shared/components/atoms/ActionChip.vue';
 import ColumnFilter from '@shared/components/molecules/ColumnFilter.vue';
 import ConfirmDialog from '@shared/components/molecules/ConfirmDialog.vue';
 import CustomerFormDialog from '@features/customers/components/organisms/CustomerFormDialog.vue';
+import CustomerDetailDialog from '@features/customers/components/organisms/CustomerDetailDialog.vue';
 
 const vm = reactive(useCustomersView());
 </script>

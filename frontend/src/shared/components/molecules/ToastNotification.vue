@@ -32,9 +32,7 @@ const notification = useNotificationStore();
 const isCritical = computed(() => notification.type === 'error');
 
 const toastColor = computed(() => {
-  if (isCritical.value) return 'error';
-  if (notification.type === 'warning') return 'warning';
-  return undefined;
+  return notification.type ?? undefined;
 });
 
 const iconForType = computed(() => {

@@ -17,13 +17,15 @@ export function useCustomersView() {
   const customers = ref<CustomerDto[]>([]);
   const loading = ref(false);
   const totalCount = ref(0);
+  const totalPages = computed(() => Math.ceil(totalCount.value / (searchParams.value.pageSize || 25)));
   const selectedCustomer = ref<CustomerDto | null>(null);
   const showFormDialog = ref(false);
+  const showDetailDialog = ref(false);
   const showDeactivateDialog = ref(false);
   const deactivating = ref(false);
 
   const searchParams = ref<SearchCustomersRequest>({
-    includeDeleted: false,
+    includeDeleted: true,
     sortBy: 'name',
     sortDescending: false,
     page: 1,
@@ -99,7 +101,12 @@ export function useCustomersView() {
   }
 
   function handleDetail(customer: CustomerDto): void {
-    router.push({ name: 'customer-detail', params: { id: customer.id } });
+    if (layout.isPageMode) {
+      router.push({ name: 'customer-detail', params: { id: customer.id } });
+    } else {
+      selectedCustomer.value = customer;
+      showDetailDialog.value = true;
+    }
   }
 
   function openDeactivateDialog(customer: CustomerDto): void {
@@ -132,13 +139,25 @@ export function useCustomersView() {
     }
   }
 
+  function handlePageChange(newPage: number): void {
+    searchParams.value = { ...searchParams.value, page: newPage };
+    loadCustomers();
+  }
+
+  function handlePageSizeChange(newSize: number): void {
+    searchParams.value = { ...searchParams.value, pageSize: newSize, page: 1 };
+    loadCustomers();
+  }
+
   return {
     t,
     layout,
     loading,
     totalCount,
+    totalPages,
     selectedCustomer,
     showFormDialog,
+    showDetailDialog,
     showDeactivateDialog,
     deactivating,
     searchParams,
@@ -153,5 +172,7 @@ export function useCustomersView() {
     openDeactivateDialog,
     handleDeactivate,
     handleReactivate,
+    handlePageChange,
+    handlePageSizeChange,
   };
 }
