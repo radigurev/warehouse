@@ -1,5 +1,6 @@
 using NLog;
 using NLog.Web;
+using Warehouse.Infrastructure.Middleware;
 
 Logger logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
 
@@ -21,6 +22,8 @@ try
         .AddUrlGroup(new Uri("http://localhost:5003/health/ready"), "inventory-api", tags: ["ready"]);
 
     WebApplication app = builder.Build();
+
+    app.UseMiddleware<CorrelationIdMiddleware>();
 
     app.MapHealthChecks("/health");
     app.MapReverseProxy();

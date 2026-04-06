@@ -11,13 +11,14 @@ namespace Warehouse.Infrastructure.Extensions;
 public static class WebApplicationExtensions
 {
     /// <summary>
-    /// Configures the shared middleware pipeline: exception handler, Swagger (in dev),
+    /// Configures the shared middleware pipeline: correlation ID, exception handler, Swagger (in dev),
     /// authentication, authorization, controllers, and health check endpoints.
     /// </summary>
     public static WebApplication UseWarehousePipeline(
         this WebApplication app,
         string swaggerEndpointTitle)
     {
+        app.UseMiddleware<CorrelationIdMiddleware>();
         app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 
         if (app.Environment.IsDevelopment())

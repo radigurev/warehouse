@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Warehouse.Infrastructure.Authorization;
 using Warehouse.Infrastructure.Configuration;
+using Warehouse.Infrastructure.Http;
 
 namespace Warehouse.Infrastructure.Extensions;
 
@@ -141,6 +142,17 @@ public static class ServiceCollectionExtensions
                 configuration.GetConnectionString("WarehouseDb")!,
                 name: "database",
                 tags: ["ready"]);
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers correlation ID infrastructure: IHttpContextAccessor and the delegating handler.
+    /// </summary>
+    public static IServiceCollection AddCorrelationId(this IServiceCollection services)
+    {
+        services.AddHttpContextAccessor();
+        services.AddTransient<CorrelationIdDelegatingHandler>();
 
         return services;
     }

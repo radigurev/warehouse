@@ -12,4 +12,8 @@
     <PackageReference Include="AspNetCore.HealthChecks.Uris" Version="9.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\Warehouse.Infrastructure\Warehouse.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>

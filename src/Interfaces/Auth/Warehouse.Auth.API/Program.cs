@@ -47,6 +47,7 @@ static void ConfigureServices(WebApplicationBuilder builder)
 
     ConfigureDatabase(services, configuration);
 
+    services.AddCorrelationId();
     services.AddWarehouseAuthentication(configuration);
     services.AddWarehouseApiVersioning();
     services.AddWarehouseSwagger("Warehouse Auth API", "Authentication and authorization service for the Warehouse system.");
