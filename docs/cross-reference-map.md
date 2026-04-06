@@ -1,6 +1,6 @@
 # Cross-Reference Map
 
-> Last updated: 2026-04-05
+> Last updated: 2026-04-06
 >
 > Note: Updated all paths for domain-split restructure (Auth.DBModel, Customers.DBModel, Interfaces/Auth/, Interfaces/Customers/)
 
@@ -172,6 +172,36 @@ This document provides a bidirectional mapping between SDD specifications and so
 | `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Services/StocktakeSessionServiceTests.cs` | Test | Stocktake service tests |
 | `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Services/StocktakeCountServiceTests.cs` | Test | Count entry service tests |
 
+### SDD-PURCH-001 — Procurement Operations
+
+| File | Type | Role |
+|---|---|---|
+| `src/Interfaces/Purchasing/Warehouse.Purchasing.API/Controllers/SuppliersController.cs` | Controller | Supplier CRUD endpoints |
+| `src/Interfaces/Purchasing/Warehouse.Purchasing.API/Controllers/SupplierCategoriesController.cs` | Controller | Supplier category CRUD endpoints |
+| `src/Interfaces/Purchasing/Warehouse.Purchasing.API/Controllers/SupplierContactsController.cs` | Controller | Address, phone, email endpoints |
+| `src/Interfaces/Purchasing/Warehouse.Purchasing.API/Controllers/PurchaseOrdersController.cs` | Controller | PO lifecycle endpoints |
+| `src/Interfaces/Purchasing/Warehouse.Purchasing.API/Controllers/PurchaseOrderLinesController.cs` | Controller | PO line management endpoints |
+| `src/Interfaces/Purchasing/Warehouse.Purchasing.API/Controllers/GoodsReceiptsController.cs` | Controller | Goods receiving endpoints |
+| `src/Interfaces/Purchasing/Warehouse.Purchasing.API/Controllers/SupplierReturnsController.cs` | Controller | Supplier return endpoints |
+| `src/Interfaces/Purchasing/Warehouse.Purchasing.API/Controllers/PurchaseEventsController.cs` | Controller | Purchase event history endpoints |
+| `src/Interfaces/Purchasing/Warehouse.Purchasing.API/Services/SupplierService.cs` | Service | Supplier business logic |
+| `src/Interfaces/Purchasing/Warehouse.Purchasing.API/Services/SupplierCategoryService.cs` | Service | Category business logic |
+| `src/Interfaces/Purchasing/Warehouse.Purchasing.API/Services/SupplierContactService.cs` | Service | Contact info business logic |
+| `src/Interfaces/Purchasing/Warehouse.Purchasing.API/Services/PurchaseOrderService.cs` | Service | PO lifecycle and status machine |
+| `src/Interfaces/Purchasing/Warehouse.Purchasing.API/Services/GoodsReceiptService.cs` | Service | Goods receiving business logic |
+| `src/Interfaces/Purchasing/Warehouse.Purchasing.API/Services/ReceivingInspectionService.cs` | Service | Inspection business logic |
+| `src/Interfaces/Purchasing/Warehouse.Purchasing.API/Services/SupplierReturnService.cs` | Service | Supplier return business logic |
+| `src/Interfaces/Purchasing/Warehouse.Purchasing.API/Services/PurchaseEventService.cs` | Service | Event history business logic |
+| `src/Databases/Warehouse.Purchasing.DBModel/Models/` | Entities | All purchasing database models |
+| `src/Databases/Warehouse.Purchasing.DBModel/PurchasingDbContext.cs` | DbContext | Purchasing EF Core context |
+| `src/Warehouse.ServiceModel/DTOs/Purchasing/` | DTOs | Purchasing domain DTOs |
+| `src/Warehouse.ServiceModel/Requests/Purchasing/` | Requests | Purchasing request models |
+| `src/Warehouse.ServiceModel/Events/GoodsReceiptCompletedEvent.cs` | Event | MassTransit event contract |
+| `src/Warehouse.ServiceModel/Events/SupplierReturnCompletedEvent.cs` | Event | MassTransit event contract |
+| `src/Warehouse.ServiceModel/Events/GoodsReceiptLineAcceptedEvent.cs` | Event | MassTransit event contract |
+| `src/Warehouse.Mapping/Profiles/Purchasing/PurchasingMappingProfile.cs` | Mapping | AutoMapper profile |
+| `src/Interfaces/Purchasing/Warehouse.Purchasing.API.Tests/` | Tests | Unit and integration tests |
+
 ## Section 2 — Source File → Specs
 
 | Source File | Spec ID(s) |
@@ -236,3 +266,14 @@ This document provides a bidirectional mapping between SDD specifications and so
 | `src/Interfaces/Inventory/Warehouse.Inventory.API/Services/*` | SDD-INV-001, SDD-INV-002, SDD-INV-003, SDD-INV-004 |
 | `src/Warehouse.Mapping/Profiles/Inventory/InventoryMappingProfile.cs` | SDD-INV-001, SDD-INV-002, SDD-INV-003, SDD-INV-004 |
 | `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Services/*` | SDD-INV-001, SDD-INV-002, SDD-INV-003, SDD-INV-004 |
+| `src/Databases/Warehouse.Purchasing.DBModel/Models/*` | SDD-PURCH-001 |
+| `src/Databases/Warehouse.Purchasing.DBModel/PurchasingDbContext.cs` | SDD-PURCH-001 |
+| `src/Interfaces/Purchasing/Warehouse.Purchasing.API/Controllers/*` | SDD-PURCH-001 |
+| `src/Interfaces/Purchasing/Warehouse.Purchasing.API/Services/*` | SDD-PURCH-001 |
+| `src/Warehouse.ServiceModel/DTOs/Purchasing/*` | SDD-PURCH-001 |
+| `src/Warehouse.ServiceModel/Requests/Purchasing/*` | SDD-PURCH-001 |
+| `src/Warehouse.ServiceModel/Events/GoodsReceiptCompletedEvent.cs` | SDD-PURCH-001, SDD-INV-002 |
+| `src/Warehouse.ServiceModel/Events/SupplierReturnCompletedEvent.cs` | SDD-PURCH-001, SDD-INV-002 |
+| `src/Warehouse.ServiceModel/Events/GoodsReceiptLineAcceptedEvent.cs` | SDD-PURCH-001, SDD-INV-002 |
+| `src/Warehouse.Mapping/Profiles/Purchasing/PurchasingMappingProfile.cs` | SDD-PURCH-001 |
+| `src/Interfaces/Purchasing/Warehouse.Purchasing.API.Tests/Unit/Services/*` | SDD-PURCH-001 |
