@@ -96,6 +96,7 @@ public sealed class ProductService : BaseInventoryEntityService, IProductService
             CategoryId = request.CategoryId,
             UnitOfMeasureId = request.UnitOfMeasureId,
             Notes = request.Notes,
+            RequiresBatchTracking = request.RequiresBatchTracking,
             IsActive = true,
             IsDeleted = false,
             CreatedAtUtc = DateTime.UtcNow,
@@ -137,6 +138,10 @@ public sealed class ProductService : BaseInventoryEntityService, IProductService
         product.CategoryId = request.CategoryId;
         product.UnitOfMeasureId = request.UnitOfMeasureId;
         product.Notes = request.Notes;
+
+        if (request.RequiresBatchTracking.HasValue)
+            product.RequiresBatchTracking = request.RequiresBatchTracking.Value;
+
         product.ModifiedAtUtc = DateTime.UtcNow;
         product.ModifiedByUserId = userId;
 

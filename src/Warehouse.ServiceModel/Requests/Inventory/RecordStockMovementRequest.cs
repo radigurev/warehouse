@@ -1,3 +1,5 @@
+using Warehouse.Common.Enums;
+
 namespace Warehouse.ServiceModel.Requests.Inventory;
 
 /// <summary>
@@ -26,9 +28,9 @@ public sealed record RecordStockMovementRequest
     public required decimal Quantity { get; init; }
 
     /// <summary>
-    /// Gets the reason code. Required.
+    /// Gets the reason code per ISA-95 terminology. Required.
     /// </summary>
-    public required string ReasonCode { get; init; }
+    public required StockMovementReason ReasonCode { get; init; }
 
     /// <summary>
     /// Gets the optional batch ID.

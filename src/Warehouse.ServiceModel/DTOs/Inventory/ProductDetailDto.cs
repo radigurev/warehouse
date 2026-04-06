@@ -61,6 +61,11 @@ public sealed record ProductDetailDto
     public string? Notes { get; init; }
 
     /// <summary>
+    /// Gets whether this product requires batch/lot tracking.
+    /// </summary>
+    public required bool RequiresBatchTracking { get; init; }
+
+    /// <summary>
     /// Gets whether the product is active.
     /// </summary>
     public required bool IsActive { get; init; }

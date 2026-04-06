@@ -1,5 +1,6 @@
 using FluentAssertions;
 using FluentValidation.Results;
+using Warehouse.Common.Enums;
 using Warehouse.Inventory.API.Validators;
 using Warehouse.ServiceModel.Requests.Inventory;
 
@@ -29,7 +30,7 @@ public sealed class RecordStockMovementRequestValidatorTests
             ProductId = 1,
             WarehouseId = 1,
             Quantity = 10m,
-            ReasonCode = "Receipt"
+            ReasonCode = StockMovementReason.Receipt
         };
 
         // Act
@@ -48,7 +49,7 @@ public sealed class RecordStockMovementRequestValidatorTests
             ProductId = 0,
             WarehouseId = 1,
             Quantity = 10m,
-            ReasonCode = "Receipt"
+            ReasonCode = StockMovementReason.Receipt
         };
 
         // Act
@@ -68,7 +69,7 @@ public sealed class RecordStockMovementRequestValidatorTests
             ProductId = 1,
             WarehouseId = 1,
             Quantity = 0m,
-            ReasonCode = "Receipt"
+            ReasonCode = StockMovementReason.Receipt
         };
 
         // Act
@@ -80,7 +81,7 @@ public sealed class RecordStockMovementRequestValidatorTests
     }
 
     [Test]
-    public void Validate_EmptyReasonCode_Fails()
+    public void Validate_InvalidReasonCode_Fails()
     {
         // Arrange
         RecordStockMovementRequest request = new()
@@ -88,7 +89,7 @@ public sealed class RecordStockMovementRequestValidatorTests
             ProductId = 1,
             WarehouseId = 1,
             Quantity = 10m,
-            ReasonCode = ""
+            ReasonCode = (StockMovementReason)999
         };
 
         // Act
@@ -108,7 +109,7 @@ public sealed class RecordStockMovementRequestValidatorTests
             ProductId = 1,
             WarehouseId = 1,
             Quantity = -5m,
-            ReasonCode = "Shrinkage"
+            ReasonCode = StockMovementReason.Shipment
         };
 
         // Act

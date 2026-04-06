@@ -51,6 +51,11 @@ public sealed record StockMovementDto
     public required string ReasonCode { get; init; }
 
     /// <summary>
+    /// Gets the optional reference type for the movement.
+    /// </summary>
+    public string? ReferenceType { get; init; }
+
+    /// <summary>
     /// Gets the optional reference number.
     /// </summary>
     public string? ReferenceNumber { get; init; }

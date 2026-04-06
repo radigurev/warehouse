@@ -99,6 +99,16 @@
               auto-grow
             />
           </v-col>
+
+          <v-col v-bind="grid.fullCols">
+            <v-switch
+              v-model="form.requiresBatchTracking"
+              :label="t('products.form.requiresBatchTracking')"
+              :density="layout.vuetifyDensity"
+              color="primary"
+              hide-details
+            />
+          </v-col>
         </v-row>
       </v-form>
     </v-card-text>
@@ -165,6 +175,7 @@ const form = reactive({
   unitOfMeasureId: null as number | null,
   description: '',
   notes: '',
+  requiresBatchTracking: false,
 });
 
 async function loadDropdowns(): Promise<void> {
@@ -197,6 +208,7 @@ async function populateForm(): Promise<void> {
       form.unitOfMeasureId = detail.unitOfMeasureId;
       form.description = detail.description ?? '';
       form.notes = detail.notes ?? '';
+      form.requiresBatchTracking = detail.requiresBatchTracking;
     } catch {
       notification.error(t('errors.UNEXPECTED_ERROR'));
     }
@@ -210,6 +222,7 @@ async function populateForm(): Promise<void> {
     form.unitOfMeasureId = null;
     form.description = '';
     form.notes = '';
+    form.requiresBatchTracking = false;
   }
   fieldErrors.name = [];
   fieldErrors.code = [];
@@ -242,6 +255,7 @@ async function handleSubmit(): Promise<void> {
         categoryId: form.categoryId,
         unitOfMeasureId: form.unitOfMeasureId!,
         notes: form.notes || null,
+        requiresBatchTracking: form.requiresBatchTracking,
       });
       notification.success(t('products.edit') + ' \u2713');
     } else {
@@ -254,6 +268,7 @@ async function handleSubmit(): Promise<void> {
         categoryId: form.categoryId,
         unitOfMeasureId: form.unitOfMeasureId!,
         notes: form.notes || null,
+        requiresBatchTracking: form.requiresBatchTracking,
       });
       notification.success(t('products.create') + ' \u2713');
     }

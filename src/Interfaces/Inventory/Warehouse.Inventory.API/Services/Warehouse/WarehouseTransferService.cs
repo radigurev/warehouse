@@ -1,6 +1,7 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Warehouse.Common.Enums;
 using Warehouse.Common.Models;
 using Warehouse.GenericFiltering;
 using Warehouse.Inventory.API.Interfaces.Warehouse;
@@ -229,8 +230,8 @@ public sealed class WarehouseTransferService : BaseInventoryEntityService, IWare
             WarehouseId = warehouseId,
             LocationId = locationId,
             Quantity = quantity,
-            ReasonCode = "Transfer",
-            ReferenceType = "WarehouseTransfer",
+            ReasonCode = StockMovementReason.Transfer,
+            ReferenceType = StockMovementReferenceType.WarehouseTransfer,
             ReferenceId = transfer.Id,
             CreatedAtUtc = DateTime.UtcNow,
             CreatedByUserId = userId

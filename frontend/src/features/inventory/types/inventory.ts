@@ -3,17 +3,26 @@
 // ---------------------------------------------------------------------------
 
 export type StockMovementReason =
-  | 'PurchaseReceipt'
-  | 'SalesDispatch'
+  | 'Receipt'
+  | 'Shipment'
   | 'Adjustment'
   | 'Transfer'
   | 'CustomerReturn'
   | 'SupplierReturn'
   | 'ProductionConsumption'
-  | 'ProductionReceipt'
+  | 'ProductionOutput'
   | 'WriteOff'
-  | 'StocktakeCorrection'
+  | 'CountAdjustment'
   | 'Other';
+
+export type StockMovementReasonCode =
+  | 'Receipt' | 'Shipment' | 'Adjustment' | 'Transfer'
+  | 'CustomerReturn' | 'SupplierReturn' | 'ProductionConsumption'
+  | 'ProductionOutput' | 'WriteOff' | 'CountAdjustment' | 'Other';
+
+export type StockMovementReferenceType =
+  | 'Manual' | 'PurchaseOrder' | 'SalesOrder' | 'InventoryAdjustment'
+  | 'WarehouseTransfer' | 'StocktakeSession' | 'ProductionOrder' | 'QualityInspection';
 
 export type MovementDirection = 'In' | 'Out';
 
@@ -36,6 +45,7 @@ export interface ProductDto {
   description: string | null;
   categoryName: string | null;
   unitOfMeasureName: string;
+  requiresBatchTracking: boolean;
   isActive: boolean;
   createdAtUtc: string;
 }
@@ -52,6 +62,7 @@ export interface ProductDetailDto {
   unitOfMeasureId: number;
   unitOfMeasureName: string;
   notes: string | null;
+  requiresBatchTracking: boolean;
   isActive: boolean;
   createdAtUtc: string;
 }
@@ -213,6 +224,7 @@ export interface StockMovementDto {
   locationName: string | null;
   quantity: number;
   reasonCode: string;
+  referenceType: string | null;
   referenceNumber: string | null;
   notes: string | null;
   createdAtUtc: string;
@@ -371,6 +383,7 @@ export interface CreateProductRequest {
   categoryId?: number | null;
   unitOfMeasureId: number;
   notes?: string | null;
+  requiresBatchTracking?: boolean;
 }
 
 export interface UpdateProductRequest {
@@ -381,6 +394,7 @@ export interface UpdateProductRequest {
   categoryId?: number | null;
   unitOfMeasureId: number;
   notes?: string | null;
+  requiresBatchTracking?: boolean;
 }
 
 export interface SearchProductsRequest {

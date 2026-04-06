@@ -36,6 +36,10 @@ public sealed class StockMovementService : BaseInventoryEntityService, IStockMov
         if (productValidation is not null)
             return Result<StockMovementDto>.Failure(productValidation.ErrorCode!, productValidation.ErrorMessage!, productValidation.StatusCode!.Value);
 
+        Result? batchValidation = await ValidateBatchTrackingAsync(request.ProductId, request.BatchId, cancellationToken).ConfigureAwait(false);
+        if (batchValidation is not null)
+            return Result<StockMovementDto>.Failure(batchValidation.ErrorCode!, batchValidation.ErrorMessage!, batchValidation.StatusCode!.Value);
+
         Result? warehouseValidation = await ValidateWarehouseExistsAsync(request.WarehouseId, cancellationToken).ConfigureAwait(false);
         if (warehouseValidation is not null)
             return Result<StockMovementDto>.Failure(warehouseValidation.ErrorCode!, warehouseValidation.ErrorMessage!, warehouseValidation.StatusCode!.Value);
@@ -171,8 +175,8 @@ public sealed class StockMovementService : BaseInventoryEntityService, IStockMov
         if (request.WarehouseId.HasValue)
             query = query.Where(m => m.WarehouseId == request.WarehouseId.Value);
 
-        if (!string.IsNullOrWhiteSpace(request.ReasonCode))
-            query = query.Where(m => m.ReasonCode == request.ReasonCode);
+        if (request.ReasonCode.HasValue)
+            query = query.Where(m => m.ReasonCode == request.ReasonCode.Value);
 
         if (request.DateFrom.HasValue)
             query = query.Where(m => m.CreatedAtUtc >= request.DateFrom.Value);
@@ -224,6 +228,27 @@ public sealed class StockMovementService : BaseInventoryEntityService, IStockMov
 
         if (available < Math.Abs(request.Quantity))
             return Result.Failure("INSUFFICIENT_STOCK", "Insufficient stock for this movement.", 409);
+
+        return null;
+    }
+
+    /// <summary>
+    /// Validates that a product requiring batch tracking has a BatchId provided.
+    /// </summary>
+    private async Task<Result?> ValidateBatchTrackingAsync(
+        int productId,
+        int? batchId,
+        CancellationToken cancellationToken)
+    {
+        bool requiresBatch = await Context.Products
+            .AsNoTracking()
+            .Where(p => p.Id == productId && !p.IsDeleted)
+            .Select(p => p.RequiresBatchTracking)
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        if (requiresBatch && batchId is null)
+            return Result.Failure("BATCH_REQUIRED", "This product requires batch tracking. A BatchId must be provided.", 400);
 
         return null;
     }

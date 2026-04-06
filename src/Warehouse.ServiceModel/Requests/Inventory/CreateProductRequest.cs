@@ -44,4 +44,9 @@ public sealed record CreateProductRequest
     /// Gets the optional notes. Max 2000 characters.
     /// </summary>
     public string? Notes { get; init; }
+
+    /// <summary>
+    /// Gets whether this product requires batch/lot tracking. Defaults to false.
+    /// </summary>
+    public bool RequiresBatchTracking { get; init; }
 }

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Warehouse.Common.Enums;
 using Warehouse.Inventory.DBModel.Models;
 
 namespace Warehouse.Inventory.DBModel;
@@ -172,6 +173,7 @@ public sealed class InventoryDbContext : DbContext
     {
         modelBuilder.Entity<Product>(e =>
         {
+            e.Property(p => p.RequiresBatchTracking).HasDefaultValue(false);
             e.Property(p => p.IsActive).HasDefaultValue(true);
             e.Property(p => p.IsDeleted).HasDefaultValue(false);
             e.Property(p => p.CreatedAtUtc).HasDefaultValueSql("SYSUTCDATETIME()");
@@ -415,6 +417,20 @@ public sealed class InventoryDbContext : DbContext
     {
         modelBuilder.Entity<StockMovement>(e =>
         {
+            e.Property(p => p.ReasonCode)
+                .HasConversion(
+                    v => v.ToString(),
+                    v => Enum.Parse<StockMovementReason>(v))
+                .HasMaxLength(50)
+                .HasColumnType("nvarchar(50)");
+
+            e.Property(p => p.ReferenceType)
+                .HasConversion(
+                    v => v == null ? null : v.ToString(),
+                    v => v == null ? null : Enum.Parse<StockMovementReferenceType>(v))
+                .HasMaxLength(50)
+                .HasColumnType("nvarchar(50)");
+
             e.Property(p => p.CreatedAtUtc).HasDefaultValueSql("SYSUTCDATETIME()");
 
             e.HasIndex(m => m.ProductId)

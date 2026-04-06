@@ -1,23 +1,21 @@
 namespace Warehouse.Common.Enums;
 
 /// <summary>
-/// Defines the reason codes for stock movements.
-/// <para>Extends ISA-95 base movement types (Receipt, Shipment, Transfer, Adjustment,
-/// Count Adjustment, Production Consumption, Production Output) with finer-grained
-/// codes for business reporting and audit. See CLAUDE.md section 1.1.6.1 for the
-/// full ISA-95 mapping table.</para>
+/// Defines the reason codes for stock movements per ISA-95 terminology.
+/// <para>Maps to ISA-95 base movement types: Receipt, Shipment, Transfer, Adjustment,
+/// Count Adjustment, Production Consumption, Production Output.</para>
 /// </summary>
 public enum StockMovementReason
 {
     /// <summary>
-    /// Stock received from a purchase order. ISA-95 base type: Receipt.
+    /// Stock received (inbound). ISA-95 base type: Receipt.
     /// </summary>
-    PurchaseReceipt,
+    Receipt,
 
     /// <summary>
-    /// Stock dispatched for a sales order. ISA-95 base type: Shipment.
+    /// Stock shipped (outbound). ISA-95 base type: Shipment.
     /// </summary>
-    SalesDispatch,
+    Shipment,
 
     /// <summary>
     /// Manual inventory adjustment. ISA-95 base type: Adjustment.
@@ -45,9 +43,9 @@ public enum StockMovementReason
     ProductionConsumption,
 
     /// <summary>
-    /// Finished goods received from production. ISA-95 base type: Production Output.
+    /// Finished goods output from production. ISA-95 base type: Production Output.
     /// </summary>
-    ProductionReceipt,
+    ProductionOutput,
 
     /// <summary>
     /// Stock written off due to damage or loss. ISA-95 base type: Adjustment.
@@ -57,7 +55,7 @@ public enum StockMovementReason
     /// <summary>
     /// Correction from stocktake variance. ISA-95 base type: Count Adjustment.
     /// </summary>
-    StocktakeCorrection,
+    CountAdjustment,
 
     /// <summary>
     /// Other reason not covered by standard codes. Escape hatch; SHOULD be avoided.

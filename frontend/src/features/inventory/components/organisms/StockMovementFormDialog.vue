@@ -167,9 +167,9 @@ const batches = ref<BatchDto[]>([]);
 const batchesLoading = ref(false);
 
 const reasonCodes: StockMovementReason[] = [
-  'PurchaseReceipt', 'SalesDispatch', 'Adjustment', 'Transfer',
+  'Receipt', 'Shipment', 'Adjustment', 'Transfer',
   'CustomerReturn', 'SupplierReturn', 'ProductionConsumption',
-  'ProductionReceipt', 'WriteOff', 'StocktakeCorrection', 'Other',
+  'ProductionOutput', 'WriteOff', 'CountAdjustment', 'Other',
 ];
 
 const reasonOptions = computed(() =>

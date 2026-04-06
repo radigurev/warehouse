@@ -178,7 +178,13 @@ public sealed class InventoryMappingProfile : Profile
                 opt => opt.MapFrom(src => src.Warehouse.Name))
             .ForMember(
                 dest => dest.LocationName,
-                opt => opt.MapFrom(src => src.Location != null ? src.Location.Name : null));
+                opt => opt.MapFrom(src => src.Location != null ? src.Location.Name : null))
+            .ForMember(
+                dest => dest.ReasonCode,
+                opt => opt.MapFrom(src => src.ReasonCode.ToString()))
+            .ForMember(
+                dest => dest.ReferenceType,
+                opt => opt.MapFrom(src => src.ReferenceType != null ? src.ReferenceType.ToString() : null));
     }
 
     /// <summary>

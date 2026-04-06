@@ -23,8 +23,7 @@ public sealed class RecordStockMovementRequestValidator : AbstractValidator<Reco
             .NotEqual(0).WithErrorCode("INVALID_MOVEMENT_QUANTITY").WithMessage("Quantity must not be zero.");
 
         RuleFor(x => x.ReasonCode)
-            .NotEmpty().WithErrorCode("INVALID_REASON_CODE").WithMessage("Reason code is required.")
-            .MaximumLength(50).WithErrorCode("INVALID_REASON_CODE").WithMessage("Reason code must not exceed 50 characters.");
+            .IsInEnum().WithErrorCode("INVALID_REASON_CODE").WithMessage("Invalid reason code.");
 
         RuleFor(x => x.ReferenceNumber)
             .MaximumLength(100).WithErrorCode("INVALID_REFERENCE_NUMBER").WithMessage("Reference number must not exceed 100 characters.")

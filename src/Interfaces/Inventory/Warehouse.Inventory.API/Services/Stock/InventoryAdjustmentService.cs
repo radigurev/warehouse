@@ -1,6 +1,7 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Warehouse.Common.Enums;
 using Warehouse.Common.Models;
 using Warehouse.GenericFiltering;
 using Warehouse.Inventory.API.Interfaces.Stock;
@@ -223,8 +224,8 @@ public sealed class InventoryAdjustmentService : BaseInventoryEntityService, IIn
                 WarehouseId = line.WarehouseId,
                 LocationId = line.LocationId,
                 Quantity = variance,
-                ReasonCode = "Adjustment",
-                ReferenceType = "InventoryAdjustment",
+                ReasonCode = StockMovementReason.Adjustment,
+                ReferenceType = StockMovementReferenceType.InventoryAdjustment,
                 ReferenceId = adjustment.Id,
                 CreatedAtUtc = DateTime.UtcNow,
                 CreatedByUserId = userId

@@ -83,7 +83,7 @@ This spec defines the Stocktaking sub-domain for the Warehouse Inventory system.
 1. Stocktake session is completed with variance counts
 2. An `InventoryAdjustment` is created from the session (this endpoint)
 3. The adjustment is approved and applied (see SDD-INV-002)
-4. Application of the adjustment creates immutable `StockMovement` records with reason code `StocktakeCorrection`
+4. Application of the adjustment creates immutable `StockMovement` records with reason code `CountAdjustment`
 
 This three-step process ensures human oversight of variance corrections while maintaining ISA-95 traceability.
 

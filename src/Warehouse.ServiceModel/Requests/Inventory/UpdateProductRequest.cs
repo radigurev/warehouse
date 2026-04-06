@@ -39,4 +39,9 @@ public sealed record UpdateProductRequest
     /// Gets the optional notes. Max 2000 characters.
     /// </summary>
     public string? Notes { get; init; }
+
+    /// <summary>
+    /// Gets the optional batch tracking override. Only applied when provided.
+    /// </summary>
+    public bool? RequiresBatchTracking { get; init; }
 }

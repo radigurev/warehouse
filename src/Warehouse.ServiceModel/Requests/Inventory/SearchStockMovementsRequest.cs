@@ -1,3 +1,5 @@
+using Warehouse.Common.Enums;
+
 namespace Warehouse.ServiceModel.Requests.Inventory;
 
 /// <summary>
@@ -18,7 +20,7 @@ public sealed record SearchStockMovementsRequest
     /// <summary>
     /// Gets the reason code filter. Optional.
     /// </summary>
-    public string? ReasonCode { get; init; }
+    public StockMovementReason? ReasonCode { get; init; }
 
     /// <summary>
     /// Gets the start date filter (inclusive). Optional.

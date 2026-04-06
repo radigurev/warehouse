@@ -80,6 +80,12 @@ public sealed class Product : IEntity
     public string? Notes { get; set; }
 
     /// <summary>
+    /// Gets or sets whether this product requires batch/lot tracking per ISA-95 Material Lot chain.
+    /// </summary>
+    [Required]
+    public bool RequiresBatchTracking { get; set; }
+
+    /// <summary>
     /// Gets or sets whether the product is active.
     /// </summary>
     [Required]

@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Warehouse.Common.Enums;
 using Warehouse.Common.Models;
 using Warehouse.Inventory.API.Services.Stock;
 using Warehouse.Inventory.API.Tests.Fixtures;
@@ -38,7 +39,7 @@ public sealed class StockMovementServiceTests : InventoryTestBase
             ProductId = product.Id,
             WarehouseId = warehouse.Id,
             Quantity = 50m,
-            ReasonCode = "Receipt"
+            ReasonCode = StockMovementReason.Receipt
         };
 
         // Act
@@ -68,7 +69,7 @@ public sealed class StockMovementServiceTests : InventoryTestBase
             ProductId = product.Id,
             WarehouseId = warehouse.Id,
             Quantity = 25m,
-            ReasonCode = "Receipt"
+            ReasonCode = StockMovementReason.Receipt
         };
 
         // Act
@@ -92,7 +93,7 @@ public sealed class StockMovementServiceTests : InventoryTestBase
             ProductId = 9999,
             WarehouseId = warehouse.Id,
             Quantity = 10m,
-            ReasonCode = "Receipt"
+            ReasonCode = StockMovementReason.Receipt
         };
 
         // Act
@@ -114,7 +115,7 @@ public sealed class StockMovementServiceTests : InventoryTestBase
             ProductId = product.Id,
             WarehouseId = 9999,
             Quantity = 10m,
-            ReasonCode = "Receipt"
+            ReasonCode = StockMovementReason.Receipt
         };
 
         // Act
@@ -137,7 +138,7 @@ public sealed class StockMovementServiceTests : InventoryTestBase
             ProductId = product.Id,
             WarehouseId = warehouse.Id,
             Quantity = 10m,
-            ReasonCode = "Receipt"
+            ReasonCode = StockMovementReason.Receipt
         };
 
         // Act
@@ -156,9 +157,9 @@ public sealed class StockMovementServiceTests : InventoryTestBase
         Product product1 = await SeedProductAsync(code: "MOV-P1").ConfigureAwait(false);
         Product product2 = await SeedProductAsync(code: "MOV-P2").ConfigureAwait(false);
 
-        Context.StockMovements.Add(new StockMovement { ProductId = product1.Id, WarehouseId = warehouse.Id, Quantity = 10m, ReasonCode = "Receipt", CreatedAtUtc = DateTime.UtcNow, CreatedByUserId = 1 });
-        Context.StockMovements.Add(new StockMovement { ProductId = product1.Id, WarehouseId = warehouse.Id, Quantity = 20m, ReasonCode = "Receipt", CreatedAtUtc = DateTime.UtcNow, CreatedByUserId = 1 });
-        Context.StockMovements.Add(new StockMovement { ProductId = product2.Id, WarehouseId = warehouse.Id, Quantity = 5m, ReasonCode = "Receipt", CreatedAtUtc = DateTime.UtcNow, CreatedByUserId = 1 });
+        Context.StockMovements.Add(new StockMovement { ProductId = product1.Id, WarehouseId = warehouse.Id, Quantity = 10m, ReasonCode = StockMovementReason.Receipt, CreatedAtUtc = DateTime.UtcNow, CreatedByUserId = 1 });
+        Context.StockMovements.Add(new StockMovement { ProductId = product1.Id, WarehouseId = warehouse.Id, Quantity = 20m, ReasonCode = StockMovementReason.Receipt, CreatedAtUtc = DateTime.UtcNow, CreatedByUserId = 1 });
+        Context.StockMovements.Add(new StockMovement { ProductId = product2.Id, WarehouseId = warehouse.Id, Quantity = 5m, ReasonCode = StockMovementReason.Receipt, CreatedAtUtc = DateTime.UtcNow, CreatedByUserId = 1 });
         await Context.SaveChangesAsync(CancellationToken.None).ConfigureAwait(false);
 
         SearchStockMovementsRequest request = new() { ProductId = product1.Id, Page = 1, PageSize = 10 };

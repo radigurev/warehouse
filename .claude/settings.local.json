@@ -26,7 +26,12 @@
       "Bash(printf '{\"\"\"\"username\"\"\"\":\"\"\"\"admin\"\"\"\",\"\"\"\"password\"\"\"\":\"\"\"\"Admin123!\"\"\"\"}')",
       "Bash(find C:/Users/radoslav.gurev/source/repos/Personal/warehouse -type f -name *Request.cs)",
       "Bash(taskkill //F //PID 6544 //PID 37784 //PID 29908)",
-      "Bash(npx vue-tsc:*)"
+      "Bash(npx vue-tsc:*)",
+      "Bash(taskkill //F //PID 25260 //PID 24684 //PID 45080)",
+      "Bash(dotnet test:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   },
   "mcpServers": {

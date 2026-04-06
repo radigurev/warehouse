@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Warehouse.Common.Enums;
 using Warehouse.Common.Interfaces;
 
 namespace Warehouse.Inventory.DBModel.Models;
@@ -50,19 +51,15 @@ public sealed class StockMovement : IEntity
     public decimal Quantity { get; set; }
 
     /// <summary>
-    /// Gets or sets the reason code for the movement.
+    /// Gets or sets the reason code for the movement per ISA-95 terminology.
     /// </summary>
     [Required]
-    [MaxLength(50)]
-    [Column(TypeName = "nvarchar(50)")]
-    public required string ReasonCode { get; set; }
+    public required StockMovementReason ReasonCode { get; set; }
 
     /// <summary>
-    /// Gets or sets the optional reference type (e.g., Order, Adjustment, Transfer).
+    /// Gets or sets the optional reference type per ISA-95 traceability requirements.
     /// </summary>
-    [MaxLength(50)]
-    [Column(TypeName = "nvarchar(50)")]
-    public string? ReferenceType { get; set; }
+    public StockMovementReferenceType? ReferenceType { get; set; }
 
     /// <summary>
     /// Gets or sets the optional reference entity ID.
