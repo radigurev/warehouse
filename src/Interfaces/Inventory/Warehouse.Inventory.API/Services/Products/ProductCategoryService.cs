@@ -1,5 +1,7 @@
+using System.Text.Json;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using Warehouse.Common.Models;
 using Warehouse.Inventory.API.Interfaces.Products;
 using Warehouse.Inventory.API.Services.Base;
@@ -17,12 +19,18 @@ namespace Warehouse.Inventory.API.Services.Products;
 /// </summary>
 public sealed class ProductCategoryService : BaseInventoryEntityService, IProductCategoryService
 {
+    private const string CacheKey = "inventory:product-categories:all";
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(30);
+
+    private readonly IDistributedCache _cache;
+
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
-    public ProductCategoryService(InventoryDbContext context, IMapper mapper)
+    public ProductCategoryService(InventoryDbContext context, IMapper mapper, IDistributedCache cache)
         : base(context, mapper)
     {
+        _cache = cache;
     }
 
     /// <inheritdoc />
@@ -45,30 +53,22 @@ public sealed class ProductCategoryService : BaseInventoryEntityService, IProduc
         PaginationParams pagination,
         CancellationToken cancellationToken)
     {
-        IQueryable<ProductCategory> query = Context.ProductCategories
+        IReadOnlyList<ProductCategoryDto>? cached = await GetCachedListAsync(cancellationToken).ConfigureAwait(false);
+
+        if (cached is not null)
+            return PaginateFromList(cached, pagination);
+
+        List<ProductCategory> categories = await Context.ProductCategories
             .AsNoTracking()
             .Include(c => c.ParentCategory)
-            .OrderBy(c => c.Name);
-
-        int totalCount = await query.CountAsync(cancellationToken).ConfigureAwait(false);
-
-        List<ProductCategory> categories = await query
-            .Skip(pagination.Skip)
-            .Take(pagination.EffectivePageSize)
+            .OrderBy(c => c.Name)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        IReadOnlyList<ProductCategoryDto> dtos = Mapper.Map<IReadOnlyList<ProductCategoryDto>>(categories);
+        IReadOnlyList<ProductCategoryDto> allDtos = Mapper.Map<IReadOnlyList<ProductCategoryDto>>(categories);
+        await SetCacheAsync(allDtos, cancellationToken).ConfigureAwait(false);
 
-        PaginatedResponse<ProductCategoryDto> response = new()
-        {
-            Items = dtos,
-            Page = pagination.Page,
-            PageSize = pagination.EffectivePageSize,
-            TotalCount = totalCount
-        };
-
-        return Result<PaginatedResponse<ProductCategoryDto>>.Success(response);
+        return PaginateFromList(allDtos, pagination);
     }
 
     /// <inheritdoc />
@@ -90,6 +90,7 @@ public sealed class ProductCategoryService : BaseInventoryEntityService, IProduc
 
         Context.ProductCategories.Add(category);
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await InvalidateCacheAsync(cancellationToken).ConfigureAwait(false);
 
         ProductCategory? created = await Context.ProductCategories
             .Include(c => c.ParentCategory)
@@ -127,6 +128,7 @@ public sealed class ProductCategoryService : BaseInventoryEntityService, IProduc
         category.ModifiedAtUtc = DateTime.UtcNow;
 
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await InvalidateCacheAsync(cancellationToken).ConfigureAwait(false);
 
         ProductCategoryDto dto = Mapper.Map<ProductCategoryDto>(category);
         return Result<ProductCategoryDto>.Success(dto);
@@ -158,7 +160,53 @@ public sealed class ProductCategoryService : BaseInventoryEntityService, IProduc
 
         Context.ProductCategories.Remove(category);
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await InvalidateCacheAsync(cancellationToken).ConfigureAwait(false);
         return Result.Success();
+    }
+
+    /// <summary>
+    /// Paginates an in-memory list of DTOs.
+    /// </summary>
+    private static Result<PaginatedResponse<ProductCategoryDto>> PaginateFromList(
+        IReadOnlyList<ProductCategoryDto> items,
+        PaginationParams pagination)
+    {
+        PaginatedResponse<ProductCategoryDto> response = new()
+        {
+            Items = items.Skip(pagination.Skip).Take(pagination.EffectivePageSize).ToList(),
+            Page = pagination.Page,
+            PageSize = pagination.EffectivePageSize,
+            TotalCount = items.Count
+        };
+
+        return Result<PaginatedResponse<ProductCategoryDto>>.Success(response);
+    }
+
+    /// <summary>
+    /// Attempts to read the full category list from cache.
+    /// </summary>
+    private async Task<IReadOnlyList<ProductCategoryDto>?> GetCachedListAsync(CancellationToken cancellationToken)
+    {
+        byte[]? cached = await _cache.GetAsync(CacheKey, cancellationToken).ConfigureAwait(false);
+        return cached is null ? null : JsonSerializer.Deserialize<List<ProductCategoryDto>>(cached);
+    }
+
+    /// <summary>
+    /// Stores the full category list in cache.
+    /// </summary>
+    private async Task SetCacheAsync(IReadOnlyList<ProductCategoryDto> items, CancellationToken cancellationToken)
+    {
+        byte[] serialized = JsonSerializer.SerializeToUtf8Bytes(items);
+        DistributedCacheEntryOptions options = new() { AbsoluteExpirationRelativeToNow = CacheDuration };
+        await _cache.SetAsync(CacheKey, serialized, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Removes the category list from cache.
+    /// </summary>
+    private async Task InvalidateCacheAsync(CancellationToken cancellationToken)
+    {
+        await _cache.RemoveAsync(CacheKey, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

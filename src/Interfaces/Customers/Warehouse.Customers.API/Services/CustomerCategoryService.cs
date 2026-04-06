@@ -1,5 +1,7 @@
+using System.Text.Json;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using Warehouse.Common.Models;
 using Warehouse.Customers.API.Interfaces;
 using Warehouse.Customers.DBModel;
@@ -11,17 +13,23 @@ using Warehouse.ServiceModel.Responses;
 namespace Warehouse.Customers.API.Services;
 
 /// <summary>
-/// Implements customer category operations: CRUD with uniqueness and in-use checks.
+/// Implements customer category operations with Redis caching.
 /// <para>See <see cref="ICustomerCategoryService"/>.</para>
 /// </summary>
 public sealed class CustomerCategoryService : BaseCustomerEntityService, ICustomerCategoryService
 {
+    private const string CacheKey = "customers:customer-categories:all";
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(30);
+
+    private readonly IDistributedCache _cache;
+
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
-    public CustomerCategoryService(CustomersDbContext context, IMapper mapper)
+    public CustomerCategoryService(CustomersDbContext context, IMapper mapper, IDistributedCache cache)
         : base(context, mapper)
     {
+        _cache = cache;
     }
 
     /// <inheritdoc />
@@ -42,6 +50,7 @@ public sealed class CustomerCategoryService : BaseCustomerEntityService, ICustom
 
         Context.CustomerCategories.Add(category);
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await InvalidateCacheAsync(cancellationToken).ConfigureAwait(false);
 
         CustomerCategoryDto dto = Mapper.Map<CustomerCategoryDto>(category);
         return Result<CustomerCategoryDto>.Success(dto);
@@ -52,29 +61,21 @@ public sealed class CustomerCategoryService : BaseCustomerEntityService, ICustom
         PaginationParams pagination,
         CancellationToken cancellationToken)
     {
-        IQueryable<CustomerCategory> query = Context.CustomerCategories
+        IReadOnlyList<CustomerCategoryDto>? cached = await GetCachedListAsync(cancellationToken).ConfigureAwait(false);
+
+        if (cached is not null)
+            return PaginateFromList(cached, pagination);
+
+        List<CustomerCategory> categories = await Context.CustomerCategories
             .AsNoTracking()
-            .OrderBy(c => c.Name);
-
-        int totalCount = await query.CountAsync(cancellationToken).ConfigureAwait(false);
-
-        List<CustomerCategory> categories = await query
-            .Skip(pagination.Skip)
-            .Take(pagination.EffectivePageSize)
+            .OrderBy(c => c.Name)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        IReadOnlyList<CustomerCategoryDto> dtos = Mapper.Map<IReadOnlyList<CustomerCategoryDto>>(categories);
+        IReadOnlyList<CustomerCategoryDto> allDtos = Mapper.Map<IReadOnlyList<CustomerCategoryDto>>(categories);
+        await SetCacheAsync(allDtos, cancellationToken).ConfigureAwait(false);
 
-        PaginatedResponse<CustomerCategoryDto> response = new()
-        {
-            Items = dtos,
-            Page = pagination.Page,
-            PageSize = pagination.EffectivePageSize,
-            TotalCount = totalCount
-        };
-
-        return Result<PaginatedResponse<CustomerCategoryDto>>.Success(response);
+        return PaginateFromList(allDtos, pagination);
     }
 
     /// <inheritdoc />
@@ -114,6 +115,7 @@ public sealed class CustomerCategoryService : BaseCustomerEntityService, ICustom
         category.ModifiedAtUtc = DateTime.UtcNow;
 
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await InvalidateCacheAsync(cancellationToken).ConfigureAwait(false);
 
         CustomerCategoryDto dto = Mapper.Map<CustomerCategoryDto>(category);
         return Result<CustomerCategoryDto>.Success(dto);
@@ -138,8 +140,54 @@ public sealed class CustomerCategoryService : BaseCustomerEntityService, ICustom
 
         Context.CustomerCategories.Remove(category);
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await InvalidateCacheAsync(cancellationToken).ConfigureAwait(false);
 
         return Result.Success();
+    }
+
+    /// <summary>
+    /// Paginates an in-memory list of DTOs.
+    /// </summary>
+    private static Result<PaginatedResponse<CustomerCategoryDto>> PaginateFromList(
+        IReadOnlyList<CustomerCategoryDto> items,
+        PaginationParams pagination)
+    {
+        PaginatedResponse<CustomerCategoryDto> response = new()
+        {
+            Items = items.Skip(pagination.Skip).Take(pagination.EffectivePageSize).ToList(),
+            Page = pagination.Page,
+            PageSize = pagination.EffectivePageSize,
+            TotalCount = items.Count
+        };
+
+        return Result<PaginatedResponse<CustomerCategoryDto>>.Success(response);
+    }
+
+    /// <summary>
+    /// Attempts to read the full category list from cache.
+    /// </summary>
+    private async Task<IReadOnlyList<CustomerCategoryDto>?> GetCachedListAsync(CancellationToken cancellationToken)
+    {
+        byte[]? cached = await _cache.GetAsync(CacheKey, cancellationToken).ConfigureAwait(false);
+        return cached is null ? null : JsonSerializer.Deserialize<List<CustomerCategoryDto>>(cached);
+    }
+
+    /// <summary>
+    /// Stores the full category list in cache.
+    /// </summary>
+    private async Task SetCacheAsync(IReadOnlyList<CustomerCategoryDto> items, CancellationToken cancellationToken)
+    {
+        byte[] serialized = JsonSerializer.SerializeToUtf8Bytes(items);
+        DistributedCacheEntryOptions options = new() { AbsoluteExpirationRelativeToNow = CacheDuration };
+        await _cache.SetAsync(CacheKey, serialized, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Removes the category list from cache.
+    /// </summary>
+    private async Task InvalidateCacheAsync(CancellationToken cancellationToken)
+    {
+        await _cache.RemoveAsync(CacheKey, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
