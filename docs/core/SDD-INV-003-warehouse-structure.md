@@ -27,6 +27,8 @@ This spec defines the Warehouse Structure sub-domain for the Warehouse Inventory
 - `SDD-INV-001` — Products referenced by transfer lines.
 - `SDD-INV-002` — Stock levels and movements reference warehouses and locations defined here. Transfers create stock movements.
 
+**ISA-95 Conformance:** Conforms to ISA-95 Part 2, Section 5 — Equipment Model (Site, Area/Storage Zone, Storage Unit) and ISA-95 Part 3 — Inventory Operations Activity Model (Material Transfer, Material Storage).
+
 ---
 
 ## 2. Behavior

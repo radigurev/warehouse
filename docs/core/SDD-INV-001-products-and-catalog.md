@@ -32,6 +32,8 @@ This spec defines the Product catalog sub-domain for the Warehouse Inventory sys
 - `SDD-INV-003` — Warehouse locations reference products for stock placement.
 - `SDD-INV-004` — Stocktaking references products for count verification.
 
+**ISA-95 Conformance:** Conforms to ISA-95 Part 2, Section 7 — Material Model (Material Definition, Material Class, Unit of Measure, Bill of Material, Alternate/Related Material).
+
 ---
 
 ## 2. Behavior

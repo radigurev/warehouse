@@ -28,6 +28,8 @@ This spec defines the Stocktaking sub-domain for the Warehouse Inventory system.
 - `SDD-INV-002` — Completed stocktakes with variances create inventory adjustments.
 - `SDD-INV-003` — Warehouses and locations referenced by stocktake sessions.
 
+**ISA-95 Conformance:** Conforms to ISA-95 Part 3 — Inventory Operations Activity Model (Inventory Counting). Note: Stocktake variances produce immutable stock movement records through the adjustment approval workflow (StocktakeSession -> InventoryAdjustment -> StockMovement). See SDD-INV-002 for adjustment application rules.
+
 ---
 
 ## 2. Behavior
@@ -76,6 +78,14 @@ This spec defines the Stocktaking sub-domain for the Warehouse Inventory system.
 - The adjustment MUST include one line per count entry that has a non-zero variance.
 - Only completed sessions MAY generate adjustments.
 - The generated adjustment MUST reference the stocktake session ID.
+
+**ISA-95 Immutable Event Chain:** Per ISA-95 operations event model, stocktake variances MUST ultimately produce immutable stock movement records. This is achieved through the adjustment approval workflow:
+1. Stocktake session is completed with variance counts
+2. An `InventoryAdjustment` is created from the session (this endpoint)
+3. The adjustment is approved and applied (see SDD-INV-002)
+4. Application of the adjustment creates immutable `StockMovement` records with reason code `StocktakeCorrection`
+
+This three-step process ensures human oversight of variance corrections while maintaining ISA-95 traceability.
 
 ### 2.2 Stocktake Counts
 

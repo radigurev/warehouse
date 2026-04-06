@@ -28,6 +28,8 @@ This spec defines the Stock Management sub-domain for the Warehouse Inventory sy
 - `SDD-INV-003` — Warehouse and location entities referenced by stock levels.
 - `SDD-INV-004` — Stocktaking creates adjustments when variances are found.
 
+**ISA-95 Conformance:** Conforms to ISA-95 Part 2, Section 7 — Material Model (Material Lot) and ISA-95 Part 3 — Inventory Operations Activity Model (Material Inventory Tracking, Material Movement, Inventory Adjustment).
+
 ---
 
 ## 2. Behavior

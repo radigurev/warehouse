@@ -1,6 +1,6 @@
 # Warehouse — Project Instructions
 
-> Last updated: 2026-04-05
+> Last updated: 2026-04-06
 
 ---
 
@@ -110,9 +110,168 @@ If a request is outside scope, contradicts a spec, or is ambiguous — **STOP an
 
 ## 1. Project Purpose
 
-Warehouse Management System (WMS) — a monorepo containing .NET 8 backend microservices and a Vue.js Single Page Application (SPA) frontend. The system will manage warehouse operations including inventory, storage locations, inbound/outbound shipments, and related workflows.
+Warehouse Management System (WMS) — a monorepo containing .NET 8 backend microservices and a Vue.js Single Page Application (SPA) frontend. The system manages warehouse operations including inventory, storage locations, inbound/outbound shipments, and related workflows. **The system is designed to conform to the ISA-95 (IEC 62264) standard** for enterprise–operations integration.
 
 **Architecture:** Monorepo with multiple backend microservices sharing common libraries, and a single Vue.js SPA frontend that consumes the backend REST APIs.
+
+---
+
+## 1.1 ISA-95 Standard Compliance (IEC 62264)
+
+This project follows the **ISA-95 / IEC 62264** international standard for integrating enterprise and control systems. ISA-95 compliance is an **architectural policy** — all domain modeling, entity naming, operations design, and future feature planning MUST align with the ISA-95 object and activity models.
+
+### 1.1.1 ISA-95 Hierarchy Placement
+
+| ISA-95 Level | Description | WMS Scope |
+|---|---|---|
+| **Level 4** | Business Planning & Logistics | ERP integration (future), customer orders, purchasing |
+| **Level 3** | Manufacturing Operations Management | **This WMS** — Inventory Operations, Warehouse Execution |
+| Level 2 | Monitoring & Supervisory Control | Barcode scanning, IoT sensors (future) |
+| Level 1 | Sensing & Manipulation | Equipment controllers (out of scope) |
+| Level 0 | Physical Process | Physical equipment (out of scope) |
+
+This WMS primarily operates at **Level 3** (Operations Management) with Level 4 interfaces planned for ERP integration.
+
+### 1.1.2 ISA-95 Operations Domains
+
+| ISA-95 Domain | Status | WMS Microservice | Scope |
+|---|---|---|---|
+| **Inventory Operations** | Active | `Warehouse.Inventory.API` | Material tracking, movements, adjustments, stocktaking, transfers |
+| **Personnel & Authorization** | Active | `Warehouse.Auth.API` | Personnel, roles, qualifications, audit |
+| **Business Partner Management** | Active | `Warehouse.Customers.API` | Customers, accounts, contacts |
+| **Production Operations** | Planned | Future: `Warehouse.Production.API` | Production orders, work orders, scheduling |
+| **Quality Operations** | Planned | Future: `Warehouse.Quality.API` | Inspections, quality holds, certifications |
+| **Procurement Operations** | Planned | Future: `Warehouse.Purchasing.API` | Purchase orders, inbound shipments, supplier management |
+| **Fulfillment Operations** | Planned | Future: `Warehouse.Fulfillment.API` | Sales orders, picking, packing, outbound shipments |
+| **Maintenance Operations** | Out of scope | — | Equipment maintenance |
+
+### 1.1.3 ISA-95 Object Model — Terminology Mapping
+
+All entity naming and domain concepts follow the ISA-95 object model. This mapping is the **canonical reference** for how WMS entities relate to the standard.
+
+#### Material Model (ISA-95 Part 2, Section 7)
+
+| ISA-95 Term | WMS Entity | DB Table | Notes |
+|---|---|---|---|
+| Material Definition | `Product` | `inventory.Products` | Master data defining what a material is |
+| Material Class | `ProductCategory` | `inventory.ProductCategories` | Hierarchical classification of materials |
+| Material Lot | `Batch` | `inventory.Batches` | Tracked quantity with shared properties (expiry, manufacturing date) |
+| Material Sublot | — | — | Not yet implemented — subdivision of lots for finer traceability |
+| Unit of Measure | `UnitOfMeasure` | `inventory.UnitsOfMeasure` | Standard measurement units (kg, pcs, L, etc.) |
+| Bill of Material | `BillOfMaterials` | `inventory.BillOfMaterials` | Recipe/formula definition (parent product) |
+| BOM Component | `BomLine` | `inventory.BomLines` | Component line within a BOM (child product + quantity) |
+| Alternate Material | `ProductSubstitute` | `inventory.ProductSubstitutes` | Interchangeable material definition |
+| Related Material | `ProductAccessory` | `inventory.ProductAccessories` | Associated/complementary material |
+
+#### Equipment Model (ISA-95 Part 2, Section 5)
+
+| ISA-95 Term | WMS Entity | DB Table | Notes |
+|---|---|---|---|
+| Enterprise | — | — | Organization level (implicit — single-tenant system) |
+| Site | `WarehouseEntity` | `inventory.Warehouses` | Physical warehouse facility |
+| Area | `Zone` | `inventory.Zones` | Functional subdivision within a site |
+| Storage Zone | `Zone` | `inventory.Zones` | ISA-95 storage zone maps to WMS Zone |
+| Storage Unit | `StorageLocation` | `inventory.StorageLocations` | Addressable position (Row, Shelf, Bin, Bulk) |
+| Work Center | — | — | Not applicable — no production execution yet |
+| Work Unit | — | — | Not applicable — no production execution yet |
+
+#### Personnel Model (ISA-95 Part 2, Section 6)
+
+| ISA-95 Term | WMS Entity | DB Table | Notes |
+|---|---|---|---|
+| Person | `User` | `auth.Users` | Individual operator/user identity |
+| Personnel Class | `Role` | `auth.Roles` | Role-based classification of personnel |
+| Qualification | `Permission` | `auth.Permissions` | Specific capability/authorization (resource:action) |
+| Credential | `RefreshToken` | `auth.RefreshTokens` | Authentication credential |
+
+#### Operations Event Model
+
+| ISA-95 Term | WMS Entity | DB Table | Notes |
+|---|---|---|---|
+| Operations Event | `UserActionLog` | `auth.UserActionLogs` | Immutable audit record of operations |
+| Stock Event | `StockMovement` | `inventory.StockMovements` | Immutable record of material quantity change |
+| Inventory Count | `StocktakeSession` | `inventory.StocktakeSessions` | Physical inventory count event |
+| Count Record | `StocktakeCount` | `inventory.StocktakeCounts` | Individual product count entry |
+
+### 1.1.4 ISA-95 Inventory Operations Activity Model (Part 3)
+
+This maps ISA-95 activity model functions to WMS implementation.
+
+| ISA-95 Activity | WMS Concept | Controller / Service | Status |
+|---|---|---|---|
+| **Inventory Definition Management** | Product/Category/UOM CRUD | `ProductsController`, `ProductCategoriesController`, `UnitsOfMeasureController` | Implemented |
+| **Material Inventory Tracking** | StockLevel per product/location/batch | `StockLevelsController` | Implemented |
+| **Inventory Counting** | StocktakeSession + StocktakeCount | `StocktakeSessionsController`, `StocktakeCountsController` | Implemented |
+| **Inventory Adjustment** | Approval workflow (Pending → Approved → Applied) | `InventoryAdjustmentsController` | Implemented |
+| **Material Movement** | Immutable StockMovement records with reason codes | `StockMovementsController` | Implemented |
+| **Material Transfer** | Inter-site transfer (Draft → Completed) | `WarehouseTransfersController` | Implemented |
+| **Material Receipt** | Inbound shipment processing | — | Planned |
+| **Material Shipment** | Outbound shipment processing | — | Planned |
+| **Material Storage** | Location assignment and management | `StorageLocationsController` | Implemented |
+| **Production Resource Management** | BOM/recipe definition | `BillOfMaterialsController` | Catalog only |
+
+### 1.1.5 ISA-95 Information Exchange (Part 4 — Future)
+
+When implementing ERP integration, the information exchange MUST follow ISA-95 Part 4 patterns:
+
+| Exchange Type | Direction | Payload | Notes |
+|---|---|---|---|
+| Material Definition Download | ERP → WMS | Product master data | Sync material definitions from enterprise |
+| Inventory Report | WMS → ERP | Stock levels by site/material | Periodic or on-demand inventory visibility |
+| Material Movement Report | WMS → ERP | Movement transactions | Immutable event stream of stock changes |
+| Production Order | ERP → WMS | Work order + BOM | Future: production execution |
+| Shipment Request | ERP → WMS | Outbound order lines | Future: pick/pack/ship instructions |
+| Receipt Confirmation | WMS → ERP | Inbound receipt details | Future: goods receipt posting |
+
+The data format SHOULD follow B2MML (Business to Manufacturing Markup Language) or an equivalent JSON schema derived from ISA-95 object models.
+
+### 1.1.6 ISA-95 Compliance Policy Rules
+
+These rules are **MANDATORY** for all new development:
+
+1.  **Entity Classification** — All new entities MUST be classified under an ISA-95 object model category (Material, Equipment, Personnel, or Operations Event). Add the mapping to the terminology table in this section.
+2.  **Activity Model Alignment** — All new operations/endpoints MUST be mapped to an ISA-95 activity model function. If no matching function exists, document the extension rationale.
+3.  **Spec References** — SDD specifications MUST reference the applicable ISA-95 part and section in their Context block (e.g., "Conforms to ISA-95 Part 2 Section 7 — Material Model").
+4.  **Equipment Hierarchy** — The ISA-95 hierarchy (Enterprise → Site → Area → Work Center) MUST be respected. Do not introduce equipment entities that violate this hierarchy.
+5.  **Material Traceability** — Material tracking MUST maintain the ISA-95 chain: Material Definition → Material Lot → Material Sublot. Do not bypass lot tracking for traceable materials.
+6.  **Movement Types** — Stock movements MUST use ISA-95 aligned reason codes: Receipt, Shipment, Transfer, Adjustment, Count Adjustment, Production Consumption, Production Output.
+7.  **Terminology Preference** — When naming new entities, properties, or API resources, PREFER ISA-95 terminology where it does not conflict with already-established WMS naming conventions. Existing entity names are grandfathered and do NOT need renaming.
+8.  **Domain Boundaries** — New microservices MUST align with an ISA-95 operations domain. Do not create services that span multiple operations domains.
+9.  **Information Exchange** — Future ERP/MES integration MUST follow ISA-95 Part 4 information exchange patterns. Do not design proprietary integration schemas without documenting the ISA-95 deviation.
+10. **Immutable Events** — All operations that change material state (movements, adjustments, transfers, counts) MUST produce immutable event records, per ISA-95 operations event model.
+
+### 1.1.6.1 Movement Reason Code Extensions
+
+The `StockMovementReason` enum extends ISA-95 base movement types with finer-grained codes required for business reporting and audit. Each extended code maps back to an ISA-95 base type.
+
+| WMS Reason Code | ISA-95 Base Type | Rationale |
+|---|---|---|
+| `PurchaseReceipt` | Receipt | Specialized for purchase order inbound receipts |
+| `SalesDispatch` | Shipment | Specialized for sales order outbound fulfillment |
+| `Adjustment` | Adjustment | Direct 1:1 mapping to ISA-95 base type |
+| `Transfer` | Transfer | Direct 1:1 mapping to ISA-95 base type |
+| `CustomerReturn` | Receipt | Goods returned by customer (inbound receipt) |
+| `SupplierReturn` | Shipment | Goods returned to supplier (outbound shipment) |
+| `ProductionConsumption` | Production Consumption | Direct 1:1 mapping to ISA-95 base type |
+| `ProductionReceipt` | Production Output | Finished goods received from production |
+| `WriteOff` | Adjustment | Irreversible loss — damage, expiry, theft |
+| `StocktakeCorrection` | Count Adjustment | Variance correction from physical inventory count |
+| `Other` | *(escape hatch)* | Edge cases not covered by specific codes; SHOULD be avoided in favor of specific codes |
+
+**Rationale:** Business operations require finer granularity than the seven ISA-95 base movement types for accurate reporting, audit trails, and operational analytics. The extended codes preserve full traceability to ISA-95 base types while enabling domain-specific filtering and dashboards.
+
+### 1.1.7 ISA-95 Compliance Checklist (New Features)
+
+Add to the Quick Checklist (Section 12) when building features:
+
+-   [ ] New entity classified under ISA-95 object model (Material / Equipment / Personnel / Event)
+-   [ ] New operations mapped to ISA-95 activity model function
+-   [ ] SDD spec references applicable ISA-95 part/section
+-   [ ] Equipment hierarchy respected (Enterprise → Site → Area → Storage Unit)
+-   [ ] Material traceability chain maintained (Definition → Lot → Sublot)
+-   [ ] Stock movement reason codes align with ISA-95 movement types
+-   [ ] New microservice maps to a single ISA-95 operations domain
+-   [ ] Immutable event records produced for all state-changing operations
 
 ---
 

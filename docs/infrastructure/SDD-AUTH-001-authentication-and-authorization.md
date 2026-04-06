@@ -24,6 +24,8 @@ This spec defines the authentication and authorization system for all Warehouse 
 
 **Related specs:** None yet — this is the first spec. All future service specs will reference SDD-AUTH-001 for their authorization requirements.
 
+**ISA-95 Conformance:** Conforms to ISA-95 Part 2, Section 6 — Personnel Model (Person, Personnel Class, Qualification, Credential).
+
 ---
 
 ## 2. Behavior
