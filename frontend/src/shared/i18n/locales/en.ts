@@ -655,6 +655,7 @@ export default {
     inactive: 'Inactive',
     actions: 'Actions',
     required: 'This field is required.',
+    pageInfo: 'Page {page} of {pages} ({total} total)',
   },
   validation: {
     usernameLength: 'Username must be 3–50 characters (letters, numbers, underscores).',

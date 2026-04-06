@@ -655,6 +655,7 @@ export default {
     inactive: 'Неактивен',
     actions: 'Действия',
     required: 'Това поле е задължително.',
+    pageInfo: 'Страница {page} от {pages} ({total} общо)',
   },
   validation: {
     usernameLength: 'Потребителското име трябва да е 3–50 символа (букви, цифри, долни черти).',

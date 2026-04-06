@@ -53,7 +53,7 @@ import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useNotificationStore } from '@shared/stores/notification';
 import { getRolePermissions, assignPermissions, removePermission } from '@features/auth/api/roles';
-import { getPermissions } from '@features/auth/api/permissions';
+import { getAllPermissions } from '@features/auth/api/permissions';
 import type { PermissionDto } from '@features/auth/types/permission';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
 
@@ -101,7 +101,7 @@ async function loadPermissions(): Promise<void> {
   try {
     const [rolePerms, perms] = await Promise.all([
       getRolePermissions(props.roleId),
-      getPermissions(),
+      getAllPermissions(),
     ]);
     assignedPermissions.value = rolePerms;
     allPermissions.value = perms;

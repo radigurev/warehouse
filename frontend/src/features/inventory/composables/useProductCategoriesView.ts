@@ -21,6 +21,10 @@ export function useProductCategoriesView() {
   const showFormDialog = ref(false);
   const showDeleteDialog = ref(false);
   const deleting = ref(false);
+  const page = ref(1);
+  const pageSize = ref(25);
+  const totalCount = ref(0);
+  const totalPages = ref(0);
 
   const { columnFilters, filteredItems } = useColumnFilters(categories, ['name', 'parentCategoryName']);
 
@@ -36,12 +40,26 @@ export function useProductCategoriesView() {
   async function loadCategories(): Promise<void> {
     loading.value = true;
     try {
-      categories.value = await searchCategories();
+      const response = await searchCategories(page.value, pageSize.value);
+      categories.value = response.items;
+      totalCount.value = response.totalCount;
+      totalPages.value = response.totalPages;
     } catch {
       notification.error(t('errors.UNEXPECTED_ERROR'));
     } finally {
       loading.value = false;
     }
+  }
+
+  function handlePageChange(newPage: number): void {
+    page.value = newPage;
+    loadCategories();
+  }
+
+  function handlePageSizeChange(newSize: number): void {
+    pageSize.value = newSize;
+    page.value = 1;
+    loadCategories();
   }
 
   function handleCreate(): void {
@@ -96,10 +114,16 @@ export function useProductCategoriesView() {
     showFormDialog,
     showDeleteDialog,
     deleting,
+    page,
+    pageSize,
+    totalCount,
+    totalPages,
     columnFilters,
     filteredItems,
     headers,
     loadCategories,
+    handlePageChange,
+    handlePageSizeChange,
     handleCreate,
     handleEdit,
     openDeleteDialog,

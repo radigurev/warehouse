@@ -13,15 +13,15 @@ export function useDashboardView() {
 
   onMounted(async () => {
     try {
-      const [usersResponse, roles, permissions] = await Promise.all([
+      const [usersResponse, rolesResponse, permissionsResponse] = await Promise.all([
         getUsers(),
         getRoles(),
         getPermissions(),
       ]);
       stats.value = {
         users: usersResponse.totalCount,
-        roles: roles.length,
-        permissions: permissions.length,
+        roles: rolesResponse.totalCount,
+        permissions: permissionsResponse.totalCount,
       };
     } catch {
       // Dashboard stats are non-critical

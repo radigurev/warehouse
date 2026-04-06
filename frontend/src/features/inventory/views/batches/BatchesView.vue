@@ -8,14 +8,19 @@
     </div>
 
     <v-card class="view-list-card">
-      <v-data-table
+      <v-data-table-server
         :headers="vm.headers"
         :items="vm.filteredItems"
+        :items-length="vm.totalCount"
         :loading="vm.loading"
         :density="vm.layout.vuetifyDensity"
-        :items-per-page="-1"
+        :page="vm.searchParams.page"
+        :items-per-page="vm.searchParams.pageSize"
+        :items-per-page-options="[10, 25, 50, 100]"
         fixed-header
         hover
+        @update:page="vm.handlePageChange"
+        @update:items-per-page="vm.handlePageSizeChange"
       >
         <template #header.batchNumber="{ column }">
           <div class="d-inline-flex align-center">
@@ -47,7 +52,15 @@
           <ActionChip :label="vm.t('common.edit')" icon="mdi-pencil" color="primary" :compact="vm.layout.isCompact" @click="vm.handleEdit(item)" />
           <ActionChip v-if="item.isActive" :label="vm.t('batches.deactivate')" icon="mdi-close-circle" color="error" :compact="vm.layout.isCompact" @click="vm.openDeactivateDialog(item)" />
         </template>
-      </v-data-table>
+
+        <template #tfoot>
+          <tr>
+            <td :colspan="vm.headers.length" class="text-center text-caption text-medium-emphasis py-1">
+              {{ vm.t('common.pageInfo', { page: vm.searchParams.page, pages: vm.totalPages, total: vm.totalCount }) }}
+            </td>
+          </tr>
+        </template>
+      </v-data-table-server>
     </v-card>
 
     <BatchFormDialog v-model="vm.showFormDialog" :batch="vm.selectedBatch" @saved="vm.loadBatches" />

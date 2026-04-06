@@ -15,6 +15,7 @@ export function useStockLevelsView() {
   const stockLevels = ref<StockLevelDto[]>([]);
   const loading = ref(false);
   const totalCount = ref(0);
+  const totalPages = computed(() => Math.ceil(totalCount.value / (searchParams.value.pageSize || 25)));
 
   const searchParams = ref<SearchStockLevelsRequest>({
     sortBy: 'productName',
@@ -71,15 +72,28 @@ export function useStockLevelsView() {
     }
   }
 
+  function handlePageChange(newPage: number): void {
+    searchParams.value = { ...searchParams.value, page: newPage };
+    loadStockLevels();
+  }
+
+  function handlePageSizeChange(newSize: number): void {
+    searchParams.value = { ...searchParams.value, pageSize: newSize, page: 1 };
+    loadStockLevels();
+  }
+
   return {
     t,
     layout,
     loading,
     totalCount,
+    totalPages,
     searchParams,
     columnFilters,
     filteredItems,
     headers,
     loadStockLevels,
+    handlePageChange,
+    handlePageSizeChange,
   };
 }

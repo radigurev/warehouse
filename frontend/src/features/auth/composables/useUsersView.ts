@@ -17,6 +17,10 @@ export function useUsersView() {
 
   const users = ref<UserDto[]>([]);
   const loading = ref(false);
+  const totalCount = ref(0);
+  const totalPages = computed(() => Math.ceil(totalCount.value / (pageSize.value || 25)));
+  const page = ref(1);
+  const pageSize = ref(25);
   const selectedUser = ref<UserDto | null>(null);
   const showFormDialog = ref(false);
   const showRolesDialog = ref(false);
@@ -42,8 +46,9 @@ export function useUsersView() {
   async function loadUsers(): Promise<void> {
     loading.value = true;
     try {
-      const response = await getUsers();
+      const response = await getUsers(page.value, pageSize.value);
       users.value = response.items;
+      totalCount.value = response.totalCount;
     } catch {
       notification.error(t('errors.UNEXPECTED_ERROR'));
     } finally {
@@ -125,10 +130,25 @@ export function useUsersView() {
     }
   }
 
+  function handlePageChange(newPage: number): void {
+    page.value = newPage;
+    loadUsers();
+  }
+
+  function handlePageSizeChange(newSize: number): void {
+    pageSize.value = newSize;
+    page.value = 1;
+    loadUsers();
+  }
+
   return {
     t,
     layout,
     loading,
+    totalCount,
+    totalPages,
+    page,
+    pageSize,
     selectedUser,
     showFormDialog,
     showRolesDialog,
@@ -148,5 +168,7 @@ export function useUsersView() {
     copyPassword,
     openDeactivateDialog,
     handleDeactivate,
+    handlePageChange,
+    handlePageSizeChange,
   };
 }

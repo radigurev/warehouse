@@ -8,14 +8,19 @@
     </div>
 
     <v-card class="view-list-card">
-      <v-data-table
+      <v-data-table-server
         :headers="vm.headers"
         :items="vm.filteredItems"
+        :items-length="vm.totalCount"
         :loading="vm.loading"
         :density="vm.layout.vuetifyDensity"
-        :items-per-page="-1"
+        :page="vm.searchParams.page"
+        :items-per-page="vm.searchParams.pageSize"
+        :items-per-page-options="[10, 25, 50, 100]"
         fixed-header
         hover
+        @update:page="vm.handlePageChange"
+        @update:items-per-page="vm.handlePageSizeChange"
       >
         <template #header.name="{ column }">
           <div class="d-inline-flex align-center">
@@ -52,7 +57,15 @@
           <ActionChip v-if="item.isActive" :label="vm.t('products.deactivate')" icon="mdi-package-variant-closed-remove" color="error" :compact="vm.layout.isCompact" @click="vm.openDeactivateDialog(item)" />
           <ActionChip v-else :label="vm.t('products.reactivate')" icon="mdi-package-variant-closed-check" color="success" :compact="vm.layout.isCompact" @click="vm.handleReactivate(item)" />
         </template>
-      </v-data-table>
+
+        <template #tfoot>
+          <tr>
+            <td :colspan="vm.headers.length" class="text-center text-caption text-medium-emphasis py-1">
+              {{ vm.t('common.pageInfo', { page: vm.searchParams.page, pages: vm.totalPages, total: vm.totalCount }) }}
+            </td>
+          </tr>
+        </template>
+      </v-data-table-server>
     </v-card>
 
     <ProductFormDialog v-model="vm.showFormDialog" :product="vm.selectedProduct" @saved="vm.loadProducts" />

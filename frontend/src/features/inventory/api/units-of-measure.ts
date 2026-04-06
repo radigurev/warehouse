@@ -1,12 +1,21 @@
 import apiClient from '@shared/api/client';
+import type { PaginatedResponse } from '@shared/types/api';
 import type {
   UnitOfMeasureDto,
   CreateUnitOfMeasureRequest,
   UpdateUnitOfMeasureRequest,
 } from '@features/inventory/types/inventory';
 
-export function searchUnits(): Promise<UnitOfMeasureDto[]> {
-  return apiClient.get<UnitOfMeasureDto[]>('/units-of-measure').then((r) => r.data);
+export function searchUnits(page = 1, pageSize = 25): Promise<PaginatedResponse<UnitOfMeasureDto>> {
+  return apiClient
+    .get<PaginatedResponse<UnitOfMeasureDto>>('/units-of-measure', { params: { page, pageSize } })
+    .then((r) => r.data);
+}
+
+export function getAllUnits(): Promise<UnitOfMeasureDto[]> {
+  return apiClient
+    .get<PaginatedResponse<UnitOfMeasureDto>>('/units-of-measure', { params: { page: 1, pageSize: 100 } })
+    .then((r) => r.data.items);
 }
 
 export function getUnitById(id: number): Promise<UnitOfMeasureDto> {

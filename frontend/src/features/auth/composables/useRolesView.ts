@@ -22,6 +22,10 @@ export function useRolesView() {
   const showPermissionsDialog = ref(false);
   const showDeleteDialog = ref(false);
   const deleting = ref(false);
+  const page = ref(1);
+  const pageSize = ref(25);
+  const totalCount = ref(0);
+  const totalPages = ref(0);
 
   const { columnFilters, filteredItems } = useColumnFilters(roles, ['name']);
 
@@ -37,12 +41,26 @@ export function useRolesView() {
   async function loadRoles(): Promise<void> {
     loading.value = true;
     try {
-      roles.value = await getRoles();
+      const response = await getRoles(page.value, pageSize.value);
+      roles.value = response.items;
+      totalCount.value = response.totalCount;
+      totalPages.value = response.totalPages;
     } catch {
       notification.error(t('errors.UNEXPECTED_ERROR'));
     } finally {
       loading.value = false;
     }
+  }
+
+  function handlePageChange(newPage: number): void {
+    page.value = newPage;
+    loadRoles();
+  }
+
+  function handlePageSizeChange(newSize: number): void {
+    pageSize.value = newSize;
+    page.value = 1;
+    loadRoles();
   }
 
   function handleCreate(): void {
@@ -109,10 +127,16 @@ export function useRolesView() {
     showPermissionsDialog,
     showDeleteDialog,
     deleting,
+    page,
+    pageSize,
+    totalCount,
+    totalPages,
     columnFilters,
     filteredItems,
     headers,
     loadRoles,
+    handlePageChange,
+    handlePageSizeChange,
     handleCreate,
     handleEdit,
     handlePermissions,

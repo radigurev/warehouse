@@ -17,6 +17,7 @@ export function useTransfersView() {
   const transfers = ref<WarehouseTransferDto[]>([]);
   const loading = ref(false);
   const totalCount = ref(0);
+  const totalPages = computed(() => Math.ceil(totalCount.value / (searchParams.value.pageSize || 25)));
 
   const searchParams = ref<SearchTransfersRequest>({
     page: 1,
@@ -89,11 +90,22 @@ export function useTransfersView() {
     }
   }
 
+  function handlePageChange(newPage: number): void {
+    searchParams.value = { ...searchParams.value, page: newPage };
+    loadTransfers();
+  }
+
+  function handlePageSizeChange(newSize: number): void {
+    searchParams.value = { ...searchParams.value, pageSize: newSize, page: 1 };
+    loadTransfers();
+  }
+
   return {
     t,
     layout,
     loading,
     totalCount,
+    totalPages,
     searchParams,
     columnFilters,
     filteredItems,
@@ -103,5 +115,7 @@ export function useTransfersView() {
     handleCreate,
     handleDetail,
     statusColor,
+    handlePageChange,
+    handlePageSizeChange,
   };
 }

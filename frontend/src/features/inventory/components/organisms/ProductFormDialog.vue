@@ -118,8 +118,8 @@ import { ref, reactive, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useNotificationStore } from '@shared/stores/notification';
 import { createProduct, updateProduct, getProductById } from '@features/inventory/api/products';
-import { searchCategories } from '@features/inventory/api/product-categories';
-import { searchUnits } from '@features/inventory/api/units-of-measure';
+import { getAllCategories } from '@features/inventory/api/product-categories';
+import { getAllUnits } from '@features/inventory/api/units-of-measure';
 import type { ProductDto, ProductCategoryDto, UnitOfMeasureDto } from '@features/inventory/types/inventory';
 import type { AxiosError } from 'axios';
 import type { ProblemDetails } from '@shared/types/api';
@@ -171,7 +171,7 @@ async function loadDropdowns(): Promise<void> {
   categoriesLoading.value = true;
   unitsLoading.value = true;
   try {
-    const [cats, uoms] = await Promise.all([searchCategories(), searchUnits()]);
+    const [cats, uoms] = await Promise.all([getAllCategories(), getAllUnits()]);
     categories.value = cats;
     units.value = uoms;
   } catch {

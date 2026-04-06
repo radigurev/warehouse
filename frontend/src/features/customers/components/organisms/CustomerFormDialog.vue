@@ -99,7 +99,7 @@ import { ref, reactive, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useNotificationStore } from '@shared/stores/notification';
 import { createCustomer, updateCustomer, getCustomerById } from '@features/customers/api/customers';
-import { getCategories } from '@features/customers/api/categories';
+import { getAllCategories } from '@features/customers/api/categories';
 import type { CustomerDto, CustomerCategoryDto } from '@features/customers/types/customer';
 import type { AxiosError } from 'axios';
 import type { ProblemDetails } from '@shared/types/api';
@@ -147,7 +147,7 @@ const form = reactive({
 async function loadCategories(): Promise<void> {
   categoriesLoading.value = true;
   try {
-    categories.value = await getCategories();
+    categories.value = await getAllCategories();
   } catch {
     // silent — categories dropdown will be empty
   } finally {

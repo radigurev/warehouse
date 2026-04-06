@@ -17,13 +17,14 @@ export function useWarehousesView() {
   const warehouses = ref<WarehouseDto[]>([]);
   const loading = ref(false);
   const totalCount = ref(0);
+  const totalPages = computed(() => Math.ceil(totalCount.value / (searchParams.value.pageSize || 25)));
   const selectedWarehouse = ref<WarehouseDto | null>(null);
   const showFormDialog = ref(false);
   const showDeactivateDialog = ref(false);
   const deactivating = ref(false);
 
   const searchParams = ref<SearchWarehousesRequest>({
-    includeDeleted: false,
+    includeDeleted: true,
     sortBy: 'name',
     sortDescending: false,
     page: 1,
@@ -131,11 +132,22 @@ export function useWarehousesView() {
     }
   }
 
+  function handlePageChange(newPage: number): void {
+    searchParams.value = { ...searchParams.value, page: newPage };
+    loadWarehouses();
+  }
+
+  function handlePageSizeChange(newSize: number): void {
+    searchParams.value = { ...searchParams.value, pageSize: newSize, page: 1 };
+    loadWarehouses();
+  }
+
   return {
     t,
     layout,
     loading,
     totalCount,
+    totalPages,
     selectedWarehouse,
     showFormDialog,
     showDeactivateDialog,
@@ -152,5 +164,7 @@ export function useWarehousesView() {
     openDeactivateDialog,
     handleDeactivate,
     handleReactivate,
+    handlePageChange,
+    handlePageSizeChange,
   };
 }

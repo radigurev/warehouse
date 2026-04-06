@@ -50,7 +50,7 @@ import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useNotificationStore } from '@shared/stores/notification';
 import { getUserRoles, assignRoles, removeRole } from '@features/auth/api/users';
-import { getRoles } from '@features/auth/api/roles';
+import { getAllRoles } from '@features/auth/api/roles';
 import type { RoleDto } from '@features/auth/types/role';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
 
@@ -88,7 +88,7 @@ async function loadRoles(): Promise<void> {
   try {
     const [userRoles, roles] = await Promise.all([
       getUserRoles(props.userId),
-      getRoles(),
+      getAllRoles(),
     ]);
     assignedRoles.value = userRoles;
     allRoles.value = roles;

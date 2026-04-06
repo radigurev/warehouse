@@ -1,9 +1,18 @@
 import apiClient from '@shared/api/client';
+import type { PaginatedResponse } from '@shared/types/api';
 import type { RoleDto, RoleDetailDto, CreateRoleRequest, UpdateRoleRequest, AssignPermissionsRequest } from '@features/auth/types/role';
 import type { PermissionDto } from '@features/auth/types/permission';
 
-export function getRoles(): Promise<RoleDto[]> {
-  return apiClient.get<RoleDto[]>('/roles').then((r) => r.data);
+export function getRoles(page = 1, pageSize = 25): Promise<PaginatedResponse<RoleDto>> {
+  return apiClient
+    .get<PaginatedResponse<RoleDto>>('/roles', { params: { page, pageSize } })
+    .then((r) => r.data);
+}
+
+export function getAllRoles(): Promise<RoleDto[]> {
+  return apiClient
+    .get<PaginatedResponse<RoleDto>>('/roles', { params: { page: 1, pageSize: 100 } })
+    .then((r) => r.data.items);
 }
 
 export function getRoleById(id: number): Promise<RoleDetailDto> {

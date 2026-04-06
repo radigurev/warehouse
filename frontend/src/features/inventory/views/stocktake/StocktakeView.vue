@@ -8,14 +8,19 @@
     </div>
 
     <v-card class="view-list-card">
-      <v-data-table
+      <v-data-table-server
         :headers="vm.headers"
         :items="vm.filteredItems"
+        :items-length="vm.totalCount"
         :loading="vm.loading"
         :density="vm.layout.vuetifyDensity"
-        :items-per-page="-1"
+        :page="vm.searchParams.page"
+        :items-per-page="vm.searchParams.pageSize"
+        :items-per-page-options="[10, 25, 50, 100]"
         fixed-header
         hover
+        @update:page="vm.handlePageChange"
+        @update:items-per-page="vm.handlePageSizeChange"
       >
         <template #header.name="{ column }">
           <div class="d-inline-flex align-center">
@@ -51,7 +56,15 @@
         <template #item.actions="{ item }">
           <ActionChip :label="vm.t('stocktake.viewDetails')" icon="mdi-eye" color="info" :compact="vm.layout.isCompact" @click="vm.handleDetail(item)" />
         </template>
-      </v-data-table>
+
+        <template #tfoot>
+          <tr>
+            <td :colspan="vm.headers.length" class="text-center text-caption text-medium-emphasis py-1">
+              {{ vm.t('common.pageInfo', { page: vm.searchParams.page, pages: vm.totalPages, total: vm.totalCount }) }}
+            </td>
+          </tr>
+        </template>
+      </v-data-table-server>
     </v-card>
   </div>
 </template>

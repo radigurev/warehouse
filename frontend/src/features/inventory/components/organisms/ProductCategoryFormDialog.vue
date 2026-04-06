@@ -62,7 +62,7 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useNotificationStore } from '@shared/stores/notification';
-import { searchCategories, createCategory, updateCategory } from '@features/inventory/api/product-categories';
+import { getAllCategories, createCategory, updateCategory } from '@features/inventory/api/product-categories';
 import type { ProductCategoryDto } from '@features/inventory/types/inventory';
 import type { AxiosError } from 'axios';
 import type { ProblemDetails } from '@shared/types/api';
@@ -110,7 +110,7 @@ const availableParentCategories = computed(() => {
 async function loadParentCategories(): Promise<void> {
   parentCategoriesLoading.value = true;
   try {
-    allCategories.value = await searchCategories();
+    allCategories.value = await getAllCategories();
   } catch {
     // silent — dropdown will be empty
   } finally {

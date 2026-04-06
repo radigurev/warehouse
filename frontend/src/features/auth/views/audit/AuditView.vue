@@ -80,13 +80,18 @@
     </v-card>
 
     <v-card>
-      <v-data-table
+      <v-data-table-server
         :headers="vm.headers"
         :items="vm.filteredItems"
+        :items-length="vm.totalCount"
         :loading="vm.loading"
         :density="vm.layout.vuetifyDensity"
-        :items-per-page="25"
+        :page="vm.page"
+        :items-per-page="vm.pageSize"
+        :items-per-page-options="[10, 25, 50, 100]"
         hover
+        @update:page="vm.handlePageChange"
+        @update:items-per-page="vm.handlePageSizeChange"
       >
         <template #header.action="{ column }">
           <div class="d-inline-flex align-center">
@@ -120,7 +125,15 @@
             @click="vm.openDetails(item.details)"
           />
         </template>
-      </v-data-table>
+
+        <template #tfoot>
+          <tr>
+            <td :colspan="vm.headers.length" class="text-center text-caption text-medium-emphasis py-1">
+              {{ vm.t('common.pageInfo', { page: vm.page, pages: vm.totalPages, total: vm.totalCount }) }}
+            </td>
+          </tr>
+        </template>
+      </v-data-table-server>
     </v-card>
 
     <v-dialog v-model="vm.showDetailsDialog" max-width="600">

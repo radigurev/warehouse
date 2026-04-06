@@ -19,6 +19,7 @@ export function useStockMovementsView() {
   const movements = ref<StockMovementDto[]>([]);
   const loading = ref(false);
   const totalCount = ref(0);
+  const totalPages = computed(() => Math.ceil(totalCount.value / (searchParams.value.pageSize || 25)));
   const showFormDialog = ref(false);
 
   const searchParams = ref<SearchStockMovementsRequest>({
@@ -101,11 +102,22 @@ export function useStockMovementsView() {
     await loadMovements();
   }
 
+  function handlePageChange(newPage: number): void {
+    searchParams.value = { ...searchParams.value, page: newPage };
+    loadMovements();
+  }
+
+  function handlePageSizeChange(newSize: number): void {
+    searchParams.value = { ...searchParams.value, pageSize: newSize, page: 1 };
+    loadMovements();
+  }
+
   return {
     t,
     layout,
     loading,
     totalCount,
+    totalPages,
     showFormDialog,
     searchParams,
     columnFilters,
@@ -116,5 +128,7 @@ export function useStockMovementsView() {
     translateReason,
     handleRecordMovement,
     submitMovement,
+    handlePageChange,
+    handlePageSizeChange,
   };
 }

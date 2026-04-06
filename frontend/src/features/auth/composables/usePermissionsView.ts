@@ -16,6 +16,10 @@ export function usePermissionsView() {
   const permissions = ref<PermissionDto[]>([]);
   const loading = ref(false);
   const showFormDialog = ref(false);
+  const page = ref(1);
+  const pageSize = ref(25);
+  const totalCount = ref(0);
+  const totalPages = ref(0);
 
   const { columnFilters, filteredItems } = useColumnFilters(permissions, ['resource', 'action']);
 
@@ -30,12 +34,26 @@ export function usePermissionsView() {
   async function loadPermissions(): Promise<void> {
     loading.value = true;
     try {
-      permissions.value = await getPermissions();
+      const response = await getPermissions(page.value, pageSize.value);
+      permissions.value = response.items;
+      totalCount.value = response.totalCount;
+      totalPages.value = response.totalPages;
     } catch {
       notification.error(t('errors.UNEXPECTED_ERROR'));
     } finally {
       loading.value = false;
     }
+  }
+
+  function handlePageChange(newPage: number): void {
+    page.value = newPage;
+    loadPermissions();
+  }
+
+  function handlePageSizeChange(newSize: number): void {
+    pageSize.value = newSize;
+    page.value = 1;
+    loadPermissions();
   }
 
   function handleCreate(): void {
@@ -51,10 +69,16 @@ export function usePermissionsView() {
     layout,
     loading,
     showFormDialog,
+    page,
+    pageSize,
+    totalCount,
+    totalPages,
     columnFilters,
     filteredItems,
     headers,
     loadPermissions,
+    handlePageChange,
+    handlePageSizeChange,
     handleCreate,
   };
 }

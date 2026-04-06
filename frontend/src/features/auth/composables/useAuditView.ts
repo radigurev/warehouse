@@ -15,6 +15,10 @@ export function useAuditView() {
   const auditLogs = ref<AuditLogDto[]>([]);
   const userMap = ref<Map<number, string>>(new Map());
   const loading = ref(false);
+  const totalCount = ref(0);
+  const totalPages = computed(() => Math.ceil(totalCount.value / (pageSize.value || 25)));
+  const page = ref(1);
+  const pageSize = ref(25);
   const showDetailsDialog = ref(false);
   const dateFromMenu = ref(false);
   const dateToMenu = ref(false);
@@ -83,12 +87,15 @@ export function useAuditView() {
     loading.value = true;
     try {
       const response = await getAuditLogs({
+        page: page.value,
+        pageSize: pageSize.value,
         userId: filters.userId || undefined,
         action: filters.action || undefined,
         fromDate: filters.dateFrom || undefined,
         toDate: filters.dateTo || undefined,
       });
       auditLogs.value = response.items;
+      totalCount.value = response.totalCount;
     } catch {
       notification.error(t('errors.UNEXPECTED_ERROR'));
     } finally {
@@ -128,6 +135,18 @@ export function useAuditView() {
     filters.action = '';
     filters.dateFrom = '';
     filters.dateTo = '';
+    page.value = 1;
+    loadAuditLogs();
+  }
+
+  function handlePageChange(newPage: number): void {
+    page.value = newPage;
+    loadAuditLogs();
+  }
+
+  function handlePageSizeChange(newSize: number): void {
+    pageSize.value = newSize;
+    page.value = 1;
     loadAuditLogs();
   }
 
@@ -140,6 +159,10 @@ export function useAuditView() {
     t,
     layout,
     loading,
+    totalCount,
+    totalPages,
+    page,
+    pageSize,
     showDetailsDialog,
     dateFromMenu,
     dateToMenu,
@@ -158,5 +181,7 @@ export function useAuditView() {
     onDateToPicked,
     clearFilters,
     openDetails,
+    handlePageChange,
+    handlePageSizeChange,
   };
 }

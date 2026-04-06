@@ -1,12 +1,21 @@
 import apiClient from '@shared/api/client';
+import type { PaginatedResponse } from '@shared/types/api';
 import type {
   CustomerCategoryDto,
   CreateCategoryRequest,
   UpdateCategoryRequest,
 } from '@features/customers/types/customer';
 
-export function getCategories(): Promise<CustomerCategoryDto[]> {
-  return apiClient.get<CustomerCategoryDto[]>('/customer-categories').then((r) => r.data);
+export function getCategories(page = 1, pageSize = 25): Promise<PaginatedResponse<CustomerCategoryDto>> {
+  return apiClient
+    .get<PaginatedResponse<CustomerCategoryDto>>('/customer-categories', { params: { page, pageSize } })
+    .then((r) => r.data);
+}
+
+export function getAllCategories(): Promise<CustomerCategoryDto[]> {
+  return apiClient
+    .get<PaginatedResponse<CustomerCategoryDto>>('/customer-categories', { params: { page: 1, pageSize: 100 } })
+    .then((r) => r.data.items);
 }
 
 export function getCategoryById(id: number): Promise<CustomerCategoryDto> {

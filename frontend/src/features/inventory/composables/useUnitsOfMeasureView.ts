@@ -21,6 +21,10 @@ export function useUnitsOfMeasureView() {
   const showFormDialog = ref(false);
   const showDeleteDialog = ref(false);
   const deleting = ref(false);
+  const page = ref(1);
+  const pageSize = ref(25);
+  const totalCount = ref(0);
+  const totalPages = ref(0);
 
   const { columnFilters, filteredItems } = useColumnFilters(units, ['code', 'name']);
 
@@ -36,12 +40,26 @@ export function useUnitsOfMeasureView() {
   async function loadUnits(): Promise<void> {
     loading.value = true;
     try {
-      units.value = await searchUnits();
+      const response = await searchUnits(page.value, pageSize.value);
+      units.value = response.items;
+      totalCount.value = response.totalCount;
+      totalPages.value = response.totalPages;
     } catch {
       notification.error(t('errors.UNEXPECTED_ERROR'));
     } finally {
       loading.value = false;
     }
+  }
+
+  function handlePageChange(newPage: number): void {
+    page.value = newPage;
+    loadUnits();
+  }
+
+  function handlePageSizeChange(newSize: number): void {
+    pageSize.value = newSize;
+    page.value = 1;
+    loadUnits();
   }
 
   function handleCreate(): void {
@@ -96,10 +114,16 @@ export function useUnitsOfMeasureView() {
     showFormDialog,
     showDeleteDialog,
     deleting,
+    page,
+    pageSize,
+    totalCount,
+    totalPages,
     columnFilters,
     filteredItems,
     headers,
     loadUnits,
+    handlePageChange,
+    handlePageSizeChange,
     handleCreate,
     handleEdit,
     openDeleteDialog,

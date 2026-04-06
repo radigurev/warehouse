@@ -1,12 +1,21 @@
 import apiClient from '@shared/api/client';
+import type { PaginatedResponse } from '@shared/types/api';
 import type {
   ProductCategoryDto,
   CreateProductCategoryRequest,
   UpdateProductCategoryRequest,
 } from '@features/inventory/types/inventory';
 
-export function searchCategories(): Promise<ProductCategoryDto[]> {
-  return apiClient.get<ProductCategoryDto[]>('/product-categories').then((r) => r.data);
+export function searchCategories(page = 1, pageSize = 25): Promise<PaginatedResponse<ProductCategoryDto>> {
+  return apiClient
+    .get<PaginatedResponse<ProductCategoryDto>>('/product-categories', { params: { page, pageSize } })
+    .then((r) => r.data);
+}
+
+export function getAllCategories(): Promise<ProductCategoryDto[]> {
+  return apiClient
+    .get<PaginatedResponse<ProductCategoryDto>>('/product-categories', { params: { page: 1, pageSize: 100 } })
+    .then((r) => r.data.items);
 }
 
 export function getCategoryById(id: number): Promise<ProductCategoryDto> {

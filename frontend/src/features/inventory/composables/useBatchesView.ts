@@ -17,13 +17,14 @@ export function useBatchesView() {
   const batches = ref<BatchDto[]>([]);
   const loading = ref(false);
   const totalCount = ref(0);
+  const totalPages = computed(() => Math.ceil(totalCount.value / (searchParams.value.pageSize || 25)));
   const selectedBatch = ref<BatchDto | null>(null);
   const showFormDialog = ref(false);
   const showDeactivateDialog = ref(false);
   const deactivating = ref(false);
 
   const searchParams = ref<SearchBatchesRequest>({
-    includeExpired: false,
+    includeExpired: true,
     page: 1,
     pageSize: 25,
   });
@@ -118,11 +119,22 @@ export function useBatchesView() {
     }
   }
 
+  function handlePageChange(newPage: number): void {
+    searchParams.value = { ...searchParams.value, page: newPage };
+    loadBatches();
+  }
+
+  function handlePageSizeChange(newSize: number): void {
+    searchParams.value = { ...searchParams.value, pageSize: newSize, page: 1 };
+    loadBatches();
+  }
+
   return {
     t,
     layout,
     loading,
     totalCount,
+    totalPages,
     selectedBatch,
     showFormDialog,
     showDeactivateDialog,
@@ -137,5 +149,7 @@ export function useBatchesView() {
     handleEdit,
     openDeactivateDialog,
     handleDeactivate,
+    handlePageChange,
+    handlePageSizeChange,
   };
 }

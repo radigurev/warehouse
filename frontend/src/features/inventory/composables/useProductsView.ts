@@ -17,13 +17,14 @@ export function useProductsView() {
   const products = ref<ProductDto[]>([]);
   const loading = ref(false);
   const totalCount = ref(0);
+  const totalPages = computed(() => Math.ceil(totalCount.value / (searchParams.value.pageSize || 25)));
   const selectedProduct = ref<ProductDto | null>(null);
   const showFormDialog = ref(false);
   const showDeactivateDialog = ref(false);
   const deactivating = ref(false);
 
   const searchParams = ref<SearchProductsRequest>({
-    includeDeleted: false,
+    includeDeleted: true,
     sortBy: 'name',
     sortDescending: false,
     page: 1,
@@ -132,11 +133,22 @@ export function useProductsView() {
     }
   }
 
+  function handlePageChange(newPage: number): void {
+    searchParams.value = { ...searchParams.value, page: newPage };
+    loadProducts();
+  }
+
+  function handlePageSizeChange(newSize: number): void {
+    searchParams.value = { ...searchParams.value, pageSize: newSize, page: 1 };
+    loadProducts();
+  }
+
   return {
     t,
     layout,
     loading,
     totalCount,
+    totalPages,
     selectedProduct,
     showFormDialog,
     showDeactivateDialog,
@@ -153,5 +165,7 @@ export function useProductsView() {
     openDeactivateDialog,
     handleDeactivate,
     handleReactivate,
+    handlePageChange,
+    handlePageSizeChange,
   };
 }

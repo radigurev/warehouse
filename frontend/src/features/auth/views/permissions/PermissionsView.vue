@@ -8,14 +8,19 @@
     </div>
 
     <v-card class="view-list-card">
-      <v-data-table
+      <v-data-table-server
         :headers="vm.headers"
         :items="vm.filteredItems"
+        :items-length="vm.totalCount"
         :loading="vm.loading"
         :density="vm.layout.vuetifyDensity"
-        :items-per-page="-1"
+        :page="vm.page"
+        :items-per-page="vm.pageSize"
+        :items-per-page-options="[10, 25, 50, 100]"
         fixed-header
         hover
+        @update:page="vm.handlePageChange"
+        @update:items-per-page="vm.handlePageSizeChange"
       >
         <template #header.resource="{ column }">
           <div class="d-inline-flex align-center">
@@ -30,7 +35,15 @@
             <ColumnFilter v-model="vm.columnFilters.action" column-key="action" />
           </div>
         </template>
-      </v-data-table>
+
+        <template #tfoot>
+          <tr>
+            <td :colspan="vm.headers.length" class="text-center text-caption text-medium-emphasis py-1">
+              {{ vm.t('common.pageInfo', { page: vm.page, pages: vm.totalPages, total: vm.totalCount }) }}
+            </td>
+          </tr>
+        </template>
+      </v-data-table-server>
     </v-card>
 
     <PermissionFormDialog v-model="vm.showFormDialog" @saved="vm.loadPermissions" />
