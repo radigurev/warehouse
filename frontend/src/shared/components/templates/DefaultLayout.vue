@@ -185,6 +185,254 @@
             </div>
           </v-expand-transition>
         </template>
+
+        <!-- Inventory — Products section -->
+        <v-list-group v-if="!layout.sidebarCollapsed" value="inventory-products">
+          <template #activator="{ props: groupProps }">
+            <v-list-item
+              v-bind="groupProps"
+              prepend-icon="mdi-package-variant-closed"
+              :title="t('nav.products')"
+              rounded="xl"
+            />
+          </template>
+
+          <v-list-item
+            to="/products"
+            prepend-icon="mdi-package-variant-closed"
+            :title="t('nav.products')"
+            :active="route.path === '/products'"
+            rounded="xl"
+          />
+          <v-list-item
+            to="/product-categories"
+            prepend-icon="mdi-tag-multiple"
+            :title="t('nav.productCategories')"
+            :active="route.path === '/product-categories'"
+            rounded="xl"
+          />
+          <v-list-item
+            to="/units-of-measure"
+            prepend-icon="mdi-ruler"
+            :title="t('nav.unitsOfMeasure')"
+            :active="route.path === '/units-of-measure'"
+            rounded="xl"
+          />
+        </v-list-group>
+
+        <template v-else>
+          <v-list-item
+            prepend-icon="mdi-package-variant-closed"
+            density="compact"
+            rounded="xl"
+            :class="['mt-2', { 'rail-admin-parent': productsRailExpanded }]"
+            @click="productsRailExpanded = !productsRailExpanded"
+          >
+            <template #append>
+              <v-icon
+                icon="mdi-chevron-down"
+                size="x-small"
+                :class="['rail-arrow', { 'rail-arrow--open': productsRailExpanded }]"
+              />
+            </template>
+          </v-list-item>
+
+          <v-expand-transition>
+            <div v-show="productsRailExpanded" class="rail-admin-items">
+              <v-list-item
+                to="/products"
+                prepend-icon="mdi-package-variant-closed"
+                :active="route.path === '/products'"
+                rounded="xl"
+                class="rail-admin-item"
+              />
+              <v-list-item
+                to="/product-categories"
+                prepend-icon="mdi-tag-multiple"
+                :active="route.path === '/product-categories'"
+                rounded="xl"
+                class="rail-admin-item"
+              />
+              <v-list-item
+                to="/units-of-measure"
+                prepend-icon="mdi-ruler"
+                :active="route.path === '/units-of-measure'"
+                rounded="xl"
+                class="rail-admin-item"
+              />
+            </div>
+          </v-expand-transition>
+        </template>
+
+        <!-- Inventory — Warehouse section -->
+        <v-list-group v-if="!layout.sidebarCollapsed" value="inventory-warehouse">
+          <template #activator="{ props: groupProps }">
+            <v-list-item
+              v-bind="groupProps"
+              prepend-icon="mdi-warehouse"
+              :title="t('nav.warehouseManagement')"
+              rounded="xl"
+            />
+          </template>
+
+          <v-list-item
+            to="/warehouses"
+            prepend-icon="mdi-warehouse"
+            :title="t('nav.warehouses')"
+            :active="route.path === '/warehouses'"
+            rounded="xl"
+          />
+          <v-list-item
+            to="/stock-levels"
+            prepend-icon="mdi-package-variant"
+            :title="t('nav.stockLevels')"
+            :active="route.path === '/stock-levels'"
+            rounded="xl"
+          />
+          <v-list-item
+            to="/stock-movements"
+            prepend-icon="mdi-swap-horizontal"
+            :title="t('nav.stockMovements')"
+            :active="route.path === '/stock-movements'"
+            rounded="xl"
+          />
+          <v-list-item
+            to="/batches"
+            prepend-icon="mdi-barcode"
+            :title="t('nav.batches')"
+            :active="route.path === '/batches'"
+            rounded="xl"
+          />
+        </v-list-group>
+
+        <template v-else>
+          <v-list-item
+            prepend-icon="mdi-warehouse"
+            density="compact"
+            rounded="xl"
+            :class="['mt-2', { 'rail-admin-parent': warehouseRailExpanded }]"
+            @click="warehouseRailExpanded = !warehouseRailExpanded"
+          >
+            <template #append>
+              <v-icon
+                icon="mdi-chevron-down"
+                size="x-small"
+                :class="['rail-arrow', { 'rail-arrow--open': warehouseRailExpanded }]"
+              />
+            </template>
+          </v-list-item>
+
+          <v-expand-transition>
+            <div v-show="warehouseRailExpanded" class="rail-admin-items">
+              <v-list-item
+                to="/warehouses"
+                prepend-icon="mdi-warehouse"
+                :active="route.path === '/warehouses'"
+                rounded="xl"
+                class="rail-admin-item"
+              />
+              <v-list-item
+                to="/stock-levels"
+                prepend-icon="mdi-package-variant"
+                :active="route.path === '/stock-levels'"
+                rounded="xl"
+                class="rail-admin-item"
+              />
+              <v-list-item
+                to="/stock-movements"
+                prepend-icon="mdi-swap-horizontal"
+                :active="route.path === '/stock-movements'"
+                rounded="xl"
+                class="rail-admin-item"
+              />
+              <v-list-item
+                to="/batches"
+                prepend-icon="mdi-barcode"
+                :active="route.path === '/batches'"
+                rounded="xl"
+                class="rail-admin-item"
+              />
+            </div>
+          </v-expand-transition>
+        </template>
+
+        <!-- Inventory — Operations section -->
+        <v-list-group v-if="!layout.sidebarCollapsed" value="inventory-operations">
+          <template #activator="{ props: groupProps }">
+            <v-list-item
+              v-bind="groupProps"
+              prepend-icon="mdi-cog-transfer"
+              :title="t('nav.operations')"
+              rounded="xl"
+            />
+          </template>
+
+          <v-list-item
+            to="/adjustments"
+            prepend-icon="mdi-pencil-ruler"
+            :title="t('nav.adjustments')"
+            :active="route.path === '/adjustments'"
+            rounded="xl"
+          />
+          <v-list-item
+            to="/transfers"
+            prepend-icon="mdi-truck"
+            :title="t('nav.transfers')"
+            :active="route.path === '/transfers'"
+            rounded="xl"
+          />
+          <v-list-item
+            to="/stocktake"
+            prepend-icon="mdi-clipboard-check"
+            :title="t('nav.stocktake')"
+            :active="route.path === '/stocktake'"
+            rounded="xl"
+          />
+        </v-list-group>
+
+        <template v-else>
+          <v-list-item
+            prepend-icon="mdi-cog-transfer"
+            density="compact"
+            rounded="xl"
+            :class="['mt-2', { 'rail-admin-parent': operationsRailExpanded }]"
+            @click="operationsRailExpanded = !operationsRailExpanded"
+          >
+            <template #append>
+              <v-icon
+                icon="mdi-chevron-down"
+                size="x-small"
+                :class="['rail-arrow', { 'rail-arrow--open': operationsRailExpanded }]"
+              />
+            </template>
+          </v-list-item>
+
+          <v-expand-transition>
+            <div v-show="operationsRailExpanded" class="rail-admin-items">
+              <v-list-item
+                to="/adjustments"
+                prepend-icon="mdi-pencil-ruler"
+                :active="route.path === '/adjustments'"
+                rounded="xl"
+                class="rail-admin-item"
+              />
+              <v-list-item
+                to="/transfers"
+                prepend-icon="mdi-truck"
+                :active="route.path === '/transfers'"
+                rounded="xl"
+                class="rail-admin-item"
+              />
+              <v-list-item
+                to="/stocktake"
+                prepend-icon="mdi-clipboard-check"
+                :active="route.path === '/stocktake'"
+                rounded="xl"
+                class="rail-admin-item"
+              />
+            </div>
+          </v-expand-transition>
+        </template>
       </v-list>
     </v-navigation-drawer>
 
@@ -314,10 +562,13 @@ const layout = useLayoutStore();
 const drawerOpen = ref(true);
 const adminRailExpanded = ref(true);
 const customerRailExpanded = ref(true);
+const productsRailExpanded = ref(true);
+const warehouseRailExpanded = ref(true);
+const operationsRailExpanded = ref(true);
 
 const currentLocale = computed(() => locale.value);
 
-const formPageRoutes = ['user-create', 'user-edit', 'user-password', 'user-roles', 'role-create', 'role-edit', 'role-permissions', 'permission-create', 'customer-create', 'customer-edit', 'category-create', 'category-edit', 'settings-edit-profile', 'settings-change-password'];
+const formPageRoutes = ['user-create', 'user-edit', 'user-password', 'user-roles', 'role-create', 'role-edit', 'role-permissions', 'permission-create', 'customer-create', 'customer-edit', 'category-create', 'category-edit', 'settings-edit-profile', 'settings-change-password', 'product-create', 'product-edit', 'product-category-create', 'product-category-edit', 'unit-create', 'unit-edit', 'warehouse-create', 'warehouse-edit', 'batch-create', 'batch-edit', 'adjustment-create', 'transfer-create', 'stocktake-create'];
 const isFormPage = computed(() => formPageRoutes.includes(route.name as string));
 
 const pageTitle = computed(() => {

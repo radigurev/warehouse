@@ -27,6 +27,66 @@ export default defineConfig({
         target: 'http://localhost:5002',
         changeOrigin: true,
       },
+      '/api/v1/products': {
+        target: 'http://localhost:5003',
+        changeOrigin: true,
+      },
+      '/api/v1/product-categories': {
+        target: 'http://localhost:5003',
+        changeOrigin: true,
+      },
+      '/api/v1/units-of-measure': {
+        target: 'http://localhost:5003',
+        changeOrigin: true,
+      },
+      '/api/v1/product-accessories': {
+        target: 'http://localhost:5003',
+        changeOrigin: true,
+      },
+      '/api/v1/product-substitutes': {
+        target: 'http://localhost:5003',
+        changeOrigin: true,
+      },
+      '/api/v1/bom': {
+        target: 'http://localhost:5003',
+        changeOrigin: true,
+      },
+      '/api/v1/warehouses': {
+        target: 'http://localhost:5003',
+        changeOrigin: true,
+      },
+      '/api/v1/zones': {
+        target: 'http://localhost:5003',
+        changeOrigin: true,
+      },
+      '/api/v1/storage-locations': {
+        target: 'http://localhost:5003',
+        changeOrigin: true,
+      },
+      '/api/v1/stock-levels': {
+        target: 'http://localhost:5003',
+        changeOrigin: true,
+      },
+      '/api/v1/stock-movements': {
+        target: 'http://localhost:5003',
+        changeOrigin: true,
+      },
+      '/api/v1/batches': {
+        target: 'http://localhost:5003',
+        changeOrigin: true,
+      },
+      '/api/v1/adjustments': {
+        target: 'http://localhost:5003',
+        changeOrigin: true,
+      },
+      '/api/v1/transfers': {
+        target: 'http://localhost:5003',
+        changeOrigin: true,
+      },
+      '/api/v1/stocktake': {
+        target: 'http://localhost:5003',
+        changeOrigin: true,
+      },
       '/api': {
         target: 'http://localhost:5001',
         changeOrigin: true,
