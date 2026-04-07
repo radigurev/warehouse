@@ -38,6 +38,10 @@ public sealed class CustomerReturnService : BaseFulfillmentEntityService, ICusto
     /// <inheritdoc />
     public async Task<Result<CustomerReturnDetailDto>> CreateAsync(CreateCustomerReturnRequest request, int userId, CancellationToken cancellationToken)
     {
+        // TODO: [SDD-FULF-001 §2.7.1] Validate customer exists
+        // via typed HttpClient to Customers.API with Polly resilience.
+        // Error: CUSTOMER_NOT_FOUND (404)
+
         string returnNumber = await GenerateReturnNumberAsync(cancellationToken).ConfigureAwait(false);
 
         CustomerReturn cr = new()

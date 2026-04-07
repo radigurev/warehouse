@@ -32,6 +32,14 @@ public sealed class SalesOrderService : BaseFulfillmentEntityService, ISalesOrde
     /// <inheritdoc />
     public async Task<Result<SalesOrderDetailDto>> CreateAsync(CreateSalesOrderRequest request, int userId, CancellationToken cancellationToken)
     {
+        // TODO: [SDD-FULF-001 §2.1.1] Validate customer exists and is active
+        // via typed HttpClient to Customers.API with Polly resilience.
+        // Errors: CUSTOMER_NOT_FOUND (404), CUSTOMER_INACTIVE (409)
+
+        // TODO: [SDD-FULF-001 §2.1.1] Validate warehouse exists
+        // via typed HttpClient to Inventory.API with Polly resilience.
+        // Error: INVALID_WAREHOUSE (400)
+
         string orderNumber = await GenerateOrderNumberAsync(cancellationToken).ConfigureAwait(false);
 
         SalesOrder so = new()

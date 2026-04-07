@@ -44,6 +44,10 @@ public sealed class PickListService : BaseFulfillmentEntityService, IPickListSer
         if (so.Status != nameof(SalesOrderStatus.Confirmed) && so.Status != nameof(SalesOrderStatus.Picking))
             return Result<PickListDetailDto>.Failure("SO_NOT_PICKABLE", "Sales order is not in a pickable status.", 409);
 
+        // TODO: [SDD-FULF-001 §2.2.1] Validate sufficient available stock
+        // via typed HttpClient to Inventory.API with Polly resilience.
+        // Error: INSUFFICIENT_STOCK (409)
+
         List<SalesOrderLine> unallocatedLines = GetUnallocatedLines(so);
         if (unallocatedLines.Count == 0) return Result<PickListDetailDto>.Failure("SO_FULLY_ALLOCATED", "All sales order lines are already allocated to pick lists.", 409);
 
