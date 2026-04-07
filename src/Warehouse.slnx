@@ -1,10 +1,12 @@
 <Solution>
+  <Folder Name="/Databases/" />
   <Folder Name="/Databases/Auth/">
     <Project Path="Databases/Warehouse.Auth.DBModel/Warehouse.Auth.DBModel.csproj" />
   </Folder>
   <Folder Name="/Databases/Customers/">
     <Project Path="Databases/Warehouse.Customers.DBModel/Warehouse.Customers.DBModel.csproj" />
   </Folder>
+  <Folder Name="/Interfaces/" />
   <Folder Name="/Interfaces/Auth/">
     <Project Path="Interfaces/Auth/Warehouse.Auth.API/Warehouse.Auth.API.csproj" />
     <Project Path="Interfaces/Auth/Warehouse.Auth.API.Tests/Warehouse.Auth.API.Tests.csproj" />
@@ -22,6 +24,7 @@
   </Folder>
   <Project Path="Warehouse.Common/Warehouse.Common.csproj" />
   <Project Path="Warehouse.GenericFiltering/Warehouse.GenericFiltering.csproj" />
+  <Project Path="Warehouse.Infrastructure.Tests/Warehouse.Infrastructure.Tests.csproj" />
   <Project Path="Warehouse.Infrastructure/Warehouse.Infrastructure.csproj" />
   <Project Path="Warehouse.Mapping/Warehouse.Mapping.csproj" />
   <Project Path="Warehouse.ServiceModel/Warehouse.ServiceModel.csproj" />

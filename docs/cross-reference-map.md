@@ -1,6 +1,6 @@
 # Cross-Reference Map
 
-> Last updated: 2026-04-06
+> Last updated: 2026-04-07
 >
 > Note: Updated all paths for domain-split restructure (Auth.DBModel, Customers.DBModel, Interfaces/Auth/, Interfaces/Customers/)
 
@@ -233,6 +233,28 @@ This document provides a bidirectional mapping between SDD specifications and so
 | `src/Warehouse.Mapping/Profiles/Fulfillment/FulfillmentMappingProfile.cs` | Mapping | AutoMapper profile |
 | `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API.Tests/` | Tests | Unit and integration tests |
 
+### SDD-INFRA-001 — Shared Infrastructure Library
+
+| File | Type | Role |
+|---|---|---|
+| `src/Warehouse.Infrastructure/Extensions/ServiceCollectionExtensions.cs` | Extension | All `Add*` DI registration extension methods |
+| `src/Warehouse.Infrastructure/Extensions/WebApplicationExtensions.cs` | Extension | `UseWarehousePipeline` middleware pipeline |
+| `src/Warehouse.Infrastructure/Middleware/CorrelationIdMiddleware.cs` | Middleware | Inbound correlation ID handling and NLog context |
+| `src/Warehouse.Infrastructure/Middleware/GlobalExceptionHandlerMiddleware.cs` | Middleware | Global exception-to-ProblemDetails handler |
+| `src/Warehouse.Infrastructure/Http/CorrelationIdDelegatingHandler.cs` | Handler | Outbound correlation ID propagation |
+| `src/Warehouse.Infrastructure/Authorization/RequirePermissionAttribute.cs` | Attribute | Permission attribute for controllers |
+| `src/Warehouse.Infrastructure/Authorization/PermissionRequirement.cs` | Requirement | Authorization requirement value object |
+| `src/Warehouse.Infrastructure/Authorization/PermissionPolicyProvider.cs` | Provider | Dynamic policy provider for permissions |
+| `src/Warehouse.Infrastructure/Authorization/PermissionAuthorizationHandler.cs` | Handler | JWT permission claim evaluator |
+| `src/Warehouse.Infrastructure/Controllers/BaseApiController.cs` | Controller | Abstract base with Result-to-ActionResult helpers |
+| `src/Warehouse.Infrastructure/Services/BaseEntityService.cs` | Service | Abstract base with EF Core helpers |
+| `src/Warehouse.Infrastructure/Services/PrimaryFlagHelper.cs` | Utility | Static primary/default flag management |
+| `src/Warehouse.Infrastructure/Configuration/FeatureFlags.cs` | Configuration | Feature flag name constants |
+| `src/Warehouse.Infrastructure/Configuration/JwtSettings.cs` | Configuration | Strongly-typed JWT configuration model |
+| `src/Warehouse.Common/Models/Result.cs` | Model | Non-generic Result outcome type |
+| `src/Warehouse.Common/Models/ResultT.cs` | Model | Generic Result<T> outcome type |
+| `src/Warehouse.Common/Interfaces/IEntity.cs` | Interface | Entity marker interface with int Id |
+
 ## Section 2 — Source File → Specs
 
 | Source File | Spec ID(s) |
@@ -320,3 +342,64 @@ This document provides a bidirectional mapping between SDD specifications and so
 | `src/Warehouse.ServiceModel/Events/StockReservationReleasedEvent.cs` | SDD-FULF-001, SDD-INV-002 |
 | `src/Warehouse.Mapping/Profiles/Fulfillment/FulfillmentMappingProfile.cs` | SDD-FULF-001 |
 | `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API.Tests/Unit/Services/*` | SDD-FULF-001 |
+| `src/Warehouse.Infrastructure/Extensions/ServiceCollectionExtensions.cs` | SDD-INFRA-001, SDD-OBS-001, SDD-INFRA-002 |
+| `src/Warehouse.Infrastructure/Extensions/WebApplicationExtensions.cs` | SDD-INFRA-001 |
+| `src/Warehouse.Infrastructure/Middleware/CorrelationIdMiddleware.cs` | SDD-INFRA-001, SDD-OBS-001, SDD-INFRA-002 |
+| `src/Warehouse.Infrastructure/Middleware/GlobalExceptionHandlerMiddleware.cs` | SDD-INFRA-001 |
+| `src/Warehouse.Infrastructure/Http/CorrelationIdDelegatingHandler.cs` | SDD-INFRA-001, SDD-OBS-001 |
+| `src/Warehouse.Infrastructure/Authorization/RequirePermissionAttribute.cs` | SDD-INFRA-001, SDD-AUTH-001 |
+| `src/Warehouse.Infrastructure/Authorization/PermissionRequirement.cs` | SDD-INFRA-001, SDD-AUTH-001 |
+| `src/Warehouse.Infrastructure/Authorization/PermissionPolicyProvider.cs` | SDD-INFRA-001, SDD-AUTH-001 |
+| `src/Warehouse.Infrastructure/Authorization/PermissionAuthorizationHandler.cs` | SDD-INFRA-001, SDD-AUTH-001 |
+| `src/Warehouse.Infrastructure/Controllers/BaseApiController.cs` | SDD-INFRA-001 |
+| `src/Warehouse.Infrastructure/Services/BaseEntityService.cs` | SDD-INFRA-001 |
+| `src/Warehouse.Infrastructure/Services/PrimaryFlagHelper.cs` | SDD-INFRA-001 |
+| `src/Warehouse.Infrastructure/Configuration/FeatureFlags.cs` | SDD-INFRA-001 |
+| `src/Warehouse.Infrastructure/Configuration/JwtSettings.cs` | SDD-INFRA-001 |
+| `src/Warehouse.Common/Models/Result.cs` | SDD-INFRA-001 |
+| `src/Warehouse.Common/Models/ResultT.cs` | SDD-INFRA-001 |
+| `src/Warehouse.Common/Interfaces/IEntity.cs` | SDD-INFRA-001 |
+| `src/Interfaces/Auth/Warehouse.Auth.API/nlog.config` | SDD-OBS-001 |
+| `src/Interfaces/Customers/Warehouse.Customers.API/nlog.config` | SDD-OBS-001 |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/nlog.config` | SDD-OBS-001 |
+| `src/Interfaces/Purchasing/Warehouse.Purchasing.API/nlog.config` | SDD-OBS-001 |
+| `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/nlog.config` | SDD-OBS-001 |
+| `src/Gateway/Warehouse.Gateway/nlog.config` | SDD-OBS-001, SDD-INFRA-002 |
+| `docker-compose.infrastructure.yml` | SDD-OBS-001, SDD-INFRA-002 |
+| `docker/loki/loki-config.yml` | SDD-OBS-001 |
+| `docker/grafana/provisioning/datasources/loki.yml` | SDD-OBS-001 |
+| `src/Gateway/Warehouse.Gateway/Program.cs` | SDD-INFRA-002 |
+| `src/Gateway/Warehouse.Gateway/appsettings.json` | SDD-INFRA-002 |
+| `src/Gateway/Warehouse.Gateway/appsettings.json.template` | SDD-INFRA-002 |
+| `src/Gateway/Warehouse.Gateway/nlog.config` | SDD-INFRA-002 |
+| `src/Gateway/Warehouse.Gateway/Warehouse.Gateway.csproj` | SDD-INFRA-002 |
+| `src/Warehouse.Infrastructure/Middleware/CorrelationIdMiddleware.cs` | SDD-INFRA-002 |
+
+### SDD-OBS-001 — Observability (Centralized Logging & Distributed Tracing)
+
+| File | Type | Role |
+|---|---|---|
+| `src/Warehouse.Infrastructure/Extensions/ServiceCollectionExtensions.cs` | Extension | `AddWarehouseTracing()` extension method for OpenTelemetry registration |
+| `src/Warehouse.Infrastructure/Middleware/CorrelationIdMiddleware.cs` | Middleware | Sets CorrelationId in NLog scope context for log correlation |
+| `src/Warehouse.Infrastructure/Http/CorrelationIdDelegatingHandler.cs` | Handler | Propagates correlation ID to outbound HTTP calls |
+| `src/Interfaces/Auth/Warehouse.Auth.API/nlog.config` | Configuration | Auth service NLog targets (console, file, Loki) |
+| `src/Interfaces/Customers/Warehouse.Customers.API/nlog.config` | Configuration | Customers service NLog targets |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/nlog.config` | Configuration | Inventory service NLog targets |
+| `src/Interfaces/Purchasing/Warehouse.Purchasing.API/nlog.config` | Configuration | Purchasing service NLog targets |
+| `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/nlog.config` | Configuration | Fulfillment service NLog targets |
+| `src/Gateway/Warehouse.Gateway/nlog.config` | Configuration | Gateway NLog targets (no EF Core rule, adds Yarp rule) |
+| `docker-compose.infrastructure.yml` | Docker | Loki, Grafana, Jaeger container definitions |
+| `docker/loki/loki-config.yml` | Configuration | Loki server configuration (retention, schema, storage) |
+| `docker/grafana/provisioning/datasources/loki.yml` | Configuration | Grafana Loki data source provisioning |
+
+### SDD-INFRA-002 — API Gateway
+
+| File | Type | Role |
+|---|---|---|
+| `src/Gateway/Warehouse.Gateway/Program.cs` | Entry point | YARP proxy setup, rate limiting, health aggregation, middleware pipeline |
+| `src/Gateway/Warehouse.Gateway/appsettings.json` | Configuration | Route definitions, cluster destinations |
+| `src/Gateway/Warehouse.Gateway/appsettings.json.template` | Template | Configuration template with placeholders |
+| `src/Gateway/Warehouse.Gateway/nlog.config` | Configuration | NLog targets (console, file, Loki) for gateway logging |
+| `src/Gateway/Warehouse.Gateway/Warehouse.Gateway.csproj` | Project | Package references (YARP, NLog, HealthChecks.Uris) |
+| `src/Warehouse.Infrastructure/Middleware/CorrelationIdMiddleware.cs` | Middleware | Correlation ID generation and propagation |
+| `src/Warehouse.Infrastructure/Extensions/ServiceCollectionExtensions.cs` | Extension | Provides `AddWarehouseTracing()` used by gateway |

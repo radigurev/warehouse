@@ -666,18 +666,18 @@ These items should be addressed before or during Phase 2 to ensure the foundatio
 
 | # | Service | ISA-95 Domain | Spec | Implement | Test | Validate | Status |
 |---|---|---|---|---|---|---|---|
-| 1 | Auth | Personnel & Authorization | SDD-AUTH-001 | Done | Partial | — | **Implemented** |
-| 2 | Customers | Business Partner Management | SDD-CUST-001 | Done | Partial | — | **Implemented** |
-| 3 | Inventory | Inventory Operations | SDD-INV-001..004 | Done | Partial | — | **Implemented** |
-| I1 | Gateway (YARP) | Cross-cutting | — | Done | — | — | **Implemented** |
-| I2 | Correlation IDs | Cross-cutting | — | Done | — | — | **Implemented** |
-| I3 | Centralized Logging | Cross-cutting | — | Done | — | — | **Implemented** (Loki + Grafana) |
-| I4 | Distributed Tracing | Cross-cutting | — | Done | — | — | **Implemented** (OpenTelemetry → Jaeger) |
-| I5 | Polly Resilience | Cross-cutting | — | Done | — | — | **Ready** (extension method; no consumers until Phase 2) |
-| I6 | Redis (Distributed Cache) | Cross-cutting | — | Done | — | — | **Implemented** (caching in Auth, Customers, Inventory) |
-| I7 | RabbitMQ (Message Broker) | Cross-cutting | — | Done | — | — | **Implemented** (4 events published from Customers, Inventory) |
-| I8 | Rate Limiting | Cross-cutting | — | Done | — | — | **Implemented** (per-IP on Gateway) |
-| I9 | Feature Flags | Cross-cutting | — | Done | — | — | **Implemented** (gates Auth seeder) |
+| 1 | Auth | Personnel & Authorization | SDD-AUTH-001 | Done | Partial | Missing | **Implemented** |
+| 2 | Customers | Business Partner Management | SDD-CUST-001 | Done | Partial | Missing | **Implemented** |
+| 3 | Inventory | Inventory Operations | SDD-INV-001..004 | Done | Partial | Missing | **Implemented** |
+| I1 | Gateway (YARP) | Cross-cutting | SDD-INFRA-002 | Done | 20 planned | Validated | **Implemented** |
+| I2 | Correlation IDs | Cross-cutting | SDD-INFRA-001 | Done | 31 unit | Validated | **Implemented** |
+| I3 | Centralized Logging | Cross-cutting | SDD-OBS-001 | Done | 16 planned | Validated | **Implemented** (Loki + Grafana) |
+| I4 | Distributed Tracing | Cross-cutting | SDD-OBS-001 | Done | (incl. above) | Validated | **Implemented** (OpenTelemetry → Jaeger) |
+| I5 | Polly Resilience | Cross-cutting | SDD-INFRA-001 | Done | (incl. I2) | Validated | **Ready** (extension method; no consumers until Phase 2) |
+| I6 | Redis (Distributed Cache) | Cross-cutting | SDD-INFRA-001 | Done | (incl. I2) | Validated | **Implemented** (caching in Auth, Customers, Inventory) |
+| I7 | RabbitMQ (Message Broker) | Cross-cutting | SDD-INFRA-001 | Done | (incl. I2) | Validated | **Implemented** (4 events published from Customers, Inventory) |
+| I8 | Rate Limiting | Cross-cutting | SDD-INFRA-002 | Done | (incl. I1) | Validated | **Implemented** (per-IP on Gateway) |
+| I9 | Feature Flags | Cross-cutting | SDD-INFRA-001 | Done | (incl. I2) | Validated | **Implemented** (gates Auth seeder) |
 | 4 | Purchasing | Procurement Operations | SDD-PURCH-001 | Done | 80 unit | Validated | **Implemented** |
 | 5 | Fulfillment | Fulfillment Operations | SDD-FULF-001 | Done | 128 unit | Validated | **Implemented** |
 | 6 | Production | Production Operations | — | — | — | — | Not started |

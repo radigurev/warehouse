@@ -78,6 +78,9 @@ Test classes reference spec IDs: `{TestClassName}_SDD_{DOMAIN}_{NNN}_{Descriptio
 | SDD-INV-002 | Core | Stock Management | Part 2 Section 7 + Part 3 — Inventory Operations | Active |
 | SDD-INV-003 | Core | Warehouse Structure | Part 2 Section 5 + Part 3 — Inventory Operations | Active |
 | SDD-INV-004 | Core | Stocktaking | Part 3 — Inventory Counting | Active |
+| SDD-INFRA-001 | Infrastructure | Shared Infrastructure & Middleware | Cross-cutting (all parts) | Active |
+| SDD-INFRA-002 | Infrastructure | API Gateway | Cross-cutting | Active |
+| SDD-OBS-001 | Infrastructure | Observability | Cross-cutting (Part 3 — Operations Events) | Active |
 
 ## Change Spec Registry
 
@@ -108,8 +111,8 @@ Test classes reference spec IDs: `{TestClassName}_SDD_{DOMAIN}_{NNN}_{Descriptio
 | `SDD-UI` | 004 |
 | `SDD-AUTH` | 002 |
 | `SDD-FILT` | 001 |
-| `SDD-INFRA` | 001 |
-| `SDD-OBS` | 001 |
+| `SDD-INFRA` | 003 |
+| `SDD-OBS` | 002 |
 | `CHG-FEAT` | 001 |
 | `CHG-ENH` | 004 |
 | `CHG-FIX` | 001 |
