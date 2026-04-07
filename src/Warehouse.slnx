@@ -28,4 +28,11 @@
   <Folder Name="/Gateway/">
     <Project Path="Gateway/Warehouse.Gateway/Warehouse.Gateway.csproj" />
   </Folder>
+  <Folder Name="/Databases/Purchasing/">
+    <Project Path="Databases/Warehouse.Purchasing.DBModel/Warehouse.Purchasing.DBModel.csproj" />
+  </Folder>
+  <Folder Name="/Interfaces/Purchasing/">
+    <Project Path="Interfaces/Purchasing/Warehouse.Purchasing.API/Warehouse.Purchasing.API.csproj" />
+    <Project Path="Interfaces/Purchasing/Warehouse.Purchasing.API.Tests/Warehouse.Purchasing.API.Tests.csproj" />
+  </Folder>
 </Solution>
