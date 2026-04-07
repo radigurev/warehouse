@@ -1,0 +1,35 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "WarehouseDb": "<CONNECTION_STRING>",
+    "Redis": "localhost:6379"
+  },
+  "OpenTelemetry": {
+    "OtlpEndpoint": "http://localhost:4317"
+  },
+  "Jwt": {
+    "SecretKey": "<JWT_SECRET_KEY_MIN_32_CHARS>",
+    "Issuer": "Warehouse.Auth.API",
+    "Audience": "Warehouse",
+    "AccessTokenExpirationMinutes": 30,
+    "RefreshTokenExpirationDays": 7
+  },
+  "RabbitMQ": {
+    "Host": "localhost",
+    "Username": "warehouse",
+    "Password": "warehouse"
+  },
+  "Kestrel": {
+    "Endpoints": {
+      "Http": {
+        "Url": "http://localhost:5005"
+      }
+    }
+  }
+}

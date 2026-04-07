@@ -35,4 +35,10 @@
     <Project Path="Interfaces/Purchasing/Warehouse.Purchasing.API/Warehouse.Purchasing.API.csproj" />
     <Project Path="Interfaces/Purchasing/Warehouse.Purchasing.API.Tests/Warehouse.Purchasing.API.Tests.csproj" />
   </Folder>
+  <Folder Name="/Databases/Fulfillment/">
+    <Project Path="Databases/Warehouse.Fulfillment.DBModel/Warehouse.Fulfillment.DBModel.csproj" />
+  </Folder>
+  <Folder Name="/Interfaces/Fulfillment/">
+    <Project Path="Interfaces/Fulfillment/Warehouse.Fulfillment.API/Warehouse.Fulfillment.API.csproj" />
+  </Folder>
 </Solution>
