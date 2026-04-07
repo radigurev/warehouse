@@ -40,5 +40,6 @@
   </Folder>
   <Folder Name="/Interfaces/Fulfillment/">
     <Project Path="Interfaces/Fulfillment/Warehouse.Fulfillment.API/Warehouse.Fulfillment.API.csproj" />
+    <Project Path="Interfaces/Fulfillment/Warehouse.Fulfillment.API.Tests/Warehouse.Fulfillment.API.Tests.csproj" />
   </Folder>
 </Solution>
