@@ -610,6 +610,45 @@ Warehouse/
 
 ---
 
+## Phase 2 Deferred Items
+
+Items identified during validation that are intentionally deferred. These do NOT block the services from running — all business logic works. They are about completeness and hardening.
+
+### Cross-Service Validations (blocked on Polly typed HttpClients)
+
+Both Purchasing and Fulfillment have MUST rules that require calling other microservices over HTTP to validate foreign references. These are marked with `// TODO:` comments in the service code. Implementing them is the **first real Polly use case** — it requires creating typed HttpClient interfaces and registering them via `AddWarehouseHttpClient<T,TImpl>()`.
+
+| Service | Validation | Calls | Spec Reference | Error Code |
+|---|---|---|---|---|
+| Purchasing | Supplier return: check stock before confirm | Inventory.API | SDD-PURCH-001 §2.7.2 | INSUFFICIENT_STOCK (409) |
+| Fulfillment | SO create: check customer exists + active | Customers.API | SDD-FULF-001 §2.1.1 | CUSTOMER_NOT_FOUND (404), CUSTOMER_INACTIVE (409) |
+| Fulfillment | SO create: check warehouse exists | Inventory.API | SDD-FULF-001 §2.1.1 | INVALID_WAREHOUSE (400) |
+| Fulfillment | SO add line: check product exists | Inventory.API | SDD-FULF-001 §2.1.2 | INVALID_PRODUCT (400) |
+| Fulfillment | Pick list: check stock availability | Inventory.API | SDD-FULF-001 §2.2.1 | INSUFFICIENT_STOCK (409) |
+| Fulfillment | Return create: check customer exists | Customers.API | SDD-FULF-001 §2.7.1 | CUSTOMER_NOT_FOUND (404) |
+
+**To implement:** Create `IInventoryClient` and `ICustomerClient` typed HttpClient interfaces, register with `AddWarehouseHttpClient`, inject into services, replace TODO comments with actual calls.
+
+### Missing Tests
+
+| Category | Purchasing | Fulfillment | Notes |
+|---|---|---|---|
+| Integration tests (WebApplicationFactory) | 87 planned | 85 planned | Need test base with auth helpers, MassTransit test harness |
+| FluentValidation unit tests | 29 planned | 24 planned | Validators exist and work — tests verify individual rules |
+| Contact service unit tests (Purchasing only) | 11 planned | — | SupplierAddress/Phone/Email service tests |
+| Additional unit test gaps | ~8 | ~20 | Edge cases from spec test plan not yet covered |
+
+### Minor Code Items
+
+| Item | Service | Priority |
+|---|---|---|
+| Add update validators (UpdateSupplierRequest, etc.) | Purchasing | P2 |
+| Add contact validators (address, phone, email) | Purchasing | P2 |
+| Document Redis caching behavior in specs | Both | P3 |
+| Update spec status from Draft to Active | Both | P3 |
+
+---
+
 ## ISA-95 Compliance Backlog (Existing Code)
 
 These items should be addressed before or during Phase 2 to ensure the foundation is ISA-95 compliant:
@@ -639,8 +678,8 @@ These items should be addressed before or during Phase 2 to ensure the foundatio
 | I7 | RabbitMQ (Message Broker) | Cross-cutting | — | Done | — | — | **Implemented** (4 events published from Customers, Inventory) |
 | I8 | Rate Limiting | Cross-cutting | — | Done | — | — | **Implemented** (per-IP on Gateway) |
 | I9 | Feature Flags | Cross-cutting | — | Done | — | — | **Implemented** (gates Auth seeder) |
-| 4 | Purchasing | Procurement Operations | — | — | — | — | Not started |
-| 5 | Fulfillment | Fulfillment Operations | — | — | — | — | Not started |
+| 4 | Purchasing | Procurement Operations | SDD-PURCH-001 | Done | 80 unit | Validated | **Implemented** |
+| 5 | Fulfillment | Fulfillment Operations | SDD-FULF-001 | Done | 128 unit | Validated | **Implemented** |
 | 6 | Production | Production Operations | — | — | — | — | Not started |
 | 7 | Quality | Quality Operations | — | — | — | — | Not started |
 | 8 | Finance | Financial Management | — | — | — | — | Not started |
