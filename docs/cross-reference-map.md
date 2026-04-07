@@ -202,6 +202,37 @@ This document provides a bidirectional mapping between SDD specifications and so
 | `src/Warehouse.Mapping/Profiles/Purchasing/PurchasingMappingProfile.cs` | Mapping | AutoMapper profile |
 | `src/Interfaces/Purchasing/Warehouse.Purchasing.API.Tests/` | Tests | Unit and integration tests |
 
+### SDD-FULF-001 — Fulfillment Operations
+
+| File | Type | Role |
+|---|---|---|
+| `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Controllers/SalesOrdersController.cs` | Controller | SO lifecycle endpoints |
+| `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Controllers/SalesOrderLinesController.cs` | Controller | SO line management endpoints |
+| `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Controllers/PickListsController.cs` | Controller | Pick list generation and execution endpoints |
+| `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Controllers/PackingController.cs` | Controller | Parcel and packing endpoints |
+| `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Controllers/ShipmentsController.cs` | Controller | Shipment dispatch and tracking endpoints |
+| `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Controllers/CarriersController.cs` | Controller | Carrier CRUD endpoints |
+| `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Controllers/CarrierServiceLevelsController.cs` | Controller | Carrier service level endpoints |
+| `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Controllers/CustomerReturnsController.cs` | Controller | Customer return endpoints |
+| `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Controllers/FulfillmentEventsController.cs` | Controller | Fulfillment event history endpoints |
+| `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Services/SalesOrderService.cs` | Service | SO lifecycle and status machine |
+| `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Services/PickListService.cs` | Service | Pick list generation and execution |
+| `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Services/PackingService.cs` | Service | Packing business logic |
+| `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Services/ShipmentService.cs` | Service | Dispatch and tracking business logic |
+| `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Services/CarrierService.cs` | Service | Carrier business logic |
+| `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Services/CustomerReturnService.cs` | Service | Customer return business logic |
+| `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Services/FulfillmentEventService.cs` | Service | Event history business logic |
+| `src/Databases/Warehouse.Fulfillment.DBModel/Models/` | Entities | All fulfillment database models |
+| `src/Databases/Warehouse.Fulfillment.DBModel/FulfillmentDbContext.cs` | DbContext | Fulfillment EF Core context |
+| `src/Warehouse.ServiceModel/DTOs/Fulfillment/` | DTOs | Fulfillment domain DTOs |
+| `src/Warehouse.ServiceModel/Requests/Fulfillment/` | Requests | Fulfillment request models |
+| `src/Warehouse.ServiceModel/Events/ShipmentDispatchedEvent.cs` | Event | MassTransit event contract |
+| `src/Warehouse.ServiceModel/Events/CustomerReturnReceivedEvent.cs` | Event | MassTransit event contract |
+| `src/Warehouse.ServiceModel/Events/StockReservationRequestedEvent.cs` | Event | MassTransit event contract |
+| `src/Warehouse.ServiceModel/Events/StockReservationReleasedEvent.cs` | Event | MassTransit event contract |
+| `src/Warehouse.Mapping/Profiles/Fulfillment/FulfillmentMappingProfile.cs` | Mapping | AutoMapper profile |
+| `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API.Tests/` | Tests | Unit and integration tests |
+
 ## Section 2 — Source File → Specs
 
 | Source File | Spec ID(s) |
@@ -277,3 +308,15 @@ This document provides a bidirectional mapping between SDD specifications and so
 | `src/Warehouse.ServiceModel/Events/GoodsReceiptLineAcceptedEvent.cs` | SDD-PURCH-001, SDD-INV-002 |
 | `src/Warehouse.Mapping/Profiles/Purchasing/PurchasingMappingProfile.cs` | SDD-PURCH-001 |
 | `src/Interfaces/Purchasing/Warehouse.Purchasing.API.Tests/Unit/Services/*` | SDD-PURCH-001 |
+| `src/Databases/Warehouse.Fulfillment.DBModel/Models/*` | SDD-FULF-001 |
+| `src/Databases/Warehouse.Fulfillment.DBModel/FulfillmentDbContext.cs` | SDD-FULF-001 |
+| `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Controllers/*` | SDD-FULF-001 |
+| `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Services/*` | SDD-FULF-001 |
+| `src/Warehouse.ServiceModel/DTOs/Fulfillment/*` | SDD-FULF-001 |
+| `src/Warehouse.ServiceModel/Requests/Fulfillment/*` | SDD-FULF-001 |
+| `src/Warehouse.ServiceModel/Events/ShipmentDispatchedEvent.cs` | SDD-FULF-001, SDD-INV-002 |
+| `src/Warehouse.ServiceModel/Events/CustomerReturnReceivedEvent.cs` | SDD-FULF-001, SDD-INV-002 |
+| `src/Warehouse.ServiceModel/Events/StockReservationRequestedEvent.cs` | SDD-FULF-001, SDD-INV-002 |
+| `src/Warehouse.ServiceModel/Events/StockReservationReleasedEvent.cs` | SDD-FULF-001, SDD-INV-002 |
+| `src/Warehouse.Mapping/Profiles/Fulfillment/FulfillmentMappingProfile.cs` | SDD-FULF-001 |
+| `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API.Tests/Unit/Services/*` | SDD-FULF-001 |
