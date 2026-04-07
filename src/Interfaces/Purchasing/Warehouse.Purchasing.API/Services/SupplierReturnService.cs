@@ -1,6 +1,7 @@
 using AutoMapper;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using NLog;
 using Warehouse.Common.Enums;
 using Warehouse.Common.Models;
 using Warehouse.Purchasing.API.Interfaces;
@@ -20,6 +21,7 @@ namespace Warehouse.Purchasing.API.Services;
 /// </summary>
 public sealed class SupplierReturnService : BasePurchasingEntityService, ISupplierReturnService
 {
+    private static readonly NLog.Logger Logger = LogManager.GetCurrentClassLogger();
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly IPurchaseEventService _eventService;
 
@@ -99,6 +101,11 @@ public sealed class SupplierReturnService : BasePurchasingEntityService, ISuppli
         if (sr.Status == nameof(SupplierReturnStatus.Confirmed)) return Result<SupplierReturnDetailDto>.Failure("RETURN_ALREADY_CONFIRMED", "Supplier return has already been confirmed.", 409);
         if (sr.Status != nameof(SupplierReturnStatus.Draft)) return Result<SupplierReturnDetailDto>.Failure("INVALID_RETURN_STATUS", "Only draft supplier returns can be confirmed.", 409);
 
+        // TODO: [SDD-PURCH-001 §2.7.2] Validate sufficient stock for each return line
+        // by calling Inventory.API via typed HttpClient with Polly resilience.
+        // This is the first Polly use case — implement when AddWarehouseHttpClient is consumed.
+        // Error: INSUFFICIENT_STOCK (409) if any line exceeds available stock.
+
         sr.Status = nameof(SupplierReturnStatus.Confirmed); sr.ConfirmedAtUtc = DateTime.UtcNow; sr.ConfirmedByUserId = userId;
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
@@ -115,7 +122,7 @@ public sealed class SupplierReturnService : BasePurchasingEntityService, ISuppli
                 }).ToList()
             }, cancellationToken).ConfigureAwait(false);
         }
-        catch (Exception) { }
+        catch (Exception ex) { Logger.Warn(ex, "Failed to publish {EventType} event", "SupplierReturnCompleted"); }
 
         await _eventService.RecordEventAsync("SupplierReturnConfirmed", "SupplierReturn", id, userId, null, cancellationToken).ConfigureAwait(false);
 

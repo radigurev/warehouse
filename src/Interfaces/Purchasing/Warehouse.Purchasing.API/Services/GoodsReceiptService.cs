@@ -1,6 +1,7 @@
 using AutoMapper;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using NLog;
 using Warehouse.Common.Enums;
 using Warehouse.Common.Models;
 using Warehouse.Purchasing.API.Interfaces;
@@ -20,6 +21,7 @@ namespace Warehouse.Purchasing.API.Services;
 /// </summary>
 public sealed class GoodsReceiptService : BasePurchasingEntityService, IGoodsReceiptService
 {
+    private static readonly NLog.Logger Logger = LogManager.GetCurrentClassLogger();
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly IPurchaseEventService _eventService;
 
@@ -166,7 +168,7 @@ public sealed class GoodsReceiptService : BasePurchasingEntityService, IGoodsRec
                 ReceivedByUserId = userId, ReceivedAtUtc = receipt.ReceivedAtUtc, Lines = acceptedLines
             }, cancellationToken).ConfigureAwait(false);
         }
-        catch (Exception) { }
+        catch (Exception ex) { Logger.Warn(ex, "Failed to publish {EventType} event", "GoodsReceiptCompleted"); }
     }
 
     private async Task<GoodsReceipt?> GetReceiptWithDetailsAsync(int id, CancellationToken cancellationToken)

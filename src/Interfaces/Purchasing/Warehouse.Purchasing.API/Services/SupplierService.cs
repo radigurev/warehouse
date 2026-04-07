@@ -111,7 +111,7 @@ public sealed class SupplierService : BasePurchasingEntityService, ISupplierServ
         Context.Suppliers.Add(supplier);
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        await _eventService.RecordEventAsync("PurchaseOrderCreated", "Supplier", supplier.Id, userId, null, cancellationToken).ConfigureAwait(false);
+        await _eventService.RecordEventAsync("SupplierCreated", "Supplier", supplier.Id, userId, null, cancellationToken).ConfigureAwait(false);
 
         Supplier? created = await GetSupplierWithDetailsAsync(supplier.Id, cancellationToken).ConfigureAwait(false);
         SupplierDetailDto dto = Mapper.Map<SupplierDetailDto>(created!);
@@ -147,6 +147,8 @@ public sealed class SupplierService : BasePurchasingEntityService, ISupplierServ
         supplier.ModifiedByUserId = userId;
 
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        await _eventService.RecordEventAsync("SupplierUpdated", "Supplier", id, userId, null, cancellationToken).ConfigureAwait(false);
 
         Supplier? updated = await GetSupplierWithDetailsAsync(id, cancellationToken).ConfigureAwait(false);
         SupplierDetailDto dto = Mapper.Map<SupplierDetailDto>(updated!);
@@ -209,6 +211,8 @@ public sealed class SupplierService : BasePurchasingEntityService, ISupplierServ
         supplier.ModifiedByUserId = userId;
 
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        await _eventService.RecordEventAsync("SupplierReactivated", "Supplier", id, userId, null, cancellationToken).ConfigureAwait(false);
 
         Supplier? reactivated = await GetSupplierWithDetailsAsync(id, cancellationToken).ConfigureAwait(false);
         SupplierDetailDto dto = Mapper.Map<SupplierDetailDto>(reactivated!);
