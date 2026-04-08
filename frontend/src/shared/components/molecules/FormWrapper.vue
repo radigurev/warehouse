@@ -7,7 +7,7 @@
         <v-spacer />
         <v-btn icon="mdi-close" variant="text" size="small" @click="model = false" />
       </div>
-      <div class="flex-grow-1 overflow-y-auto hide-card-title">
+      <div class="flex-grow-1 d-flex flex-column overflow-hidden modal-body hide-card-title">
         <slot />
       </div>
     </v-card>
@@ -80,16 +80,28 @@ const backLabel = t('pageTitle.back');
 
 .page-form-content :deep(.v-card-text) {
   flex: 1;
+  overflow-y: auto;
   padding-top: 24px;
 }
 
 .page-form-content :deep(.v-card-actions) {
-  margin-top: auto;
+  flex-shrink: 0;
   border-radius: 0;
 }
 
 .hide-card-title :deep(.v-card-title) {
   display: none;
+}
+
+.modal-body :deep(.v-card-text) {
+  flex: 1;
+  overflow-y: auto;
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+.modal-body :deep(.v-card-actions) {
+  flex-shrink: 0;
 }
 
 .hide-card-title :deep(.v-card-text) {
