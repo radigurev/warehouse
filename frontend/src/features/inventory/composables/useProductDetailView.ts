@@ -104,7 +104,7 @@ export function useProductDetailView() {
     try {
       await deactivateProduct(productId);
       notification.success(t('products.deactivated') + ' \u2713');
-      await loadProduct();
+      router.push({ name: 'products' });
     } catch {
       notification.error(t('errors.UNEXPECTED_ERROR'));
     }

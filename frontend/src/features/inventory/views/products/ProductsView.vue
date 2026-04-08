@@ -69,6 +69,7 @@
     </v-card>
 
     <ProductFormDialog v-model="vm.showFormDialog" :product="vm.selectedProduct" @saved="vm.loadProducts" />
+    <ProductDetailDialog v-model="vm.showDetailDialog" :product-id="vm.selectedProduct?.id ?? null" />
     <ConfirmDialog
       v-model="vm.showDeactivateDialog"
       :title="vm.t('products.deactivate')"
@@ -90,6 +91,7 @@ import ActionChip from '@shared/components/atoms/ActionChip.vue';
 import ColumnFilter from '@shared/components/molecules/ColumnFilter.vue';
 import ConfirmDialog from '@shared/components/molecules/ConfirmDialog.vue';
 import ProductFormDialog from '@features/inventory/components/organisms/ProductFormDialog.vue';
+import ProductDetailDialog from '@features/inventory/components/organisms/ProductDetailDialog.vue';
 
 const vm = reactive(useProductsView());
 </script>

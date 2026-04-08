@@ -20,6 +20,7 @@ export function useProductsView() {
   const totalPages = computed(() => Math.ceil(totalCount.value / (searchParams.value.pageSize || 25)));
   const selectedProduct = ref<ProductDto | null>(null);
   const showFormDialog = ref(false);
+  const showDetailDialog = ref(false);
   const showDeactivateDialog = ref(false);
   const deactivating = ref(false);
 
@@ -100,7 +101,12 @@ export function useProductsView() {
   }
 
   function handleDetail(product: ProductDto): void {
-    router.push({ name: 'product-detail', params: { id: product.id } });
+    if (layout.isPageMode) {
+      router.push({ name: 'product-detail', params: { id: product.id } });
+    } else {
+      selectedProduct.value = product;
+      showDetailDialog.value = true;
+    }
   }
 
   function openDeactivateDialog(product: ProductDto): void {
@@ -151,6 +157,7 @@ export function useProductsView() {
     totalPages,
     selectedProduct,
     showFormDialog,
+    showDetailDialog,
     showDeactivateDialog,
     deactivating,
     searchParams,

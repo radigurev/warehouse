@@ -73,7 +73,7 @@ export function useCustomerDetailView() {
     try {
       await deactivateCustomer(customerId);
       notification.success(t('customers.deactivated') + ' \u2713');
-      await loadCustomer();
+      router.push({ name: 'customers' });
     } catch {
       notification.error(t('errors.UNEXPECTED_ERROR'));
     }

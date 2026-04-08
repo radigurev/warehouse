@@ -88,7 +88,7 @@ export function useWarehouseDetailView() {
     try {
       await deactivateWarehouse(warehouseId);
       notification.success(t('warehouses.deactivated'));
-      await loadWarehouse();
+      router.push({ name: 'warehouses' });
     } catch {
       notification.error(t('errors.UNEXPECTED_ERROR'));
     }
