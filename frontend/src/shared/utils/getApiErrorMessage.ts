@@ -6,7 +6,9 @@ export function getApiErrorMessage(
   t: (key: string) => string,
 ): string {
   const axiosError = err as AxiosError<ProblemDetails>;
-  const errorCode = axiosError?.response?.data?.title;
+  const status = axiosError?.response?.status;
+  const data = axiosError?.response?.data;
+  const errorCode = data?.title;
 
   if (errorCode) {
     const key = `errors.${errorCode}`;
@@ -14,9 +16,8 @@ export function getApiErrorMessage(
     if (translated !== key) {
       return translated;
     }
-    const detail = axiosError?.response?.data?.detail;
-    if (detail) {
-      return detail;
+    if (data?.detail) {
+      return data.detail;
     }
   }
 
@@ -24,5 +25,9 @@ export function getApiErrorMessage(
     return t('errors.NETWORK_ERROR');
   }
 
-  return t('errors.UNEXPECTED_ERROR');
+  if (!status || status >= 500) {
+    return t('errors.UNEXPECTED_ERROR');
+  }
+
+  return data?.detail || t('errors.UNEXPECTED_ERROR');
 }
