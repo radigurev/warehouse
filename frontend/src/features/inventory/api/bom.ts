@@ -7,8 +7,8 @@ import type {
   BomLineDto,
 } from '@features/inventory/types/inventory';
 
-export function getBomByProductId(productId: number): Promise<BomDto> {
-  return apiClient.get<BomDto>(`/bom/by-product/${productId}`).then((r) => r.data);
+export function getBomByProductId(productId: number): Promise<BomDto | null> {
+  return apiClient.get<BomDto[]>(`/bom/by-product/${productId}`).then((r) => r.data[0] ?? null);
 }
 
 export function createBom(request: CreateBomRequest): Promise<BomDto> {
