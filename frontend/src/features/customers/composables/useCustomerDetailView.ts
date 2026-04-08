@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useNotificationStore } from '@shared/stores/notification';
 import { useLayoutStore } from '@shared/stores/layout';
 import { getCustomerById, reactivateCustomer, deactivateCustomer } from '@features/customers/api/customers';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 import {
   createAddress, updateAddress, deleteAddress,
   createPhone, updatePhone, deletePhone,
@@ -64,8 +65,8 @@ export function useCustomerDetailView() {
     try {
       customer.value = await reactivateCustomer(customerId);
       notification.success(t('customers.reactivated') + ' \u2713');
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     }
   }
 
@@ -74,8 +75,8 @@ export function useCustomerDetailView() {
       await deactivateCustomer(customerId);
       notification.success(t('customers.deactivated') + ' \u2713');
       router.push({ name: 'customers' });
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     }
   }
 

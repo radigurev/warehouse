@@ -252,6 +252,7 @@ import { searchLocations } from '@features/inventory/api/storage-locations';
 import ConfirmDialog from '@shared/components/molecules/ConfirmDialog.vue';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
 import type { ProductDto, StorageLocationDto, StocktakeCountDto } from '@features/inventory/types/inventory';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 const notification = useNotificationStore();
 const vm = reactive(useStocktakeDetailView());
@@ -293,8 +294,8 @@ async function handleStart(): Promise<void> {
   try {
     await vm.handleStart();
     showStartDialog.value = false;
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   } finally {
     starting.value = false;
   }
@@ -305,8 +306,8 @@ async function handleComplete(): Promise<void> {
   try {
     await vm.handleComplete();
     showCompleteDialog.value = false;
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   } finally {
     completing.value = false;
   }
@@ -317,8 +318,8 @@ async function handleCancel(): Promise<void> {
   try {
     await vm.handleCancel();
     showCancelDialog.value = false;
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   } finally {
     cancelling.value = false;
   }
@@ -372,8 +373,8 @@ async function submitCount(): Promise<void> {
     }
     showCountForm.value = false;
     resetCountForm();
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   } finally {
     submittingCount.value = false;
   }
@@ -395,8 +396,8 @@ async function confirmDeleteCount(): Promise<void> {
   try {
     await vm.handleDeleteCount(deletingCount.value.id);
     showDeleteCountDialog.value = false;
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   } finally {
     deletingCountLoading.value = false;
   }

@@ -8,6 +8,7 @@ import { searchUnits, deleteUnit } from '@features/inventory/api/units-of-measur
 import type { UnitOfMeasureDto } from '@features/inventory/types/inventory';
 import type { AxiosError } from 'axios';
 import type { ProblemDetails } from '@shared/types/api';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 export function useUnitsOfMeasureView() {
   const { t } = useI18n();
@@ -44,8 +45,8 @@ export function useUnitsOfMeasureView() {
       units.value = response.items;
       totalCount.value = response.totalCount;
       totalPages.value = response.totalPages;
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     } finally {
       loading.value = false;
     }
@@ -99,7 +100,7 @@ export function useUnitsOfMeasureView() {
       if (errorCode === 'UNIT_IN_USE') {
         notification.error(axiosError.response?.data?.detail || t('errors.UNIT_IN_USE'));
       } else {
-        notification.error(t('errors.UNEXPECTED_ERROR'));
+        notification.error(getApiErrorMessage(err, t));
       }
     } finally {
       deleting.value = false;

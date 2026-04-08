@@ -130,6 +130,7 @@ import { searchWarehouses } from '@features/inventory/api/warehouses';
 import { searchLocations } from '@features/inventory/api/storage-locations';
 import { createAdjustment } from '@features/inventory/api/adjustments';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 import type {
   ProductDto,
   WarehouseDto,
@@ -249,8 +250,8 @@ async function handleSubmit(): Promise<void> {
     notification.success(t('adjustments.create') + ' \u2713');
     visible.value = false;
     emit('saved');
-  } catch {
-    notification.error(t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, t));
   } finally {
     submitting.value = false;
   }

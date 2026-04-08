@@ -136,6 +136,7 @@ import type { ProblemDetails } from '@shared/types/api';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
 import { useLayoutStore } from '@shared/stores/layout';
 import { useFormGrid } from '@shared/composables/useFormGrid';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 const { t } = useI18n();
 const notification = useNotificationStore();
@@ -209,8 +210,8 @@ async function populateForm(): Promise<void> {
       form.description = detail.description ?? '';
       form.notes = detail.notes ?? '';
       form.requiresBatchTracking = detail.requiresBatchTracking;
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     }
   } else if (visible.value) {
     isEdit.value = false;
@@ -294,7 +295,7 @@ function handleApiError(err: AxiosError<ProblemDetails>): void {
     const translated = t(key);
     notification.error(translated !== key ? translated : t('errors.UNEXPECTED_ERROR'));
   } else {
-    notification.error(t('errors.UNEXPECTED_ERROR'));
+    notification.error(getApiErrorMessage(err, t));
   }
 }
 

@@ -53,6 +53,7 @@ import { getUserRoles, assignRoles, removeRole } from '@features/auth/api/users'
 import { getAllRoles } from '@features/auth/api/roles';
 import type { RoleDto } from '@features/auth/types/role';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 const { t } = useI18n();
 const notification = useNotificationStore();
@@ -92,8 +93,8 @@ async function loadRoles(): Promise<void> {
     ]);
     assignedRoles.value = userRoles;
     allRoles.value = roles;
-  } catch {
-    notification.error(t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, t));
   } finally {
     loading.value = false;
   }
@@ -103,8 +104,8 @@ async function handleAssignRole(roleId: number): Promise<void> {
   try {
     await assignRoles(props.userId, { roleIds: [roleId] });
     await loadRoles();
-  } catch {
-    notification.error(t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, t));
   }
 }
 
@@ -112,8 +113,8 @@ async function handleRemoveRole(roleId: number): Promise<void> {
   try {
     await removeRole(props.userId, roleId);
     await loadRoles();
-  } catch {
-    notification.error(t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, t));
   }
 }
 

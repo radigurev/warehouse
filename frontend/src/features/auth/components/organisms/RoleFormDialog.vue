@@ -55,6 +55,7 @@ import type { ProblemDetails } from '@shared/types/api';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
 import { useLayoutStore } from '@shared/stores/layout';
 import { useFormGrid } from '@shared/composables/useFormGrid';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 const { t } = useI18n();
 const notification = useNotificationStore();
@@ -127,7 +128,7 @@ async function handleSubmit(): Promise<void> {
     if (errorCode === 'DUPLICATE_ROLE_NAME') {
       fieldErrors.name = [t('errors.DUPLICATE_ROLE_NAME')];
     } else {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+      notification.error(getApiErrorMessage(err, t));
     }
   } finally {
     loading.value = false;

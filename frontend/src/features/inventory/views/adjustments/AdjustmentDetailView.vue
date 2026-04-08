@@ -179,6 +179,7 @@ import { useAdjustmentDetailView } from '@features/inventory/composables/useAdju
 import { useNotificationStore } from '@shared/stores/notification';
 import ConfirmDialog from '@shared/components/molecules/ConfirmDialog.vue';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 const notification = useNotificationStore();
 const vm = reactive(useAdjustmentDetailView());
@@ -199,8 +200,8 @@ async function handleApprove(): Promise<void> {
   try {
     await vm.handleApprove();
     showApproveDialog.value = false;
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   } finally {
     approving.value = false;
   }
@@ -214,8 +215,8 @@ async function handleReject(): Promise<void> {
     await vm.handleReject(rejectionReason.value);
     showRejectDialog.value = false;
     rejectionReason.value = '';
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   } finally {
     rejecting.value = false;
   }
@@ -226,8 +227,8 @@ async function handleApply(): Promise<void> {
   try {
     await vm.handleApply();
     showApplyDialog.value = false;
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   } finally {
     applying.value = false;
   }

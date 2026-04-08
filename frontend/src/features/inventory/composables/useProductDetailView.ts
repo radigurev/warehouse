@@ -7,6 +7,7 @@ import { getProductById, reactivateProduct, deactivateProduct } from '@features/
 import { getBomByProductId, createBom, addBomLine, removeBomLine, deleteBom } from '@features/inventory/api/bom';
 import { getAccessories, createAccessory, deleteAccessory } from '@features/inventory/api/product-accessories';
 import { getSubstitutes, createSubstitute, deleteSubstitute } from '@features/inventory/api/product-substitutes';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 import type {
   ProductDetailDto,
   BomDto,
@@ -95,8 +96,8 @@ export function useProductDetailView() {
     try {
       product.value = await reactivateProduct(productId);
       notification.success(t('products.reactivated') + ' \u2713');
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     }
   }
 
@@ -105,8 +106,8 @@ export function useProductDetailView() {
       await deactivateProduct(productId);
       notification.success(t('products.deactivated') + ' \u2713');
       router.push({ name: 'products' });
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     }
   }
 

@@ -10,6 +10,7 @@ import {
   applyAdjustment,
 } from '@features/inventory/api/adjustments';
 import type { InventoryAdjustmentDetailDto } from '@features/inventory/types/inventory';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 export function useAdjustmentDetailView() {
   const { t, locale } = useI18n();
@@ -88,8 +89,8 @@ export function useAdjustmentDetailView() {
     try {
       adjustment.value = await approveAdjustment(adjustmentId, { notes });
       notification.success(t('adjustments.approve') + ' \u2713');
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     }
   }
 
@@ -97,8 +98,8 @@ export function useAdjustmentDetailView() {
     try {
       adjustment.value = await rejectAdjustment(adjustmentId, { notes: rejectionReason });
       notification.success(t('adjustments.reject') + ' \u2713');
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     }
   }
 
@@ -106,8 +107,8 @@ export function useAdjustmentDetailView() {
     try {
       adjustment.value = await applyAdjustment(adjustmentId);
       notification.success(t('adjustments.apply') + ' \u2713');
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     }
   }
 

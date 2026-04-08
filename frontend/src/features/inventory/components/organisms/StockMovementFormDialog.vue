@@ -129,6 +129,7 @@ import { searchWarehouses } from '@features/inventory/api/warehouses';
 import { searchLocations } from '@features/inventory/api/storage-locations';
 import { searchBatches } from '@features/inventory/api/batches';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 import type {
   ProductDto,
   WarehouseDto,
@@ -256,8 +257,8 @@ async function handleSubmit(): Promise<void> {
       notes: form.notes || undefined,
     };
     emit('saved', request);
-  } catch {
-    notification.error(t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, t));
   } finally {
     submitting.value = false;
   }

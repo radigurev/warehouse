@@ -6,6 +6,7 @@ import { useLayoutStore } from '@shared/stores/layout';
 import { useNotificationStore } from '@shared/stores/notification';
 import { getUserById } from '@features/auth/api/users';
 import type { UserDetailDto } from '@features/auth/types/user';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 export function useSettingsView() {
   const { t } = useI18n();
@@ -26,8 +27,8 @@ export function useSettingsView() {
     loading.value = true;
     try {
       profile.value = await getUserById(auth.userId);
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     } finally {
       loading.value = false;
     }

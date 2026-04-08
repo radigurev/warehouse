@@ -282,6 +282,7 @@ import type { ProductDto } from '@features/inventory/types/inventory';
 import StatusChip from '@shared/components/atoms/StatusChip.vue';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
 import ConfirmDialog from '@shared/components/molecules/ConfirmDialog.vue';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 const notification = useNotificationStore();
 const vm = reactive(useProductDetailView());
@@ -346,8 +347,8 @@ async function handleDeactivate(): Promise<void> {
   try {
     await vm.handleDeactivate();
     showDeactivateDialog.value = false;
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   } finally {
     deactivating.value = false;
   }
@@ -358,8 +359,8 @@ async function handleReactivate(): Promise<void> {
   try {
     await vm.handleReactivate();
     showReactivateDialog.value = false;
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   } finally {
     reactivating.value = false;
   }
@@ -376,8 +377,8 @@ async function submitCreateBom(): Promise<void> {
     });
     showBomCreateForm.value = false;
     resetBomCreateForm();
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   }
 }
 
@@ -392,8 +393,8 @@ async function submitAddBomLine(): Promise<void> {
     });
     showBomLineForm.value = false;
     resetBomLineForm();
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   }
 }
 
@@ -401,8 +402,8 @@ async function handleRemoveBomLine(lineId: number): Promise<void> {
   if (!vm.bom) return;
   try {
     await vm.handleRemoveBomLine(vm.bom.id, lineId);
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   }
 }
 
@@ -416,16 +417,16 @@ async function submitAddAccessory(): Promise<void> {
     });
     showAccessoryForm.value = false;
     resetAccessoryForm();
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   }
 }
 
 async function handleDeleteAccessory(accessoryId: number): Promise<void> {
   try {
     await vm.handleDeleteAccessory(accessoryId);
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   }
 }
 
@@ -439,16 +440,16 @@ async function submitAddSubstitute(): Promise<void> {
     });
     showSubstituteForm.value = false;
     resetSubstituteForm();
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   }
 }
 
 async function handleDeleteSubstitute(substituteId: number): Promise<void> {
   try {
     await vm.handleDeleteSubstitute(substituteId);
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   }
 }
 

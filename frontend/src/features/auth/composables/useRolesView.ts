@@ -8,6 +8,7 @@ import { getRoles, deleteRole } from '@features/auth/api/roles';
 import type { RoleDto } from '@features/auth/types/role';
 import type { AxiosError } from 'axios';
 import type { ProblemDetails } from '@shared/types/api';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 export function useRolesView() {
   const { t } = useI18n();
@@ -45,8 +46,8 @@ export function useRolesView() {
       roles.value = response.items;
       totalCount.value = response.totalCount;
       totalPages.value = response.totalPages;
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     } finally {
       loading.value = false;
     }
@@ -111,7 +112,7 @@ export function useRolesView() {
       } else if (errorCode === 'PROTECTED_ROLE') {
         notification.error(t('errors.PROTECTED_ROLE'));
       } else {
-        notification.error(t('errors.UNEXPECTED_ERROR'));
+        notification.error(getApiErrorMessage(err, t));
       }
     } finally {
       deleting.value = false;

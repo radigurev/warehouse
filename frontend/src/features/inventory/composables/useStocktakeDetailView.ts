@@ -3,6 +3,7 @@ import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useNotificationStore } from '@shared/stores/notification';
 import { useLayoutStore } from '@shared/stores/layout';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 import {
   getSessionById,
   startSession,
@@ -99,8 +100,8 @@ export function useStocktakeDetailView() {
     try {
       session.value = await startSession(sessionId);
       notification.success(t('stocktake.start') + ' \u2713');
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     }
   }
 
@@ -108,8 +109,8 @@ export function useStocktakeDetailView() {
     try {
       session.value = await completeSession(sessionId);
       notification.success(t('stocktake.complete') + ' \u2713');
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     }
   }
 
@@ -117,8 +118,8 @@ export function useStocktakeDetailView() {
     try {
       session.value = await cancelSession(sessionId);
       notification.success(t('stocktake.cancelSession') + ' \u2713');
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     }
   }
 
@@ -126,8 +127,8 @@ export function useStocktakeDetailView() {
     try {
       await addCount(sessionId, request);
       await loadSession();
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     }
   }
 
@@ -135,8 +136,8 @@ export function useStocktakeDetailView() {
     try {
       await updateCount(sessionId, countId, request);
       await loadSession();
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     }
   }
 
@@ -144,8 +145,8 @@ export function useStocktakeDetailView() {
     try {
       await deleteCount(sessionId, countId);
       await loadSession();
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     }
   }
 
@@ -153,8 +154,8 @@ export function useStocktakeDetailView() {
     try {
       varianceReport.value = await getVarianceReport(sessionId);
       showVarianceReport.value = true;
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     }
   }
 
@@ -163,8 +164,8 @@ export function useStocktakeDetailView() {
       const adj = await createAdjustmentFromSession(sessionId);
       notification.success(t('stocktake.createAdjustment') + ' \u2713');
       router.push({ name: 'adjustment-detail', params: { id: adj.id } });
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     }
   }
 

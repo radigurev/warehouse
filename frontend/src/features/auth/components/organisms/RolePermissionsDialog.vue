@@ -56,6 +56,7 @@ import { getRolePermissions, assignPermissions, removePermission } from '@featur
 import { getAllPermissions } from '@features/auth/api/permissions';
 import type { PermissionDto } from '@features/auth/types/permission';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 const { t } = useI18n();
 const notification = useNotificationStore();
@@ -105,8 +106,8 @@ async function loadPermissions(): Promise<void> {
     ]);
     assignedPermissions.value = rolePerms;
     allPermissions.value = perms;
-  } catch {
-    notification.error(t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, t));
   } finally {
     loading.value = false;
   }
@@ -116,8 +117,8 @@ async function handleAssignPermission(permissionId: number): Promise<void> {
   try {
     await assignPermissions(props.roleId, { permissionIds: [permissionId] });
     await loadPermissions();
-  } catch {
-    notification.error(t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, t));
   }
 }
 
@@ -125,8 +126,8 @@ async function handleRemovePermission(permissionId: number): Promise<void> {
   try {
     await removePermission(props.roleId, permissionId);
     await loadPermissions();
-  } catch {
-    notification.error(t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, t));
   }
 }
 

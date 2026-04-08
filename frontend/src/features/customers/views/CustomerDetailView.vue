@@ -264,6 +264,7 @@ import { useNotificationStore } from '@shared/stores/notification';
 import StatusChip from '@shared/components/atoms/StatusChip.vue';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
 import ConfirmDialog from '@shared/components/molecules/ConfirmDialog.vue';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 const notification = useNotificationStore();
 const vm = reactive(useCustomerDetailView());
@@ -279,8 +280,8 @@ async function handleDeactivate(): Promise<void> {
   try {
     await vm.handleDeactivate();
     showDeactivateDialog.value = false;
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   } finally {
     deactivating.value = false;
   }
@@ -291,8 +292,8 @@ async function handleReactivate(): Promise<void> {
   try {
     await vm.handleReactivate();
     showReactivateDialog.value = false;
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   } finally {
     reactivating.value = false;
   }
@@ -355,8 +356,8 @@ async function submitAddress(): Promise<void> {
     });
     showAddressForm.value = false;
     resetAddressForm();
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   }
 }
 
@@ -371,8 +372,8 @@ async function submitPhone(): Promise<void> {
     });
     showPhoneForm.value = false;
     resetPhoneForm();
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   }
 }
 
@@ -386,8 +387,8 @@ async function submitEmail(): Promise<void> {
     });
     showEmailForm.value = false;
     resetEmailForm();
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   }
 }
 
@@ -401,8 +402,8 @@ async function submitAccount(): Promise<void> {
     });
     showAccountForm.value = false;
     resetAccountForm();
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   }
 }
 

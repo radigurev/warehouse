@@ -234,6 +234,7 @@ import StatusChip from '@shared/components/atoms/StatusChip.vue';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
 import ConfirmDialog from '@shared/components/molecules/ConfirmDialog.vue';
 import type { ZoneDto, StorageLocationDto } from '@features/inventory/types/inventory';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 const notification = useNotificationStore();
 const vm = reactive(useWarehouseDetailView());
@@ -251,8 +252,8 @@ async function handleDeactivate(): Promise<void> {
   try {
     await vm.handleDeactivate();
     showDeactivateDialog.value = false;
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   } finally {
     deactivating.value = false;
   }
@@ -263,8 +264,8 @@ async function handleReactivate(): Promise<void> {
   try {
     await vm.handleReactivate();
     showReactivateDialog.value = false;
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   } finally {
     reactivating.value = false;
   }
@@ -315,8 +316,8 @@ async function submitZone(): Promise<void> {
     }
     showZoneForm.value = false;
     resetZoneForm();
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   }
 }
 
@@ -336,8 +337,8 @@ async function confirmDeleteZone(): Promise<void> {
   try {
     await vm.handleDeleteZone(deletingZone.value.id);
     showDeleteZoneDialog.value = false;
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   } finally {
     deletingZoneLoading.value = false;
   }
@@ -396,8 +397,8 @@ async function submitLocation(): Promise<void> {
     }
     showLocationForm.value = false;
     resetLocationForm();
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   }
 }
 
@@ -417,8 +418,8 @@ async function confirmDeleteLocation(): Promise<void> {
   try {
     await vm.handleDeleteLocation(deletingLocation.value.id);
     showDeleteLocationDialog.value = false;
-  } catch {
-    notification.error(vm.t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
   } finally {
     deletingLocationLoading.value = false;
   }

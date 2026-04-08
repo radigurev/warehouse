@@ -6,6 +6,7 @@ import { useColumnFilters } from '@shared/composables/useColumnFilters';
 import { buildFilterString } from '@shared/utils/buildFilterString';
 import { searchStockLevels } from '@features/inventory/api/stock-levels';
 import type { StockLevelDto, SearchStockLevelsRequest } from '@features/inventory/types/inventory';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 export function useStockLevelsView() {
   const { t, locale } = useI18n();
@@ -65,8 +66,8 @@ export function useStockLevelsView() {
       const response = await searchStockLevels(searchParams.value);
       stockLevels.value = response.items;
       totalCount.value = response.totalCount;
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     } finally {
       loading.value = false;
     }

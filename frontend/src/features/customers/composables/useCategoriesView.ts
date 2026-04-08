@@ -8,6 +8,7 @@ import { getCategories, deleteCategory } from '@features/customers/api/categorie
 import type { CustomerCategoryDto } from '@features/customers/types/customer';
 import type { AxiosError } from 'axios';
 import type { ProblemDetails } from '@shared/types/api';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 export function useCategoriesView() {
   const { t } = useI18n();
@@ -43,8 +44,8 @@ export function useCategoriesView() {
       categories.value = response.items;
       totalCount.value = response.totalCount;
       totalPages.value = response.totalPages;
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     } finally {
       loading.value = false;
     }
@@ -98,7 +99,7 @@ export function useCategoriesView() {
       if (errorCode === 'CATEGORY_IN_USE') {
         notification.error(axiosError.response?.data?.detail || t('errors.CATEGORY_IN_USE'));
       } else {
-        notification.error(t('errors.UNEXPECTED_ERROR'));
+        notification.error(getApiErrorMessage(err, t));
       }
     } finally {
       deleting.value = false;

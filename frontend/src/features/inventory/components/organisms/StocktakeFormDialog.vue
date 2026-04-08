@@ -82,6 +82,7 @@ import { searchZones } from '@features/inventory/api/zones';
 import { createSession } from '@features/inventory/api/stocktake';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
 import type { WarehouseDto, ZoneDto } from '@features/inventory/types/inventory';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 const { t } = useI18n();
 const notification = useNotificationStore();
@@ -176,8 +177,8 @@ async function handleSubmit(): Promise<void> {
     notification.success(t('stocktake.create') + ' \u2713');
     visible.value = false;
     emit('saved');
-  } catch {
-    notification.error(t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, t));
   } finally {
     submitting.value = false;
   }

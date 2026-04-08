@@ -7,6 +7,7 @@ import { useColumnFilters } from '@shared/composables/useColumnFilters';
 import { buildFilterString } from '@shared/utils/buildFilterString';
 import { searchBatches, deactivateBatch } from '@features/inventory/api/batches';
 import type { BatchDto, SearchBatchesRequest } from '@features/inventory/types/inventory';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 export function useBatchesView() {
   const { t, locale } = useI18n();
@@ -65,8 +66,8 @@ export function useBatchesView() {
       const response = await searchBatches(searchParams.value);
       batches.value = response.items;
       totalCount.value = response.totalCount;
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     } finally {
       loading.value = false;
     }
@@ -112,8 +113,8 @@ export function useBatchesView() {
       notification.success(t('batches.deactivate') + ' \u2713');
       showDeactivateDialog.value = false;
       await loadBatches();
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     } finally {
       deactivating.value = false;
     }

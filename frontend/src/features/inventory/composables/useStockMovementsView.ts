@@ -5,6 +5,7 @@ import { useNotificationStore } from '@shared/stores/notification';
 import { useColumnFilters } from '@shared/composables/useColumnFilters';
 import { buildFilterString } from '@shared/utils/buildFilterString';
 import { searchMovements, recordMovement } from '@features/inventory/api/stock-movements';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 import type {
   StockMovementDto,
   SearchStockMovementsRequest,
@@ -68,8 +69,8 @@ export function useStockMovementsView() {
       const response = await searchMovements(searchParams.value);
       movements.value = response.items;
       totalCount.value = response.totalCount;
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     } finally {
       loading.value = false;
     }

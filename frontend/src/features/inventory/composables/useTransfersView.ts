@@ -7,6 +7,7 @@ import { useColumnFilters } from '@shared/composables/useColumnFilters';
 import { buildFilterString } from '@shared/utils/buildFilterString';
 import { searchTransfers } from '@features/inventory/api/transfers';
 import type { WarehouseTransferDto, SearchTransfersRequest } from '@features/inventory/types/inventory';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 export function useTransfersView() {
   const { t, locale } = useI18n();
@@ -58,8 +59,8 @@ export function useTransfersView() {
       const response = await searchTransfers(searchParams.value);
       transfers.value = response.items;
       totalCount.value = response.totalCount;
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     } finally {
       loading.value = false;
     }

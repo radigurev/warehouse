@@ -7,6 +7,7 @@ import { useColumnFilters } from '@shared/composables/useColumnFilters';
 import { buildFilterString } from '@shared/utils/buildFilterString';
 import { searchSessions } from '@features/inventory/api/stocktake';
 import type { StocktakeSessionDto, SearchStocktakeSessionsRequest } from '@features/inventory/types/inventory';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 export function useStocktakeView() {
   const { t, locale } = useI18n();
@@ -62,8 +63,8 @@ export function useStocktakeView() {
       const response = await searchSessions(searchParams.value);
       sessions.value = response.items;
       totalCount.value = response.totalCount;
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     } finally {
       loading.value = false;
     }

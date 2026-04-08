@@ -6,6 +6,7 @@ import { useNotificationStore } from '@shared/stores/notification';
 import { useColumnFilters } from '@shared/composables/useColumnFilters';
 import { getPermissions } from '@features/auth/api/permissions';
 import type { PermissionDto } from '@features/auth/types/permission';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 export function usePermissionsView() {
   const { t } = useI18n();
@@ -38,8 +39,8 @@ export function usePermissionsView() {
       permissions.value = response.items;
       totalCount.value = response.totalCount;
       totalPages.value = response.totalPages;
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     } finally {
       loading.value = false;
     }

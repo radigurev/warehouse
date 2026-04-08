@@ -6,6 +6,7 @@ import { useLayoutStore } from '@shared/stores/layout';
 import { getWarehouseById, deactivateWarehouse, reactivateWarehouse } from '@features/inventory/api/warehouses';
 import { createZone, updateZone, deleteZone } from '@features/inventory/api/zones';
 import { searchLocations, createLocation, updateLocation, deleteLocation } from '@features/inventory/api/storage-locations';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 import type {
   WarehouseDetailDto,
   StorageLocationDto,
@@ -79,8 +80,8 @@ export function useWarehouseDetailView() {
       await reactivateWarehouse(warehouseId);
       notification.success(t('warehouses.reactivated'));
       await loadWarehouse();
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     }
   }
 
@@ -89,8 +90,8 @@ export function useWarehouseDetailView() {
       await deactivateWarehouse(warehouseId);
       notification.success(t('warehouses.deactivated'));
       router.push({ name: 'warehouses' });
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     }
   }
 

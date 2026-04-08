@@ -5,6 +5,7 @@ import { useNotificationStore } from '@shared/stores/notification';
 import { useLayoutStore } from '@shared/stores/layout';
 import { getTransferById, completeTransfer, cancelTransfer } from '@features/inventory/api/transfers';
 import type { WarehouseTransferDetailDto } from '@features/inventory/types/inventory';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 export function useTransferDetailView() {
   const { t, locale } = useI18n();
@@ -75,8 +76,8 @@ export function useTransferDetailView() {
     try {
       transfer.value = await completeTransfer(transferId, {});
       notification.success(t('transfers.complete'));
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     }
   }
 
@@ -84,8 +85,8 @@ export function useTransferDetailView() {
     try {
       transfer.value = await cancelTransfer(transferId);
       notification.success(t('transfers.cancel'));
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     }
   }
 

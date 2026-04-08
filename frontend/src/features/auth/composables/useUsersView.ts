@@ -7,6 +7,7 @@ import { useNotificationStore } from '@shared/stores/notification';
 import { useColumnFilters } from '@shared/composables/useColumnFilters';
 import { getUsers, deactivateUser, resetPassword } from '@features/auth/api/users';
 import type { UserDto } from '@features/auth/types/user';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 export function useUsersView() {
   const { t, locale } = useI18n();
@@ -49,8 +50,8 @@ export function useUsersView() {
       const response = await getUsers(page.value, pageSize.value);
       users.value = response.items;
       totalCount.value = response.totalCount;
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     } finally {
       loading.value = false;
     }
@@ -96,8 +97,8 @@ export function useUsersView() {
       const response = await resetPassword(user.id);
       generatedPassword.value = response.generatedPassword;
       showPasswordDialog.value = true;
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     }
   }
 
@@ -123,8 +124,8 @@ export function useUsersView() {
       notification.success(t('users.deactivate') + ' \u2713');
       showDeactivateDialog.value = false;
       await loadUsers();
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     } finally {
       deactivating.value = false;
     }

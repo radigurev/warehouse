@@ -75,6 +75,7 @@ import { searchProducts } from '@features/inventory/api/products';
 import { getBatchById, createBatch, updateBatch } from '@features/inventory/api/batches';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
 import type { ProductDto, BatchDto } from '@features/inventory/types/inventory';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 const { t } = useI18n();
 const notification = useNotificationStore();
@@ -134,8 +135,8 @@ async function populateForm(): Promise<void> {
       form.batchNumber = detail.batchNumber;
       form.expiryDate = detail.expiryDate ? detail.expiryDate.substring(0, 10) : '';
       form.notes = detail.notes ?? '';
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     }
   } else if (visible.value) {
     isEdit.value = false;
@@ -172,8 +173,8 @@ async function handleSubmit(): Promise<void> {
     }
     visible.value = false;
     emit('saved');
-  } catch {
-    notification.error(t('errors.UNEXPECTED_ERROR'));
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, t));
   } finally {
     submitting.value = false;
   }

@@ -7,6 +7,7 @@ import { useColumnFilters } from '@shared/composables/useColumnFilters';
 import { buildFilterString } from '@shared/utils/buildFilterString';
 import { searchAdjustments } from '@features/inventory/api/adjustments';
 import type { InventoryAdjustmentDto, SearchAdjustmentsRequest } from '@features/inventory/types/inventory';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 export function useAdjustmentsView() {
   const { t, locale } = useI18n();
@@ -59,8 +60,8 @@ export function useAdjustmentsView() {
       const response = await searchAdjustments(searchParams.value);
       adjustments.value = response.items;
       totalCount.value = response.totalCount;
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     } finally {
       loading.value = false;
     }

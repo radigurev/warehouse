@@ -7,6 +7,7 @@ import { useColumnFilters } from '@shared/composables/useColumnFilters';
 import { buildFilterString } from '@shared/utils/buildFilterString';
 import { searchWarehouses, deactivateWarehouse, reactivateWarehouse } from '@features/inventory/api/warehouses';
 import type { WarehouseDto, SearchWarehousesRequest } from '@features/inventory/types/inventory';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 export function useWarehousesView() {
   const { t, locale } = useI18n();
@@ -65,8 +66,8 @@ export function useWarehousesView() {
       const response = await searchWarehouses(searchParams.value);
       warehouses.value = response.items;
       totalCount.value = response.totalCount;
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     } finally {
       loading.value = false;
     }
@@ -115,8 +116,8 @@ export function useWarehousesView() {
       notification.success(t('warehouses.deactivated'));
       showDeactivateDialog.value = false;
       await loadWarehouses();
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     } finally {
       deactivating.value = false;
     }
@@ -127,8 +128,8 @@ export function useWarehousesView() {
       await reactivateWarehouse(warehouse.id);
       notification.success(t('warehouses.reactivated'));
       await loadWarehouses();
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     }
   }
 

@@ -7,6 +7,7 @@ import { useColumnFilters } from '@shared/composables/useColumnFilters';
 import { buildFilterString } from '@shared/utils/buildFilterString';
 import { searchCustomers, deactivateCustomer, reactivateCustomer } from '@features/customers/api/customers';
 import type { CustomerDto, SearchCustomersRequest } from '@features/customers/types/customer';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 export function useCustomersView() {
   const { t, locale } = useI18n();
@@ -67,8 +68,8 @@ export function useCustomersView() {
       const response = await searchCustomers(searchParams.value);
       customers.value = response.items;
       totalCount.value = response.totalCount;
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     } finally {
       loading.value = false;
     }
@@ -122,8 +123,8 @@ export function useCustomersView() {
       notification.success(t('customers.deactivated') + ' \u2713');
       showDeactivateDialog.value = false;
       await loadCustomers();
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     } finally {
       deactivating.value = false;
     }
@@ -134,8 +135,8 @@ export function useCustomersView() {
       await reactivateCustomer(customer.id);
       notification.success(t('customers.reactivated') + ' \u2713');
       await loadCustomers();
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     }
   }
 

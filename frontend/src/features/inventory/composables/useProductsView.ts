@@ -7,6 +7,7 @@ import { useColumnFilters } from '@shared/composables/useColumnFilters';
 import { buildFilterString } from '@shared/utils/buildFilterString';
 import { searchProducts, deactivateProduct, reactivateProduct } from '@features/inventory/api/products';
 import type { ProductDto, SearchProductsRequest } from '@features/inventory/types/inventory';
+import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 export function useProductsView() {
   const { t, locale } = useI18n();
@@ -67,8 +68,8 @@ export function useProductsView() {
       const response = await searchProducts(searchParams.value);
       products.value = response.items;
       totalCount.value = response.totalCount;
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     } finally {
       loading.value = false;
     }
@@ -122,8 +123,8 @@ export function useProductsView() {
       notification.success(t('products.deactivated') + ' \u2713');
       showDeactivateDialog.value = false;
       await loadProducts();
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     } finally {
       deactivating.value = false;
     }
@@ -134,8 +135,8 @@ export function useProductsView() {
       await reactivateProduct(product.id);
       notification.success(t('products.reactivated') + ' \u2713');
       await loadProducts();
-    } catch {
-      notification.error(t('errors.UNEXPECTED_ERROR'));
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
     }
   }
 
