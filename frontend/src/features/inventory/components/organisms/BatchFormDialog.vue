@@ -32,13 +32,25 @@
           </v-col>
 
           <v-col v-bind="grid.fieldCols">
-            <v-text-field
-              v-model="form.expiryDate"
-              :label="t('batches.form.expiryDate')"
-              prepend-inner-icon="mdi-calendar"
-              :density="layout.vuetifyDensity"
-              type="date"
-            />
+            <v-menu v-model="expiryDateMenu" :close-on-content-click="false">
+              <template #activator="{ props: menuProps }">
+                <v-text-field
+                  v-bind="menuProps"
+                  :model-value="form.expiryDate"
+                  :label="t('batches.form.expiryDate')"
+                  prepend-inner-icon="mdi-calendar"
+                  :density="layout.vuetifyDensity"
+                  readonly
+                  clearable
+                  @click:clear="form.expiryDate = ''"
+                />
+              </template>
+              <v-date-picker
+                :model-value="form.expiryDate ? new Date(form.expiryDate) : undefined"
+                @update:model-value="onExpiryDatePicked"
+                color="primary"
+              />
+            </v-menu>
           </v-col>
 
           <v-col v-bind="grid.fullCols">
@@ -100,6 +112,7 @@ const submitting = ref(false);
 
 const products = ref<ProductDto[]>([]);
 const productsLoading = ref(false);
+const expiryDateMenu = ref(false);
 
 const form = reactive({
   productId: null as number | null,
@@ -111,6 +124,15 @@ const form = reactive({
 const rules = {
   required: (v: unknown) => (v !== null && v !== undefined && v !== '') || t('common.required'),
 };
+
+function onExpiryDatePicked(value: unknown): void {
+  if (value instanceof Date) {
+    form.expiryDate = value.toISOString().split('T')[0];
+  } else {
+    form.expiryDate = '';
+  }
+  expiryDateMenu.value = false;
+}
 
 async function loadProducts(): Promise<void> {
   productsLoading.value = true;
