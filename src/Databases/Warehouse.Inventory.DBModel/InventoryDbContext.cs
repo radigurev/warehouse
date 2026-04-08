@@ -510,6 +510,15 @@ public sealed class InventoryDbContext : DbContext
 
             e.HasIndex(a => a.CreatedAtUtc)
                 .HasDatabaseName("IX_InventoryAdjustments_CreatedAtUtc");
+
+            e.HasIndex(a => a.SourceStocktakeSessionId)
+                .HasDatabaseName("IX_InventoryAdjustments_SourceStocktakeSessionId")
+                .HasFilter("[SourceStocktakeSessionId] IS NOT NULL");
+
+            e.HasOne(a => a.SourceStocktakeSession)
+                .WithMany()
+                .HasForeignKey(a => a.SourceStocktakeSessionId)
+                .OnDelete(DeleteBehavior.NoAction);
         });
     }
 

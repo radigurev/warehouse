@@ -222,6 +222,17 @@ public sealed class InventoryAdjustmentService : BaseInventoryEntityService, IIn
         int userId,
         CancellationToken cancellationToken)
     {
+        bool isStocktakeSourced = adjustment.SourceStocktakeSessionId.HasValue;
+        StockMovementReason reasonCode = isStocktakeSourced
+            ? StockMovementReason.CountAdjustment
+            : StockMovementReason.Adjustment;
+        StockMovementReferenceType referenceType = isStocktakeSourced
+            ? StockMovementReferenceType.StocktakeSession
+            : StockMovementReferenceType.InventoryAdjustment;
+        int referenceId = isStocktakeSourced
+            ? adjustment.SourceStocktakeSessionId!.Value
+            : adjustment.Id;
+
         foreach (InventoryAdjustmentLine line in adjustment.Lines)
         {
             decimal variance = line.ActualQuantity - line.ExpectedQuantity;
@@ -242,9 +253,9 @@ public sealed class InventoryAdjustmentService : BaseInventoryEntityService, IIn
                 WarehouseId = line.WarehouseId,
                 LocationId = line.LocationId,
                 Quantity = variance,
-                ReasonCode = StockMovementReason.Adjustment,
-                ReferenceType = StockMovementReferenceType.InventoryAdjustment,
-                ReferenceId = adjustment.Id,
+                ReasonCode = reasonCode,
+                ReferenceType = referenceType,
+                ReferenceId = referenceId,
                 CreatedAtUtc = DateTime.UtcNow,
                 CreatedByUserId = userId
             });

@@ -34,4 +34,9 @@ public sealed record InventoryAdjustmentDto
     /// Gets the ID of the user who created this adjustment.
     /// </summary>
     public required int CreatedByUserId { get; init; }
+
+    /// <summary>
+    /// Gets the optional source stocktake session ID when created from a stocktake.
+    /// </summary>
+    public int? SourceStocktakeSessionId { get; init; }
 }

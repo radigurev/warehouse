@@ -71,6 +71,11 @@ public sealed record InventoryAdjustmentDetailDto
     public int? AppliedByUserId { get; init; }
 
     /// <summary>
+    /// Gets the optional source stocktake session ID when created from a stocktake.
+    /// </summary>
+    public int? SourceStocktakeSessionId { get; init; }
+
+    /// <summary>
     /// Gets the collection of adjustment lines.
     /// </summary>
     public required IReadOnlyList<InventoryAdjustmentLineDto> Lines { get; init; }

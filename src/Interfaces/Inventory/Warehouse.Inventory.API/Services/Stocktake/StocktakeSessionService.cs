@@ -228,6 +228,7 @@ public sealed class StocktakeSessionService : BaseInventoryEntityService, IStock
             Reason = "Stocktake variance",
             Notes = $"Auto-generated from stocktake session #{session.Id}: {session.Name}",
             Status = "Pending",
+            SourceStocktakeSessionId = session.Id,
             CreatedAtUtc = DateTime.UtcNow,
             CreatedByUserId = userId
         };

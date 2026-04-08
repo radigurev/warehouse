@@ -95,6 +95,17 @@ public sealed class InventoryAdjustment : IEntity
     public int? AppliedByUserId { get; set; }
 
     /// <summary>
+    /// Gets or sets the optional source stocktake session ID when created from a stocktake.
+    /// </summary>
+    [ForeignKey(nameof(SourceStocktakeSession))]
+    public int? SourceStocktakeSessionId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the navigation property to the source stocktake session.
+    /// </summary>
+    public StocktakeSession? SourceStocktakeSession { get; set; }
+
+    /// <summary>
     /// Gets or sets the navigation collection of adjustment lines.
     /// </summary>
     public ICollection<InventoryAdjustmentLine> Lines { get; set; } = [];
