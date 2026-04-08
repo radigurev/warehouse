@@ -68,15 +68,15 @@ public sealed class WarehousesController : BaseApiController
     }
 
     /// <summary>
-    /// Gets a warehouse by ID.
+    /// Gets a warehouse by ID including zones.
     /// </summary>
     [HttpGet("{id:int}", Name = "GetWarehouseById")]
     [RequirePermission("warehouses:read")]
-    [ProducesResponseType(typeof(WarehouseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(WarehouseDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetWarehouseByIdAsync(int id, CancellationToken cancellationToken)
     {
-        Result<WarehouseDto> result = await _warehouseService
+        Result<WarehouseDetailDto> result = await _warehouseService
             .GetByIdAsync(id, cancellationToken);
 
         return ToActionResult(result);

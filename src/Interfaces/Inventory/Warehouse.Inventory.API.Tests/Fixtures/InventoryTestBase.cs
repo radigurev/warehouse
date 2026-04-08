@@ -121,14 +121,12 @@ public abstract class InventoryTestBase
     protected async Task<WarehouseEntity> SeedWarehouseAsync(
         string code = "WH-001",
         string name = "Main Warehouse",
-        bool isDeleted = false,
-        bool isActive = true)
+        bool isDeleted = false)
     {
         WarehouseEntity warehouse = new()
         {
             Code = code,
             Name = name,
-            IsActive = isActive,
             IsDeleted = isDeleted,
             DeletedAtUtc = isDeleted ? DateTime.UtcNow : null,
             CreatedAtUtc = DateTime.UtcNow,

@@ -52,12 +52,6 @@ public sealed class WarehouseEntity : IEntity
     public string? Notes { get; set; }
 
     /// <summary>
-    /// Gets or sets whether the warehouse is active.
-    /// </summary>
-    [Required]
-    public bool IsActive { get; set; } = true;
-
-    /// <summary>
     /// Gets or sets whether the warehouse is soft-deleted.
     /// </summary>
     [Required]

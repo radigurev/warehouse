@@ -25,7 +25,7 @@ export function useWarehousesView() {
   const deactivating = ref(false);
 
   const searchParams = ref<SearchWarehousesRequest>({
-    includeDeleted: true,
+    includeDeleted: false,
     sortBy: 'name',
     sortDescending: false,
     page: 1,

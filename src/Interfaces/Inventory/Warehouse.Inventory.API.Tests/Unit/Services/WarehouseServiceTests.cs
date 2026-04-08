@@ -64,7 +64,7 @@ public sealed class WarehouseServiceTests : InventoryTestBase
         WarehouseEntity warehouse = await SeedWarehouseAsync().ConfigureAwait(false);
 
         // Act
-        Result<WarehouseDto> result = await _sut.GetByIdAsync(warehouse.Id, CancellationToken.None).ConfigureAwait(false);
+        Result<WarehouseDetailDto> result = await _sut.GetByIdAsync(warehouse.Id, CancellationToken.None).ConfigureAwait(false);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -73,18 +73,17 @@ public sealed class WarehouseServiceTests : InventoryTestBase
     }
 
     [Test]
-    public async Task GetByIdAsync_SoftDeletedWarehouse_ReturnsNotFound()
+    public async Task GetByIdAsync_SoftDeletedWarehouse_ReturnsInactiveWarehouse()
     {
         // Arrange
-        WarehouseEntity warehouse = await SeedWarehouseAsync(isDeleted: true, isActive: false).ConfigureAwait(false);
+        WarehouseEntity warehouse = await SeedWarehouseAsync(isDeleted: true).ConfigureAwait(false);
 
         // Act
-        Result<WarehouseDto> result = await _sut.GetByIdAsync(warehouse.Id, CancellationToken.None).ConfigureAwait(false);
+        Result<WarehouseDetailDto> result = await _sut.GetByIdAsync(warehouse.Id, CancellationToken.None).ConfigureAwait(false);
 
         // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorCode.Should().Be("WAREHOUSE_NOT_FOUND");
-        result.StatusCode.Should().Be(404);
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.IsActive.Should().BeFalse();
     }
 
     [Test]
@@ -106,7 +105,7 @@ public sealed class WarehouseServiceTests : InventoryTestBase
     public async Task UpdateAsync_SoftDeletedWarehouse_ReturnsNotFound()
     {
         // Arrange
-        WarehouseEntity warehouse = await SeedWarehouseAsync(isDeleted: true, isActive: false).ConfigureAwait(false);
+        WarehouseEntity warehouse = await SeedWarehouseAsync(isDeleted: true).ConfigureAwait(false);
         UpdateWarehouseRequest request = new() { Name = "Ignored" };
 
         // Act
@@ -132,14 +131,13 @@ public sealed class WarehouseServiceTests : InventoryTestBase
         WarehouseEntity? updated = await Context.Warehouses.FindAsync(warehouse.Id).ConfigureAwait(false);
         updated!.IsDeleted.Should().BeTrue();
         updated.DeletedAtUtc.Should().NotBeNull();
-        updated.IsActive.Should().BeFalse();
     }
 
     [Test]
     public async Task DeactivateAsync_AlreadyDeleted_ReturnsNotFound()
     {
         // Arrange
-        WarehouseEntity warehouse = await SeedWarehouseAsync(isDeleted: true, isActive: false).ConfigureAwait(false);
+        WarehouseEntity warehouse = await SeedWarehouseAsync(isDeleted: true).ConfigureAwait(false);
 
         // Act
         Result result = await _sut.DeactivateAsync(warehouse.Id, CancellationToken.None).ConfigureAwait(false);

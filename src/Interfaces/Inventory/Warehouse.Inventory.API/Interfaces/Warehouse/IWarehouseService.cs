@@ -12,9 +12,9 @@ namespace Warehouse.Inventory.API.Interfaces.Warehouse;
 public interface IWarehouseService
 {
     /// <summary>
-    /// Gets a warehouse by ID.
+    /// Gets a warehouse by ID including zones.
     /// </summary>
-    Task<Result<WarehouseDto>> GetByIdAsync(int id, CancellationToken cancellationToken);
+    Task<Result<WarehouseDetailDto>> GetByIdAsync(int id, CancellationToken cancellationToken);
 
     /// <summary>
     /// Searches warehouses with pagination.

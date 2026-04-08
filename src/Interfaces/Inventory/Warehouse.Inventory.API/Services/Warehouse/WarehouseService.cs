@@ -26,17 +26,18 @@ public sealed class WarehouseService : BaseInventoryEntityService, IWarehouseSer
     }
 
     /// <inheritdoc />
-    public async Task<Result<WarehouseDto>> GetByIdAsync(int id, CancellationToken cancellationToken)
+    public async Task<Result<WarehouseDetailDto>> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         WarehouseEntity? warehouse = await Context.Warehouses
-            .FirstOrDefaultAsync(w => w.Id == id && !w.IsDeleted, cancellationToken)
+            .Include(w => w.Zones)
+            .FirstOrDefaultAsync(w => w.Id == id, cancellationToken)
             .ConfigureAwait(false);
 
         if (warehouse is null)
-            return Result<WarehouseDto>.Failure("WAREHOUSE_NOT_FOUND", "Warehouse not found.", 404);
+            return Result<WarehouseDetailDto>.Failure("WAREHOUSE_NOT_FOUND", "Warehouse not found.", 404);
 
-        WarehouseDto dto = Mapper.Map<WarehouseDto>(warehouse);
-        return Result<WarehouseDto>.Success(dto);
+        WarehouseDetailDto dto = Mapper.Map<WarehouseDetailDto>(warehouse);
+        return Result<WarehouseDetailDto>.Success(dto);
     }
 
     /// <inheritdoc />
@@ -47,7 +48,6 @@ public sealed class WarehouseService : BaseInventoryEntityService, IWarehouseSer
     {
         IQueryable<WarehouseEntity> query = Context.Warehouses
             .AsNoTracking()
-            .Where(w => !w.IsDeleted)
             .OrderBy(w => w.Name);
 
         int totalCount = await query.CountAsync(cancellationToken).ConfigureAwait(false);
@@ -87,7 +87,6 @@ public sealed class WarehouseService : BaseInventoryEntityService, IWarehouseSer
             Name = request.Name,
             Address = request.Address,
             Notes = request.Notes,
-            IsActive = true,
             IsDeleted = false,
             CreatedAtUtc = DateTime.UtcNow,
             CreatedByUserId = userId
@@ -138,7 +137,6 @@ public sealed class WarehouseService : BaseInventoryEntityService, IWarehouseSer
 
         warehouse.IsDeleted = true;
         warehouse.DeletedAtUtc = DateTime.UtcNow;
-        warehouse.IsActive = false;
 
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return Result.Success();
@@ -159,7 +157,6 @@ public sealed class WarehouseService : BaseInventoryEntityService, IWarehouseSer
 
         warehouse.IsDeleted = false;
         warehouse.DeletedAtUtc = null;
-        warehouse.IsActive = true;
         warehouse.ModifiedAtUtc = DateTime.UtcNow;
         warehouse.ModifiedByUserId = userId;
 

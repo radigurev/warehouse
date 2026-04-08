@@ -68,9 +68,15 @@ public sealed class InventoryMappingProfile : Profile
     /// </summary>
     private void ConfigureWarehouseMappings()
     {
-        CreateMap<WarehouseEntity, WarehouseDto>();
+        CreateMap<WarehouseEntity, WarehouseDto>()
+            .ForMember(
+                dest => dest.IsActive,
+                opt => opt.MapFrom(src => !src.IsDeleted));
 
         CreateMap<WarehouseEntity, WarehouseDetailDto>()
+            .ForMember(
+                dest => dest.IsActive,
+                opt => opt.MapFrom(src => !src.IsDeleted))
             .ForMember(
                 dest => dest.Zones,
                 opt => opt.MapFrom(src => src.Zones));

@@ -305,7 +305,6 @@ public sealed class InventoryDbContext : DbContext
     {
         modelBuilder.Entity<WarehouseEntity>(e =>
         {
-            e.Property(p => p.IsActive).HasDefaultValue(true);
             e.Property(p => p.IsDeleted).HasDefaultValue(false);
             e.Property(p => p.CreatedAtUtc).HasDefaultValueSql("SYSUTCDATETIME()");
 
