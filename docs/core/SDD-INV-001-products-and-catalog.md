@@ -1,7 +1,7 @@
 # SDD-INV-001 — Products and Catalog
 
 > Status: Active
-> Last updated: 2026-04-05
+> Last updated: 2026-04-08
 > Owner: TBD
 > Category: Core
 
@@ -42,7 +42,8 @@ This spec defines the Product catalog sub-domain for the Warehouse Inventory sys
 
 #### 2.1.1 Create Product
 
-- The system MUST support creating a product with a code, name, description, category, unit of measure, and active status.
+- The system MUST support creating a product with a code, name, description, category, unit of measure, `RequiresBatchTracking` flag, and active status.
+- The system MUST default `RequiresBatchTracking` to `false` when not provided.
 - The system MUST enforce unique product codes across all products (including soft-deleted).
 - The system MUST set `IsActive = true` by default on creation.
 - The system MUST record `CreatedAtUtc` and `CreatedByUserId` on creation.
@@ -55,7 +56,7 @@ This spec defines the Product catalog sub-domain for the Warehouse Inventory sys
 
 #### 2.1.2 Update Product
 
-- The system MUST support updating product fields: name, description, category, unit of measure, and notes.
+- The system MUST support updating product fields: name, description, category, unit of measure, notes, and `RequiresBatchTracking`.
 - The system MUST NOT allow changing the product code after creation.
 - The system MUST update `ModifiedAtUtc` and `ModifiedByUserId` on every update.
 - Updating a soft-deleted product MUST return a 404 Not Found error.
@@ -66,7 +67,7 @@ This spec defines the Product catalog sub-domain for the Warehouse Inventory sys
 
 #### 2.1.3 Get Product
 
-- The system MUST support retrieving a single product by ID, including category name and unit of measure name.
+- The system MUST support retrieving a single product by ID, including category name, unit of measure name, and `RequiresBatchTracking` flag.
 - Retrieving a soft-deleted product MUST return a 404 Not Found error.
 
 #### 2.1.4 Search Products
@@ -218,6 +219,7 @@ This spec defines the Product catalog sub-domain for the Warehouse Inventory sys
 | V7 | Notes | Optional. Max 2000 characters. | `INVALID_NOTES` |
 | V8 | Sku | Optional. 1-100 characters when provided. | `INVALID_SKU` |
 | V9 | Barcode | Optional. 1-100 characters when provided. | `INVALID_BARCODE` |
+| V10 | RequiresBatchTracking | Optional. Boolean. Defaults to `false`. When `true`, stock movements for this product MUST include a BatchId (enforced by SDD-INV-002). | — |
 
 ### 3.2 Product Category
 
@@ -354,6 +356,7 @@ All error responses MUST use ProblemDetails (RFC 7807) format.
 | CategoryId | INT | NULL, FK -> inventory.ProductCategories(Id) |
 | UnitOfMeasureId | INT | NOT NULL, FK -> inventory.UnitsOfMeasure(Id) |
 | Notes | NVARCHAR(2000) | NULL |
+| RequiresBatchTracking | BIT | NOT NULL, DEFAULT 0 |
 | IsActive | BIT | NOT NULL, DEFAULT 1 |
 | IsDeleted | BIT | NOT NULL, DEFAULT 0 |
 | DeletedAtUtc | DATETIME2(7) | NULL |
@@ -469,6 +472,12 @@ All error responses MUST use ProblemDetails (RFC 7807) format.
   - Added explicit edge case for BOM already exists on create
   - Added explicit edge case for reactivating an already active product
   - Status changed from Draft to Active
+
+- **v3 — Batch tracking documentation (2026-04-08)** (non-breaking)
+  - Documented `RequiresBatchTracking` field in Create/Update/Get Product behavior
+  - Added V10 validation rule for `RequiresBatchTracking`
+  - Added `RequiresBatchTracking` column to Products database schema
+  - Cross-reference to SDD-INV-002 for batch enforcement on stock movements
 
 ---
 

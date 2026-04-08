@@ -1,7 +1,7 @@
 # SDD-INV-002 — Stock Management
 
 > Status: Active
-> Last updated: 2026-04-05
+> Last updated: 2026-04-08
 > Owner: TBD
 > Category: Core
 
@@ -66,6 +66,7 @@ This spec defines the Stock Management sub-domain for the Warehouse Inventory sy
 - The system MUST prevent movements that would result in a negative stock level. This MUST return a 409 Conflict error.
 - The system MUST record `CreatedAtUtc` and `CreatedByUserId` on every movement.
 - Stock movements are immutable -- they MUST NOT be updated or deleted after creation.
+- If a product has `RequiresBatchTracking = true` (see SDD-INV-001), the movement MUST include a `BatchId`. Omitting it MUST return a 400 error with code `BATCH_REQUIRED`.
 
 **Edge cases:**
 - Recording a movement for a non-existent product MUST return a 400 Validation error with code `INVALID_PRODUCT`.
@@ -121,8 +122,9 @@ This spec defines the Stock Management sub-domain for the Warehouse Inventory sy
 - The system MUST support applying an approved adjustment. This sets the status to `Applied`.
 - Only adjustments with status `Approved` MAY be applied.
 - Applying an adjustment MUST create stock movements for each line (actual - expected = adjustment quantity).
-- The stock movement reason code MUST be `Adjustment`.
-- The stock movement reference MUST link back to the adjustment ID.
+- For manual adjustments, the stock movement reason code MUST be `Adjustment` with reference type `InventoryAdjustment`.
+- For stocktake-sourced adjustments (where `SourceStocktakeSessionId` is set), the reason code MUST be `CountAdjustment` with reference type `StocktakeSession` and reference ID pointing to the session.
+- The stock movement reference MUST link back to the adjustment or source session.
 - Applying MUST be performed within a single database transaction.
 
 **Edge cases:**
@@ -173,35 +175,36 @@ This spec defines the Stock Management sub-domain for the Warehouse Inventory sy
 | V5 | ReasonCode | Required. Must be a valid StockMovementReason enum value. | `INVALID_REASON_CODE` |
 | V6 | ReferenceNumber | Optional. Max 100 characters. | `INVALID_REFERENCE` |
 | V7 | Notes | Optional. Max 2000 characters. | `INVALID_NOTES` |
+| V8 | BatchId | Required when `Product.RequiresBatchTracking = true`. Must reference an existing batch. | `BATCH_REQUIRED` |
 
 ### 3.2 Inventory Adjustment
 
 | # | Field | Rule | Error Code |
 |---|---|---|---|
-| V8 | Reason | Required. 1-200 characters. | `INVALID_ADJUSTMENT_REASON` |
-| V9 | Notes | Optional. Max 2000 characters. | `INVALID_NOTES` |
-| V10 | Lines | Required. At least one line. | `ADJUSTMENT_LINES_REQUIRED` |
+| V9 | Reason | Required. 1-200 characters. | `INVALID_ADJUSTMENT_REASON` |
+| V10 | Notes | Optional. Max 2000 characters. | `INVALID_NOTES` |
+| V11 | Lines | Required. At least one line. | `ADJUSTMENT_LINES_REQUIRED` |
 
 ### 3.3 Adjustment Line
 
 | # | Field | Rule | Error Code |
 |---|---|---|---|
-| V11 | ProductId | Required. Must reference an existing product. | `INVALID_PRODUCT` |
-| V12 | WarehouseId | Required. Must reference an existing warehouse. | `INVALID_WAREHOUSE` |
-| V13 | LocationId | Optional. Must reference an existing location when provided. | `INVALID_LOCATION` |
-| V14 | ExpectedQuantity | Required. Must be >= 0. | `INVALID_EXPECTED_QUANTITY` |
-| V15 | ActualQuantity | Required. Must be >= 0. | `INVALID_ACTUAL_QUANTITY` |
+| V12 | ProductId | Required. Must reference an existing product. | `INVALID_PRODUCT` |
+| V13 | WarehouseId | Required. Must reference an existing warehouse. | `INVALID_WAREHOUSE` |
+| V14 | LocationId | Optional. Must reference an existing location when provided. | `INVALID_LOCATION` |
+| V15 | ExpectedQuantity | Required. Must be >= 0. | `INVALID_EXPECTED_QUANTITY` |
+| V16 | ActualQuantity | Required. Must be >= 0. | `INVALID_ACTUAL_QUANTITY` |
 
 ### 3.4 Batch
 
 | # | Field | Rule | Error Code |
 |---|---|---|---|
-| V16 | ProductId | Required. Must reference an existing product. | `INVALID_PRODUCT` |
-| V17 | BatchNumber | Required. 1-50 characters. | `INVALID_BATCH_NUMBER` |
-| V18 | BatchNumber | Must be unique per product. | `DUPLICATE_BATCH_NUMBER` |
-| V19 | ExpiryDate | Optional. Must be a valid date when provided. | `INVALID_EXPIRY_DATE` |
-| V20 | ManufacturingDate | Optional. Must be a valid date when provided. | `INVALID_MANUFACTURING_DATE` |
-| V21 | Notes | Optional. Max 2000 characters. | `INVALID_NOTES` |
+| V17 | ProductId | Required. Must reference an existing product. | `INVALID_PRODUCT` |
+| V18 | BatchNumber | Required. 1-50 characters. | `INVALID_BATCH_NUMBER` |
+| V19 | BatchNumber | Must be unique per product. | `DUPLICATE_BATCH_NUMBER` |
+| V20 | ExpiryDate | Optional. Must be a valid date when provided. | `INVALID_EXPIRY_DATE` |
+| V21 | ManufacturingDate | Optional. Must be a valid date when provided. | `INVALID_MANUFACTURING_DATE` |
+| V22 | Notes | Optional. Max 2000 characters. | `INVALID_NOTES` |
 
 ---
 
@@ -226,6 +229,7 @@ This spec defines the Stock Management sub-domain for the Warehouse Inventory sy
 | E15 | Movement references non-existent product | 400 | `INVALID_PRODUCT` | The specified product does not exist. |
 | E16 | Movement references non-existent warehouse | 400 | `INVALID_WAREHOUSE` | The specified warehouse does not exist. |
 | E17 | Movement references non-existent location | 400 | `INVALID_LOCATION` | The specified storage location does not exist. |
+| E18 | Product requires batch tracking but no BatchId provided | 400 | `BATCH_REQUIRED` | Product requires batch tracking but no batch was specified. |
 
 All error responses MUST use ProblemDetails (RFC 7807) format.
 
@@ -312,6 +316,7 @@ All error responses MUST use ProblemDetails (RFC 7807) format.
 | RejectionReason | NVARCHAR(500) | NULL |
 | AppliedAtUtc | DATETIME2(7) | NULL |
 | AppliedByUserId | INT | NULL |
+| SourceStocktakeSessionId | INT | NULL, FK -> inventory.StocktakeSessions(Id) |
 
 **inventory.InventoryAdjustmentLines**
 
@@ -379,6 +384,13 @@ All error responses MUST use ProblemDetails (RFC 7807) format.
   - Added explicit error rules E15-E17 for movement reference validation
   - Status changed from Draft to Active
 
+- **v3 — Batch tracking and CountAdjustment documentation (2026-04-08)** (non-breaking)
+  - Documented batch tracking enforcement on stock movements (`BATCH_REQUIRED` error E18)
+  - Added V8 validation rule for BatchId when product requires batch tracking
+  - Documented `CountAdjustment` reason code for stocktake-sourced adjustments vs `Adjustment` for manual
+  - Added `SourceStocktakeSessionId` column to InventoryAdjustments schema
+  - Renumbered validation rules V8-V21 → V9-V22
+
 ---
 
 ## 8. Test Plan
@@ -397,6 +409,7 @@ All error responses MUST use ProblemDetails (RFC 7807) format.
 - `RecordAsync_ValidOutboundMovement_CreatesMovementAndUpdatesStock` [Unit]
 - `RecordAsync_InsufficientStock_ReturnsConflictError` [Unit]
 - `RecordAsync_NonExistentProduct_ReturnsValidationError` [Unit]
+- `RecordAsync_BatchTrackingRequired_NoBatchId_ReturnsBatchRequired` [Unit]
 - `SearchAsync_WithFilters_ReturnsFilteredResults` [Unit]
 - `GetByIdAsync_ExistingMovement_ReturnsMovement` [Unit]
 
