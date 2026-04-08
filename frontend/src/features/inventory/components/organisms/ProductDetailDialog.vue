@@ -20,10 +20,10 @@
 
         <!-- Product Info -->
         <v-card class="mb-3">
-          <v-card-title class="text-subtitle-1 font-weight-medium">
-            <v-icon icon="mdi-information" class="mr-2" />
+          <div class="section-header">
+            <v-icon icon="mdi-information" class="mr-2" size="small" />
             {{ t('products.detail.info') }}
-          </v-card-title>
+          </div>
           <v-card-text>
             <v-row dense>
               <v-col v-if="product.sku" cols="12" md="6">
@@ -57,6 +57,34 @@
             </v-row>
           </v-card-text>
         </v-card>
+
+        <!-- BOM Section -->
+        <v-card class="mb-3">
+          <div class="section-header">
+            <v-icon icon="mdi-sitemap" class="mr-2" size="small" />
+            {{ t('products.detail.bom') }}
+            <span v-if="bom?.name" class="text-caption text-medium-emphasis ml-2">({{ bom.name }})</span>
+          </div>
+          <v-card-text v-if="!bom || bom.lines.length === 0" class="text-medium-emphasis">
+            {{ t('products.detail.noBom') }}
+          </v-card-text>
+          <div v-else class="bom-table-wrapper">
+            <v-table density="compact">
+              <thead>
+                <tr>
+                  <th>{{ t('products.form.name') }}</th>
+                  <th class="text-end">{{ t('products.detail.bomQuantity') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="line in bom.lines" :key="line.id">
+                  <td>{{ line.childProductName }}</td>
+                  <td class="text-end">{{ line.quantity }}</td>
+                </tr>
+              </tbody>
+            </v-table>
+          </div>
+        </v-card>
       </v-card-text>
 
       <v-card-actions>
@@ -75,7 +103,8 @@ import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { getProductById } from '@features/inventory/api/products';
-import type { ProductDetailDto } from '@features/inventory/types/inventory';
+import { getBomByProductId } from '@features/inventory/api/bom';
+import type { ProductDetailDto, BomDto } from '@features/inventory/types/inventory';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
 import StatusChip from '@shared/components/atoms/StatusChip.vue';
 
@@ -89,6 +118,7 @@ const props = defineProps<{
 }>();
 
 const product = ref<ProductDetailDto | null>(null);
+const bom = ref<BomDto | null>(null);
 const loading = ref(false);
 const notFound = ref(false);
 
@@ -97,8 +127,14 @@ watch(visible, async (open) => {
     loading.value = true;
     notFound.value = false;
     product.value = null;
+    bom.value = null;
     try {
       product.value = await getProductById(props.productId);
+      try {
+        bom.value = await getBomByProductId(props.productId);
+      } catch {
+        // BOM fetch failure should not block displaying the product
+      }
     } catch {
       notFound.value = true;
     } finally {
@@ -124,5 +160,18 @@ function openFullPage(): void {
 <style scoped>
 .detail-dialog-content {
   background: #f1f5f9;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.bom-table-wrapper {
+  max-height: 200px;
+  overflow-y: auto;
 }
 </style>

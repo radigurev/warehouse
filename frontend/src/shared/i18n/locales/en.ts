@@ -290,6 +290,7 @@ export default {
       addBom: 'Create BOM',
       addAccessory: 'Add Accessory',
       addSubstitute: 'Add Substitute',
+      bomQuantity: 'Quantity',
     },
   },
   productCategories: {

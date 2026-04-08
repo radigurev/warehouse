@@ -290,6 +290,7 @@ export default {
       addBom: 'Създай съставка',
       addAccessory: 'Добави аксесоар',
       addSubstitute: 'Добави заместител',
+      bomQuantity: 'Количество',
     },
   },
   productCategories: {
