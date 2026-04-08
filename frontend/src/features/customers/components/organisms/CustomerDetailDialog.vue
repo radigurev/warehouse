@@ -7,7 +7,7 @@
     </v-alert>
 
     <template v-else-if="customer">
-      <v-card-text class="pt-4">
+      <v-card-text class="detail-dialog-content pt-4">
         <!-- Header -->
         <div class="d-flex align-center mb-4">
           <div>
@@ -19,12 +19,12 @@
         </div>
 
         <!-- Customer Info -->
-        <v-card variant="outlined" class="mb-3">
-          <v-card-title class="text-subtitle-2 font-weight-medium py-2 px-4">
-            <v-icon icon="mdi-information" size="small" class="mr-1" />
+        <v-card class="mb-3">
+          <v-card-title class="text-subtitle-1 font-weight-medium">
+            <v-icon icon="mdi-information" class="mr-2" />
             {{ t('customers.detail.info') }}
           </v-card-title>
-          <v-card-text class="pt-0">
+          <v-card-text>
             <v-row dense>
               <v-col v-if="customer.nativeLanguageName" cols="12" md="6">
                 <div class="text-caption text-medium-emphasis">{{ t('customers.form.nativeLanguageName') }}</div>
@@ -51,78 +51,78 @@
         </v-card>
 
         <!-- Addresses -->
-        <v-card variant="outlined" class="mb-3">
-          <v-card-title class="text-subtitle-2 font-weight-medium py-2 px-4">
-            <v-icon icon="mdi-map-marker" size="small" class="mr-1" />
+        <v-card class="mb-3">
+          <v-card-title class="text-subtitle-1 font-weight-medium">
+            <v-icon icon="mdi-map-marker" class="mr-2" />
             {{ t('customers.detail.addresses') }} ({{ customer.addresses.length }})
           </v-card-title>
-          <v-card-text v-if="customer.addresses.length === 0" class="text-medium-emphasis pt-0">
+          <v-card-text v-if="customer.addresses.length === 0" class="text-medium-emphasis">
             {{ t('customers.detail.noAddresses') }}
           </v-card-text>
-          <v-list v-else density="compact" class="pt-0">
+          <v-list v-else density="compact">
             <v-list-item v-for="addr in customer.addresses" :key="addr.id">
               <template #prepend>
-                <v-chip size="x-small" :color="addr.isDefault ? 'primary' : 'default'" variant="tonal" class="mr-2">{{ addr.addressType }}</v-chip>
+                <v-chip size="small" :color="addr.isDefault ? 'primary' : 'default'" variant="tonal" class="mr-2">{{ addr.addressType }}</v-chip>
               </template>
-              <v-list-item-title class="text-body-2">{{ addr.streetLine1 }}{{ addr.streetLine2 ? ', ' + addr.streetLine2 : '' }}</v-list-item-title>
+              <v-list-item-title>{{ addr.streetLine1 }}{{ addr.streetLine2 ? ', ' + addr.streetLine2 : '' }}</v-list-item-title>
               <v-list-item-subtitle>{{ addr.city }}{{ addr.stateProvince ? ', ' + addr.stateProvince : '' }} {{ addr.postalCode }} — {{ addr.countryCode }}</v-list-item-subtitle>
             </v-list-item>
           </v-list>
         </v-card>
 
         <!-- Phones -->
-        <v-card variant="outlined" class="mb-3">
-          <v-card-title class="text-subtitle-2 font-weight-medium py-2 px-4">
-            <v-icon icon="mdi-phone" size="small" class="mr-1" />
+        <v-card class="mb-3">
+          <v-card-title class="text-subtitle-1 font-weight-medium">
+            <v-icon icon="mdi-phone" class="mr-2" />
             {{ t('customers.detail.phones') }} ({{ customer.phones.length }})
           </v-card-title>
-          <v-card-text v-if="customer.phones.length === 0" class="text-medium-emphasis pt-0">
+          <v-card-text v-if="customer.phones.length === 0" class="text-medium-emphasis">
             {{ t('customers.detail.noPhones') }}
           </v-card-text>
-          <v-list v-else density="compact" class="pt-0">
+          <v-list v-else density="compact">
             <v-list-item v-for="phone in customer.phones" :key="phone.id">
               <template #prepend>
-                <v-chip size="x-small" :color="phone.isPrimary ? 'primary' : 'default'" variant="tonal" class="mr-2">{{ phone.phoneType }}</v-chip>
+                <v-chip size="small" :color="phone.isPrimary ? 'primary' : 'default'" variant="tonal" class="mr-2">{{ phone.phoneType }}</v-chip>
               </template>
-              <v-list-item-title class="text-body-2">{{ phone.phoneNumber }}{{ phone.extension ? ' ext. ' + phone.extension : '' }}</v-list-item-title>
+              <v-list-item-title>{{ phone.phoneNumber }}{{ phone.extension ? ' ext. ' + phone.extension : '' }}</v-list-item-title>
             </v-list-item>
           </v-list>
         </v-card>
 
         <!-- Emails -->
-        <v-card variant="outlined" class="mb-3">
-          <v-card-title class="text-subtitle-2 font-weight-medium py-2 px-4">
-            <v-icon icon="mdi-email" size="small" class="mr-1" />
+        <v-card class="mb-3">
+          <v-card-title class="text-subtitle-1 font-weight-medium">
+            <v-icon icon="mdi-email" class="mr-2" />
             {{ t('customers.detail.emails') }} ({{ customer.emails.length }})
           </v-card-title>
-          <v-card-text v-if="customer.emails.length === 0" class="text-medium-emphasis pt-0">
+          <v-card-text v-if="customer.emails.length === 0" class="text-medium-emphasis">
             {{ t('customers.detail.noEmails') }}
           </v-card-text>
-          <v-list v-else density="compact" class="pt-0">
+          <v-list v-else density="compact">
             <v-list-item v-for="email in customer.emails" :key="email.id">
               <template #prepend>
-                <v-chip size="x-small" :color="email.isPrimary ? 'primary' : 'default'" variant="tonal" class="mr-2">{{ email.emailType }}</v-chip>
+                <v-chip size="small" :color="email.isPrimary ? 'primary' : 'default'" variant="tonal" class="mr-2">{{ email.emailType }}</v-chip>
               </template>
-              <v-list-item-title class="text-body-2">{{ email.emailAddress }}</v-list-item-title>
+              <v-list-item-title>{{ email.emailAddress }}</v-list-item-title>
             </v-list-item>
           </v-list>
         </v-card>
 
         <!-- Accounts -->
-        <v-card variant="outlined">
-          <v-card-title class="text-subtitle-2 font-weight-medium py-2 px-4">
-            <v-icon icon="mdi-bank" size="small" class="mr-1" />
+        <v-card class="mb-3">
+          <v-card-title class="text-subtitle-1 font-weight-medium">
+            <v-icon icon="mdi-bank" class="mr-2" />
             {{ t('customers.detail.accounts') }} ({{ customer.accounts.length }})
           </v-card-title>
-          <v-card-text v-if="customer.accounts.length === 0" class="text-medium-emphasis pt-0">
+          <v-card-text v-if="customer.accounts.length === 0" class="text-medium-emphasis">
             {{ t('customers.detail.noAccounts') }}
           </v-card-text>
-          <v-list v-else density="compact" class="pt-0">
+          <v-list v-else density="compact">
             <v-list-item v-for="acc in customer.accounts" :key="acc.id">
               <template #prepend>
-                <v-chip size="x-small" :color="acc.isPrimary ? 'primary' : 'default'" variant="tonal" class="mr-2">{{ acc.currencyCode }}</v-chip>
+                <v-chip size="small" :color="acc.isPrimary ? 'primary' : 'default'" variant="tonal" class="mr-2">{{ acc.currencyCode }}</v-chip>
               </template>
-              <v-list-item-title class="text-body-2">{{ acc.balance.toFixed(2) }} {{ acc.currencyCode }}</v-list-item-title>
+              <v-list-item-title>{{ acc.balance.toFixed(2) }} {{ acc.currencyCode }}</v-list-item-title>
               <v-list-item-subtitle v-if="acc.description">{{ acc.description }}</v-list-item-subtitle>
             </v-list-item>
           </v-list>
@@ -190,3 +190,9 @@ function openFullPage(): void {
   router.push({ name: 'customer-detail', params: { id: props.customerId! } });
 }
 </script>
+
+<style scoped>
+.detail-dialog-content {
+  background: #f1f5f9;
+}
+</style>
