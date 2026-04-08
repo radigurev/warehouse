@@ -144,6 +144,31 @@ public sealed class WarehouseService : BaseInventoryEntityService, IWarehouseSer
         return Result.Success();
     }
 
+    /// <inheritdoc />
+    public async Task<Result<WarehouseDto>> ReactivateAsync(int id, int userId, CancellationToken cancellationToken)
+    {
+        WarehouseEntity? warehouse = await Context.Warehouses
+            .FirstOrDefaultAsync(w => w.Id == id, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (warehouse is null)
+            return Result<WarehouseDto>.Failure("WAREHOUSE_NOT_FOUND", "Warehouse not found.", 404);
+
+        if (!warehouse.IsDeleted)
+            return Result<WarehouseDto>.Failure("WAREHOUSE_ALREADY_ACTIVE", "Warehouse is already active.", 400);
+
+        warehouse.IsDeleted = false;
+        warehouse.DeletedAtUtc = null;
+        warehouse.IsActive = true;
+        warehouse.ModifiedAtUtc = DateTime.UtcNow;
+        warehouse.ModifiedByUserId = userId;
+
+        await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        WarehouseDto dto = Mapper.Map<WarehouseDto>(warehouse);
+        return Result<WarehouseDto>.Success(dto);
+    }
+
     /// <summary>
     /// Validates warehouse code uniqueness.
     /// </summary>

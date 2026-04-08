@@ -35,4 +35,9 @@ public interface IWarehouseService
     /// Soft-deletes a warehouse.
     /// </summary>
     Task<Result> DeactivateAsync(int id, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Reactivates a soft-deleted warehouse.
+    /// </summary>
+    Task<Result<WarehouseDto>> ReactivateAsync(int id, int userId, CancellationToken cancellationToken);
 }

@@ -103,6 +103,24 @@ public sealed class WarehousesController : BaseApiController
     }
 
     /// <summary>
+    /// Reactivates a soft-deleted warehouse.
+    /// </summary>
+    [HttpPost("{id:int}/reactivate")]
+    [RequirePermission("warehouses:update")]
+    [ProducesResponseType(typeof(WarehouseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ReactivateWarehouseAsync(int id, CancellationToken cancellationToken)
+    {
+        int userId = GetCurrentUserId();
+
+        Result<WarehouseDto> result = await _warehouseService
+            .ReactivateAsync(id, userId, cancellationToken);
+
+        return ToActionResult(result);
+    }
+
+    /// <summary>
     /// Soft-deletes (deactivates) a warehouse.
     /// </summary>
     [HttpDelete("{id:int}")]
