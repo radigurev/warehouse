@@ -604,7 +604,9 @@ async function handleLogout(): Promise<void> {
 
 .main-compact :deep(.v-container),
 .main-comfortable :deep(.v-container) {
-  overflow: hidden !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  max-height: calc(100vh - 64px);
 }
 
 :deep(.v-application) {
@@ -621,6 +623,11 @@ async function handleLogout(): Promise<void> {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.sidebar-nav {
+  overflow-y: auto;
+  flex: 1 1 auto;
 }
 
 .sidebar-nav :deep(.v-list-item--active) {
