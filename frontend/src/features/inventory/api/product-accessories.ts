@@ -5,7 +5,7 @@ import type {
 } from '@features/inventory/types/inventory';
 
 export function getAccessories(productId: number): Promise<ProductAccessoryDto[]> {
-  return apiClient.get<ProductAccessoryDto[]>(`/products/${productId}/accessories`).then((r) => r.data);
+  return apiClient.get<ProductAccessoryDto[]>(`/product-accessories/by-product/${productId}`).then((r) => r.data);
 }
 
 export function createAccessory(request: CreateProductAccessoryRequest): Promise<ProductAccessoryDto> {

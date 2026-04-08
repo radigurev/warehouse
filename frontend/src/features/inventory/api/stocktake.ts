@@ -36,7 +36,7 @@ export function cancelSession(id: number): Promise<StocktakeSessionDetailDto> {
 }
 
 export function getVarianceReport(id: number): Promise<StocktakeCountDto[]> {
-  return apiClient.get<StocktakeCountDto[]>(`/stocktake/${id}/variance`).then((r) => r.data);
+  return apiClient.get<StocktakeCountDto[]>(`/stocktake/${id}/variance-report`).then((r) => r.data);
 }
 
 export function createAdjustmentFromSession(id: number): Promise<InventoryAdjustmentDetailDto> {

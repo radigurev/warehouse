@@ -5,7 +5,7 @@ import type {
 } from '@features/inventory/types/inventory';
 
 export function getSubstitutes(productId: number): Promise<ProductSubstituteDto[]> {
-  return apiClient.get<ProductSubstituteDto[]>(`/products/${productId}/substitutes`).then((r) => r.data);
+  return apiClient.get<ProductSubstituteDto[]>(`/product-substitutes/by-product/${productId}`).then((r) => r.data);
 }
 
 export function createSubstitute(request: CreateProductSubstituteRequest): Promise<ProductSubstituteDto> {
