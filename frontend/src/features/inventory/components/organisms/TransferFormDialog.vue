@@ -331,10 +331,6 @@ function handleApiError(err: AxiosError<ProblemDetails>): void {
   const errorCode = err.response?.data?.title;
   if (errorCode === 'TRANSFER_SAME_WAREHOUSE') {
     fieldErrors.destinationWarehouseId = [t('errors.TRANSFER_SAME_WAREHOUSE')];
-  } else if (errorCode) {
-    const key = `errors.${errorCode}`;
-    const translated = t(key);
-    notification.error(translated !== key ? translated : t('errors.UNEXPECTED_ERROR'));
   } else {
     notification.error(getApiErrorMessage(err, t));
   }

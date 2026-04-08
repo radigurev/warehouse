@@ -182,10 +182,6 @@ function handleApiError(err: AxiosError<ProblemDetails>): void {
   const errorCode = err.response?.data?.title;
   if (errorCode === 'DUPLICATE_WAREHOUSE_CODE') {
     fieldErrors.code = [err.response?.data?.detail || t('errors.DUPLICATE_WAREHOUSE_CODE')];
-  } else if (errorCode) {
-    const key = `errors.${errorCode}`;
-    const translated = t(key);
-    notification.error(translated !== key ? translated : t('errors.UNEXPECTED_ERROR'));
   } else {
     notification.error(getApiErrorMessage(err, t));
   }

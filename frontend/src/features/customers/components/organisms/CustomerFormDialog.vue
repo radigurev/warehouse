@@ -240,12 +240,6 @@ function handleApiError(err: AxiosError<ProblemDetails>): void {
     fieldErrors.code = [err.response?.data?.detail || t('errors.DUPLICATE_CUSTOMER_CODE')];
   } else if (errorCode === 'DUPLICATE_TAX_ID') {
     fieldErrors.taxId = [err.response?.data?.detail || t('errors.DUPLICATE_TAX_ID')];
-  } else if (errorCode === 'CATEGORY_NOT_FOUND') {
-    notification.error(t('errors.CATEGORY_NOT_FOUND'));
-  } else if (errorCode) {
-    const key = `errors.${errorCode}`;
-    const translated = t(key);
-    notification.error(translated !== key ? translated : t('errors.UNEXPECTED_ERROR'));
   } else {
     notification.error(getApiErrorMessage(err, t));
   }

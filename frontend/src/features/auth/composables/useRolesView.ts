@@ -6,8 +6,6 @@ import { useNotificationStore } from '@shared/stores/notification';
 import { useColumnFilters } from '@shared/composables/useColumnFilters';
 import { getRoles, deleteRole } from '@features/auth/api/roles';
 import type { RoleDto } from '@features/auth/types/role';
-import type { AxiosError } from 'axios';
-import type { ProblemDetails } from '@shared/types/api';
 import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 export function useRolesView() {
@@ -105,15 +103,7 @@ export function useRolesView() {
       showDeleteDialog.value = false;
       await loadRoles();
     } catch (err) {
-      const axiosError = err as AxiosError<ProblemDetails>;
-      const errorCode = axiosError.response?.data?.title;
-      if (errorCode === 'ROLE_IN_USE') {
-        notification.error(axiosError.response?.data?.detail || t('errors.ROLE_IN_USE'));
-      } else if (errorCode === 'PROTECTED_ROLE') {
-        notification.error(t('errors.PROTECTED_ROLE'));
-      } else {
-        notification.error(getApiErrorMessage(err, t));
-      }
+      notification.error(getApiErrorMessage(err, t));
     } finally {
       deleting.value = false;
     }

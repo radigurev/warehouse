@@ -6,8 +6,6 @@ import { useNotificationStore } from '@shared/stores/notification';
 import { useColumnFilters } from '@shared/composables/useColumnFilters';
 import { searchUnits, deleteUnit } from '@features/inventory/api/units-of-measure';
 import type { UnitOfMeasureDto } from '@features/inventory/types/inventory';
-import type { AxiosError } from 'axios';
-import type { ProblemDetails } from '@shared/types/api';
 import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 export function useUnitsOfMeasureView() {
@@ -95,13 +93,7 @@ export function useUnitsOfMeasureView() {
       showDeleteDialog.value = false;
       await loadUnits();
     } catch (err) {
-      const axiosError = err as AxiosError<ProblemDetails>;
-      const errorCode = axiosError.response?.data?.title;
-      if (errorCode === 'UNIT_IN_USE') {
-        notification.error(axiosError.response?.data?.detail || t('errors.UNIT_IN_USE'));
-      } else {
-        notification.error(getApiErrorMessage(err, t));
-      }
+      notification.error(getApiErrorMessage(err, t));
     } finally {
       deleting.value = false;
     }

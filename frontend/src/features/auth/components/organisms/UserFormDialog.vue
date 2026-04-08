@@ -209,10 +209,6 @@ function handleApiError(err: AxiosError<ProblemDetails>): void {
     fieldErrors.username = [t('errors.DUPLICATE_USERNAME')];
   } else if (errorCode === 'DUPLICATE_EMAIL') {
     fieldErrors.email = [t('errors.DUPLICATE_EMAIL')];
-  } else if (errorCode) {
-    const key = `errors.${errorCode}`;
-    const translated = t(key);
-    notification.error(translated !== key ? translated : t('errors.UNEXPECTED_ERROR'));
   } else {
     notification.error(getApiErrorMessage(err, t));
   }

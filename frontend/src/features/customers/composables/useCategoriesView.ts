@@ -6,8 +6,6 @@ import { useNotificationStore } from '@shared/stores/notification';
 import { useColumnFilters } from '@shared/composables/useColumnFilters';
 import { getCategories, deleteCategory } from '@features/customers/api/categories';
 import type { CustomerCategoryDto } from '@features/customers/types/customer';
-import type { AxiosError } from 'axios';
-import type { ProblemDetails } from '@shared/types/api';
 import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 export function useCategoriesView() {
@@ -94,13 +92,7 @@ export function useCategoriesView() {
       showDeleteDialog.value = false;
       await loadCategories();
     } catch (err) {
-      const axiosError = err as AxiosError<ProblemDetails>;
-      const errorCode = axiosError.response?.data?.title;
-      if (errorCode === 'CATEGORY_IN_USE') {
-        notification.error(axiosError.response?.data?.detail || t('errors.CATEGORY_IN_USE'));
-      } else {
-        notification.error(getApiErrorMessage(err, t));
-      }
+      notification.error(getApiErrorMessage(err, t));
     } finally {
       deleting.value = false;
     }
