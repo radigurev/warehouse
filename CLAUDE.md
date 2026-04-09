@@ -72,7 +72,7 @@ CLAUDE.md > persona-database > persona-dotnet8-microservices > csharp-persona > 
 - **Polly:** Required on all outbound HTTP clients (to be added when services are implemented)
 - **Mapping:** AutoMapper only
 - **Logging:** NLog with structured message templates
-- **ORM:** EF Core with separate DbContext per domain (AuthDbContext, CustomersDbContext, InventoryDbContext)
+- **ORM:** EF Core with separate DbContext per domain (AuthDbContext, CustomersDbContext, InventoryDbContext, PurchasingDbContext, FulfillmentDbContext)
 - **Validation:** FluentValidation
 - **PK strategy:** INT IDENTITY (or GUID with `NEWSEQUENTIALID()` if GUID is chosen)
 - **API versioning:** URL-based (`/api/v1/`)
@@ -175,8 +175,8 @@ This WMS primarily operates at **Level 3** (Operations Management) with Level 4 
 | **Business Partner Management** | Active | `Warehouse.Customers.API` | Customers, accounts, contacts |
 | **Production Operations** | Planned | Future: `Warehouse.Production.API` | Production orders, work orders, scheduling |
 | **Quality Operations** | Planned | Future: `Warehouse.Quality.API` | Inspections, quality holds, certifications |
-| **Procurement Operations** | Planned | Future: `Warehouse.Purchasing.API` | Purchase orders, inbound shipments, supplier management |
-| **Fulfillment Operations** | Planned | Future: `Warehouse.Fulfillment.API` | Sales orders, picking, packing, outbound shipments |
+| **Procurement Operations** | Active | `Warehouse.Purchasing.API` | Purchase orders, inbound shipments, supplier management |
+| **Fulfillment Operations** | Active | `Warehouse.Fulfillment.API` | Sales orders, picking, packing, outbound shipments |
 | **Maintenance Operations** | Out of scope | — | Equipment maintenance |
 
 ### 1.1.3 ISA-95 Object Model — Terminology Mapping

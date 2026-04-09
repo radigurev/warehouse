@@ -1,6 +1,6 @@
 # SDD-PURCH-001 — Procurement Operations
 
-> Status: Draft
+> Status: Implemented
 > Last updated: 2026-04-06
 > Owner: TBD
 > Category: Core

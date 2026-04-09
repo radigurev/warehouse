@@ -1,6 +1,6 @@
 # SDD-UI-002 — Form Display Mode (Modal vs Page)
 
-> Status: Draft
+> Status: Implemented
 > Last updated: 2026-04-03
 > Owner: TBD
 > Category: Domain
