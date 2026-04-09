@@ -2,7 +2,7 @@
 
 > Last updated: 2026-04-09
 >
-> Note: Added SDD-UI-004, SDD-UI-005, SDD-EVTLOG-001 cross-references
+> Note: Added SDD-INFRA-003 cross-references for centralized sequence generation
 
 This document provides a bidirectional mapping between SDD specifications and source files.
 
@@ -171,6 +171,24 @@ This document provides a bidirectional mapping between SDD specifications and so
 | `src/Databases/Warehouse.Inventory.DBModel/Models/StocktakeCount.cs` | Entity | Count entry entity |
 | `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Services/StocktakeSessionServiceTests.cs` | Test | Stocktake service tests |
 | `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Services/StocktakeCountServiceTests.cs` | Test | Count entry service tests |
+
+### SDD-INV-005 — Batch Creation on Goods Receipt
+
+| File | Type | Role |
+|---|---|---|
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Consumers/GoodsReceiptCompletedConsumer.cs` | Consumer | MassTransit consumer for GoodsReceiptCompletedEvent |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Consumers/GoodsReceiptLineAcceptedConsumer.cs` | Consumer | MassTransit consumer for GoodsReceiptLineAcceptedEvent |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Services/ReceiptStockIntakeService.cs` | Service | Shared logic for batch resolution, movement creation, stock level upsert |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Interfaces/IReceiptStockIntakeService.cs` | Interface | Service interface for receipt stock intake |
+| `src/Warehouse.ServiceModel/Events/GoodsReceiptCompletedEvent.cs` | Event | MassTransit event contract (existing, consumed here) |
+| `src/Warehouse.ServiceModel/Events/GoodsReceiptLineAcceptedEvent.cs` | Event | MassTransit event contract (existing, consumed here) |
+| `src/Databases/Warehouse.Inventory.DBModel/Models/Batch.cs` | Entity | Batch entity (existing, created by this flow) |
+| `src/Databases/Warehouse.Inventory.DBModel/Models/StockMovement.cs` | Entity | Stock movement entity (existing, created by this flow) |
+| `src/Databases/Warehouse.Inventory.DBModel/Models/StockLevel.cs` | Entity | Stock level entity (existing, upserted by this flow) |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Consumers/GoodsReceiptCompletedConsumerTests.cs` | Test | Consumer unit tests |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Consumers/GoodsReceiptLineAcceptedConsumerTests.cs` | Test | Accepted line consumer unit tests |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Services/ReceiptStockIntakeServiceTests.cs` | Test | Batch resolution unit tests |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Integration/Consumers/GoodsReceiptStockIntakeTests.cs` | Test | Integration tests with MassTransit test harness |
 
 ### SDD-PURCH-001 — Procurement Operations
 
@@ -368,8 +386,8 @@ This document provides a bidirectional mapping between SDD specifications and so
 | `frontend/src/views/settings/SettingsEditProfilePage.vue` | SDD-UI-003 |
 | `frontend/src/views/settings/SettingsChangePasswordPage.vue` | SDD-UI-003 |
 | `frontend/src/components/organisms/ProfileEditDialog.vue` | SDD-UI-003 |
-| `src/Databases/Warehouse.Inventory.DBModel/Models/*` | SDD-INV-001, SDD-INV-002, SDD-INV-003, SDD-INV-004 |
-| `src/Databases/Warehouse.Inventory.DBModel/InventoryDbContext.cs` | SDD-INV-001, SDD-INV-002, SDD-INV-003, SDD-INV-004 |
+| `src/Databases/Warehouse.Inventory.DBModel/Models/*` | SDD-INV-001, SDD-INV-002, SDD-INV-003, SDD-INV-004, SDD-INV-005 |
+| `src/Databases/Warehouse.Inventory.DBModel/InventoryDbContext.cs` | SDD-INV-001, SDD-INV-002, SDD-INV-003, SDD-INV-004, SDD-INV-005 |
 | `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/ProductsController.cs` | SDD-INV-001 |
 | `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/ProductCategoriesController.cs` | SDD-INV-001 |
 | `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/UnitsOfMeasureController.cs` | SDD-INV-001 |
@@ -384,18 +402,25 @@ This document provides a bidirectional mapping between SDD specifications and so
 | `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/WarehouseTransfersController.cs` | SDD-INV-003 |
 | `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/StocktakeSessionsController.cs` | SDD-INV-004 |
 | `src/Interfaces/Inventory/Warehouse.Inventory.API/Controllers/StocktakeCountsController.cs` | SDD-INV-004 |
-| `src/Interfaces/Inventory/Warehouse.Inventory.API/Services/*` | SDD-INV-001, SDD-INV-002, SDD-INV-003, SDD-INV-004 |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Services/*` | SDD-INV-001, SDD-INV-002, SDD-INV-003, SDD-INV-004, SDD-INV-005 |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Consumers/GoodsReceiptCompletedConsumer.cs` | SDD-INV-005 |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Consumers/GoodsReceiptLineAcceptedConsumer.cs` | SDD-INV-005 |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Interfaces/IReceiptStockIntakeService.cs` | SDD-INV-005 |
 | `src/Warehouse.Mapping/Profiles/Inventory/InventoryMappingProfile.cs` | SDD-INV-001, SDD-INV-002, SDD-INV-003, SDD-INV-004 |
 | `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Services/*` | SDD-INV-001, SDD-INV-002, SDD-INV-003, SDD-INV-004 |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Consumers/GoodsReceiptCompletedConsumerTests.cs` | SDD-INV-005 |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Consumers/GoodsReceiptLineAcceptedConsumerTests.cs` | SDD-INV-005 |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Services/ReceiptStockIntakeServiceTests.cs` | SDD-INV-005 |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Integration/Consumers/GoodsReceiptStockIntakeTests.cs` | SDD-INV-005 |
 | `src/Databases/Warehouse.Purchasing.DBModel/Models/*` | SDD-PURCH-001 |
 | `src/Databases/Warehouse.Purchasing.DBModel/PurchasingDbContext.cs` | SDD-PURCH-001 |
 | `src/Interfaces/Purchasing/Warehouse.Purchasing.API/Controllers/*` | SDD-PURCH-001 |
 | `src/Interfaces/Purchasing/Warehouse.Purchasing.API/Services/*` | SDD-PURCH-001 |
 | `src/Warehouse.ServiceModel/DTOs/Purchasing/*` | SDD-PURCH-001 |
 | `src/Warehouse.ServiceModel/Requests/Purchasing/*` | SDD-PURCH-001 |
-| `src/Warehouse.ServiceModel/Events/GoodsReceiptCompletedEvent.cs` | SDD-PURCH-001, SDD-INV-002 |
+| `src/Warehouse.ServiceModel/Events/GoodsReceiptCompletedEvent.cs` | SDD-PURCH-001, SDD-INV-002, SDD-INV-005 |
 | `src/Warehouse.ServiceModel/Events/SupplierReturnCompletedEvent.cs` | SDD-PURCH-001, SDD-INV-002 |
-| `src/Warehouse.ServiceModel/Events/GoodsReceiptLineAcceptedEvent.cs` | SDD-PURCH-001, SDD-INV-002 |
+| `src/Warehouse.ServiceModel/Events/GoodsReceiptLineAcceptedEvent.cs` | SDD-PURCH-001, SDD-INV-002, SDD-INV-005 |
 | `src/Warehouse.Mapping/Profiles/Purchasing/PurchasingMappingProfile.cs` | SDD-PURCH-001 |
 | `src/Interfaces/Purchasing/Warehouse.Purchasing.API.Tests/Unit/Services/*` | SDD-PURCH-001 |
 | `src/Databases/Warehouse.Fulfillment.DBModel/Models/*` | SDD-FULF-001 |
@@ -410,7 +435,7 @@ This document provides a bidirectional mapping between SDD specifications and so
 | `src/Warehouse.ServiceModel/Events/StockReservationReleasedEvent.cs` | SDD-FULF-001, SDD-INV-002 |
 | `src/Warehouse.Mapping/Profiles/Fulfillment/FulfillmentMappingProfile.cs` | SDD-FULF-001 |
 | `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API.Tests/Unit/Services/*` | SDD-FULF-001 |
-| `src/Warehouse.Infrastructure/Extensions/ServiceCollectionExtensions.cs` | SDD-INFRA-001, SDD-OBS-001, SDD-INFRA-002 |
+| `src/Warehouse.Infrastructure/Extensions/ServiceCollectionExtensions.cs` | SDD-INFRA-001, SDD-OBS-001, SDD-INFRA-002, SDD-INFRA-003 |
 | `src/Warehouse.Infrastructure/Extensions/WebApplicationExtensions.cs` | SDD-INFRA-001 |
 | `src/Warehouse.Infrastructure/Middleware/CorrelationIdMiddleware.cs` | SDD-INFRA-001, SDD-OBS-001, SDD-INFRA-002 |
 | `src/Warehouse.Infrastructure/Middleware/GlobalExceptionHandlerMiddleware.cs` | SDD-INFRA-001 |
@@ -472,6 +497,16 @@ This document provides a bidirectional mapping between SDD specifications and so
 | `src/Warehouse.Infrastructure/Middleware/CorrelationIdMiddleware.cs` | Middleware | Correlation ID generation and propagation |
 | `src/Warehouse.Infrastructure/Extensions/ServiceCollectionExtensions.cs` | Extension | Provides `AddWarehouseTracing()` used by gateway |
 
+### SDD-INFRA-003 — Centralized Sequence Generation
+
+| File | Type | Role |
+|---|---|---|
+| `src/Warehouse.Infrastructure/Sequences/ISequenceGenerator.cs` | Interface | Service interface with `NextAsync` and `NextBatchNumberAsync` |
+| `src/Warehouse.Infrastructure/Sequences/SequenceGenerator.cs` | Service | Implementation with raw SQL atomic increment |
+| `src/Warehouse.Infrastructure/Sequences/SequenceDefinition.cs` | Configuration | Sequence pattern definition record |
+| `src/Warehouse.Common/Enums/SequenceResetPolicy.cs` | Enum | Reset policy: `Daily`, `Monthly`, `Never` |
+| `src/Warehouse.Infrastructure/Extensions/ServiceCollectionExtensions.cs` | Extension | `AddSequenceGenerator()` DI registration |
+
 ### Section 2 Addendum — New UI Specs
 
 | Source File | Spec ID(s) |
@@ -500,6 +535,10 @@ This document provides a bidirectional mapping between SDD specifications and so
 | `src/Warehouse.ServiceModel/Events/CustomerEventOccurredEvent.cs` | SDD-EVTLOG-001 |
 | `src/Warehouse.ServiceModel/DTOs/EventLog/*` | SDD-EVTLOG-001 |
 | `src/Warehouse.ServiceModel/Requests/EventLog/*` | SDD-EVTLOG-001 |
+| `src/Warehouse.Infrastructure/Sequences/ISequenceGenerator.cs` | SDD-INFRA-003 |
+| `src/Warehouse.Infrastructure/Sequences/SequenceGenerator.cs` | SDD-INFRA-003 |
+| `src/Warehouse.Infrastructure/Sequences/SequenceDefinition.cs` | SDD-INFRA-003 |
+| `src/Warehouse.Common/Enums/SequenceResetPolicy.cs` | SDD-INFRA-003 |
 | `src/Interfaces/Auth/Warehouse.Auth.API/Services/AuditService.cs` | SDD-AUTH-001, SDD-EVTLOG-001 |
 | `src/Interfaces/Purchasing/Warehouse.Purchasing.API/Services/PurchaseEventService.cs` | SDD-PURCH-001, SDD-EVTLOG-001 |
 | `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Services/FulfillmentEventService.cs` | SDD-FULF-001, SDD-EVTLOG-001 |
