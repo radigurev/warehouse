@@ -1,6 +1,6 @@
 # Warehouse — Project Instructions
 
-> Last updated: 2026-04-06
+> Last updated: 2026-04-09
 
 ---
 
@@ -9,7 +9,7 @@
 ### Execution Pipeline
 
 ```
-spec-writer → implementator → tester → spec-validator
+spec-writer → implementator → tester → spec-validator → isa95-validator
 ```
 
 | Phase | Persona Category | Base Persona | Purpose |
@@ -18,6 +18,27 @@ spec-writer → implementator → tester → spec-validator
 | **2. Implementator** | `~/.claude/personas/implementator/` | `csharp-persona.md` | Write production-ready code that fulfills the specification |
 | **3. Tester** | `~/.claude/personas/tester/` | `csharp-persona.md` | Write tests that verify the implementation matches the specification |
 | **4. Spec Validator** | `~/.claude/personas/validator/` | `doc-governance.md` | Validate that the spec, code, and tests are all in sync |
+| **5. ISA-95 Validator** | `.claude/agents/isa95-validate.md` (local) | `CLAUDE.md` §1.1 | Validate ISA-95 compliance of entities, operations, specs, and domain boundaries |
+
+### ISA-95 Validator (Phase 5 — local agent)
+
+| Concern | Agent File |
+|---|---|
+| ISA-95 compliance validation | `.claude/agents/isa95-validate.md` |
+
+The ISA-95 validator is a **project-local agent** (not global). It validates new and existing work against the ISA-95 (IEC 62264) standard as defined in Sections 1.1–1.1.7 of this file. It checks:
+
+1. **Entity Classification** — all entities classified under ISA-95 object model (Section 1.1.3)
+2. **Activity Model Alignment** — operations mapped to ISA-95 activity functions (Section 1.1.4)
+3. **Spec ISA-95 References** — SDD specs reference applicable ISA-95 part/section (Rule 3)
+4. **Equipment Hierarchy** — Enterprise → Site → Area → Storage Unit respected (Rule 4)
+5. **Material Traceability** — Definition → Lot → Sublot chain maintained (Rule 5)
+6. **Movement Reason Codes** — aligned with ISA-95 base types (Rule 6, Section 1.1.6.1)
+7. **Domain Boundaries** — microservices map to single ISA-95 domain (Rule 8)
+8. **Immutable Events** — state-changing operations produce immutable records (Rule 10)
+9. **Terminology Compliance** — names prefer ISA-95 terms, grandfathered exceptions noted (Rule 7)
+
+The local pipeline (`.claude/agents/pipeline.md`) orchestrates all 5 phases.
 
 ### Implementator Personas
 
@@ -317,8 +338,10 @@ Warehouse/
 │   │   │   └── Models/                            ← Auth entity models (User, Role, Permission, etc.)
 │   │   ├── Warehouse.Customers.DBModel/           ← Customers EF Core entities, CustomersDbContext, migrations
 │   │   │   └── Models/                            ← Customer entity models (Customer, Account, etc.)
-│   │   └── Warehouse.Inventory.DBModel/           ← Inventory EF Core entities, InventoryDbContext, migrations
-│   │       └── Models/                            ← Inventory entity models (Product, StockLevel, Warehouse, etc.)
+│   │   ├── Warehouse.Inventory.DBModel/           ← Inventory EF Core entities, InventoryDbContext, migrations
+│   │   │   └── Models/                            ← Inventory entity models (Product, StockLevel, Warehouse, etc.)
+│   │   └── Warehouse.EventLog.DBModel/            ← EventLog EF Core entities, EventLogDbContext, migrations
+│   │       └── Models/                            ← Event log entity models (OperationsEvent hierarchy)
 │   ├── Interfaces/
 │   │   ├── Auth/                                  ← Auth domain
 │   │   │   ├── Warehouse.Auth.API/                ← Controllers, middleware, DI root
@@ -329,6 +352,10 @@ Warehouse/
 │   │   └── Inventory/                             ← Inventory domain
 │   │       ├── Warehouse.Inventory.API/           ← Controllers, services, DI root
 │   │       └── Warehouse.Inventory.API.Tests/     ← NUnit tests
+│   ├── Infrastructure/
+│   │   └── EventLog/                              ← Infrastructure: centralized event log service
+│   │       ├── Warehouse.EventLog.API/            ← MassTransit consumers, query endpoints (port 5006)
+│   │       └── Warehouse.EventLog.API.Tests/      ← NUnit tests
 │   ├── Warehouse.Common/                          ← Shared enums, helpers, extensions
 │   │   ├── Enums/
 │   │   ├── Extensions/
@@ -391,6 +418,18 @@ Warehouse.Inventory.API
 
 Warehouse.Inventory.API.Tests
   ├── Warehouse.Inventory.API
+  └── Warehouse.Mapping
+
+Warehouse.EventLog.API
+  ├── Warehouse.EventLog.DBModel
+  │   └── Warehouse.Common
+  ├── Warehouse.Common
+  ├── Warehouse.Infrastructure
+  ├── Warehouse.Mapping
+  └── Warehouse.ServiceModel
+
+Warehouse.EventLog.API.Tests
+  ├── Warehouse.EventLog.API
   └── Warehouse.Mapping
 
 Warehouse.Gateway (standalone — no project references)
@@ -713,6 +752,10 @@ Describe proposed changes. Live in `docs/changes/`.
 | Inventory API tests | `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/` |
 | Inventory DB models | `src/Databases/Warehouse.Inventory.DBModel/Models/` |
 | Inventory DbContext | `src/Databases/Warehouse.Inventory.DBModel/InventoryDbContext.cs` |
+| EventLog API | `src/Infrastructure/EventLog/Warehouse.EventLog.API/` |
+| EventLog API tests | `src/Infrastructure/EventLog/Warehouse.EventLog.API.Tests/` |
+| EventLog DB models | `src/Databases/Warehouse.EventLog.DBModel/Models/` |
+| EventLog DbContext | `src/Databases/Warehouse.EventLog.DBModel/EventLogDbContext.cs` |
 | DTOs | `src/Warehouse.ServiceModel/DTOs/` |
 | Request models | `src/Warehouse.ServiceModel/Requests/` |
 | Response models | `src/Warehouse.ServiceModel/Responses/` |

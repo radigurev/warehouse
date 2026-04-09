@@ -48,8 +48,8 @@
   <Folder Name="/Databases/EventLog/">
     <Project Path="Databases/Warehouse.EventLog.DBModel/Warehouse.EventLog.DBModel.csproj" />
   </Folder>
-  <Folder Name="/Interfaces/EventLog/">
-    <Project Path="Interfaces/EventLog/Warehouse.EventLog.API/Warehouse.EventLog.API.csproj" />
-    <Project Path="Interfaces/EventLog/Warehouse.EventLog.API.Tests/Warehouse.EventLog.API.Tests.csproj" />
+  <Folder Name="/Infrastructure/EventLog/">
+    <Project Path="Infrastructure/EventLog/Warehouse.EventLog.API/Warehouse.EventLog.API.csproj" />
+    <Project Path="Infrastructure/EventLog/Warehouse.EventLog.API.Tests/Warehouse.EventLog.API.Tests.csproj" />
   </Folder>
 </Solution>

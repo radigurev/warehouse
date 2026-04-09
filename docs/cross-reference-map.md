@@ -2,7 +2,7 @@
 
 > Last updated: 2026-04-09
 >
-> Note: Updated all paths for domain-split restructure (Auth.DBModel, Customers.DBModel, Interfaces/Auth/, Interfaces/Customers/)
+> Note: Added SDD-UI-004, SDD-UI-005, SDD-EVTLOG-001 cross-references
 
 This document provides a bidirectional mapping between SDD specifications and source files.
 
@@ -233,6 +233,74 @@ This document provides a bidirectional mapping between SDD specifications and so
 | `src/Warehouse.Mapping/Profiles/Fulfillment/FulfillmentMappingProfile.cs` | Mapping | AutoMapper profile |
 | `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API.Tests/` | Tests | Unit and integration tests |
 
+### SDD-UI-004 — Purchasing Operations SPA
+
+| File | Type | Role |
+|---|---|---|
+| `frontend/src/features/purchasing/api/purchase-orders.ts` | API | PO CRUD and status action API calls |
+| `frontend/src/features/purchasing/api/suppliers.ts` | API | Supplier CRUD API calls |
+| `frontend/src/features/purchasing/api/supplier-categories.ts` | API | Supplier category CRUD API calls |
+| `frontend/src/features/purchasing/api/supplier-contacts.ts` | API | Supplier address, phone, email API calls |
+| `frontend/src/features/purchasing/api/goods-receipts.ts` | API | Goods receipt and inspection API calls |
+| `frontend/src/features/purchasing/api/supplier-returns.ts` | API | Supplier return API calls |
+| `frontend/src/features/purchasing/api/purchase-events.ts` | API | Purchase event history API calls |
+| `frontend/src/features/purchasing/types/purchasing.ts` | Types | TypeScript types for purchasing domain |
+| `frontend/src/features/purchasing/composables/*.ts` | Composables | View logic for purchasing views |
+| `frontend/src/features/purchasing/views/**/*.vue` | Views | All purchasing view and page components |
+| `frontend/src/features/purchasing/components/organisms/*.vue` | Organisms | Form dialogs and inspection dialogs |
+| `frontend/src/app/router/purchasing.routes.ts` | Router | Purchasing feature routes |
+| `frontend/src/shared/i18n/locales/en.ts` | i18n | English translations (purchasing keys) |
+| `frontend/src/shared/i18n/locales/bg.ts` | i18n | Bulgarian translations (purchasing keys) |
+| `frontend/src/shared/components/templates/DefaultLayout.vue` | Layout | Purchasing nav group in sidebar |
+
+### SDD-UI-005 — Fulfillment Operations SPA
+
+| File | Type | Role |
+|---|---|---|
+| `frontend/src/features/fulfillment/api/sales-orders.ts` | API | SO CRUD and status action API calls |
+| `frontend/src/features/fulfillment/api/pick-lists.ts` | API | Pick list generation and execution API calls |
+| `frontend/src/features/fulfillment/api/shipments.ts` | API | Shipment dispatch and tracking API calls |
+| `frontend/src/features/fulfillment/api/carriers.ts` | API | Carrier and service level CRUD API calls |
+| `frontend/src/features/fulfillment/api/customer-returns.ts` | API | Customer return CRUD and status API calls |
+| `frontend/src/features/fulfillment/api/fulfillment-events.ts` | API | Fulfillment event history API calls |
+| `frontend/src/features/fulfillment/types/fulfillment.ts` | Types | TypeScript types for fulfillment domain |
+| `frontend/src/features/fulfillment/composables/*.ts` | Composables | View logic for fulfillment views |
+| `frontend/src/features/fulfillment/views/**/*.vue` | Views | All fulfillment view and page components |
+| `frontend/src/features/fulfillment/components/organisms/*.vue` | Organisms | Form, pick, packing, dispatch, and tracking dialogs |
+| `frontend/src/app/router/fulfillment.routes.ts` | Router | Fulfillment feature routes |
+| `frontend/src/shared/i18n/locales/en.ts` | i18n | English translations (fulfillment keys) |
+| `frontend/src/shared/i18n/locales/bg.ts` | i18n | Bulgarian translations (fulfillment keys) |
+| `frontend/src/shared/components/templates/DefaultLayout.vue` | Layout | Fulfillment nav group in sidebar |
+
+### SDD-EVTLOG-001 — Centralized Event Logging Service
+
+| File | Type | Role |
+|---|---|---|
+| `src/Infrastructure/EventLog/Warehouse.EventLog.API/Program.cs` | Entry point | DI root, MassTransit consumer registration, health checks |
+| `src/Infrastructure/EventLog/Warehouse.EventLog.API/Controllers/EventsController.cs` | Controller | Read-only event query endpoints |
+| `src/Infrastructure/EventLog/Warehouse.EventLog.API/Services/EventQueryService.cs` | Service | Search, get by ID, correlation timeline |
+| `src/Infrastructure/EventLog/Warehouse.EventLog.API/Consumers/AuthAuditLoggedEventConsumer.cs` | Consumer | MassTransit consumer for auth audit events |
+| `src/Infrastructure/EventLog/Warehouse.EventLog.API/Consumers/PurchaseEventOccurredEventConsumer.cs` | Consumer | MassTransit consumer for purchase events |
+| `src/Infrastructure/EventLog/Warehouse.EventLog.API/Consumers/FulfillmentEventOccurredEventConsumer.cs` | Consumer | MassTransit consumer for fulfillment events |
+| `src/Infrastructure/EventLog/Warehouse.EventLog.API/Consumers/InventoryEventOccurredEventConsumer.cs` | Consumer | MassTransit consumer for inventory events |
+| `src/Infrastructure/EventLog/Warehouse.EventLog.API/Consumers/CustomerEventOccurredEventConsumer.cs` | Consumer | MassTransit consumer for customer events |
+| `src/Databases/Warehouse.EventLog.DBModel/EventLogDbContext.cs` | DbContext | EF Core TPT configuration |
+| `src/Databases/Warehouse.EventLog.DBModel/Models/OperationsEvent.cs` | Entity | Base TPT entity |
+| `src/Databases/Warehouse.EventLog.DBModel/Models/AuthEvent.cs` | Entity | Auth derived entity |
+| `src/Databases/Warehouse.EventLog.DBModel/Models/PurchaseEvent.cs` | Entity | Purchase derived entity |
+| `src/Databases/Warehouse.EventLog.DBModel/Models/FulfillmentEvent.cs` | Entity | Fulfillment derived entity |
+| `src/Databases/Warehouse.EventLog.DBModel/Models/InventoryEvent.cs` | Entity | Inventory derived entity |
+| `src/Databases/Warehouse.EventLog.DBModel/Models/CustomerEvent.cs` | Entity | Customer derived entity |
+| `src/Warehouse.ServiceModel/Events/AuthAuditLoggedEvent.cs` | Event | MassTransit contract |
+| `src/Warehouse.ServiceModel/Events/PurchaseEventOccurredEvent.cs` | Event | MassTransit contract |
+| `src/Warehouse.ServiceModel/Events/FulfillmentEventOccurredEvent.cs` | Event | MassTransit contract |
+| `src/Warehouse.ServiceModel/Events/InventoryEventOccurredEvent.cs` | Event | MassTransit contract |
+| `src/Warehouse.ServiceModel/Events/CustomerEventOccurredEvent.cs` | Event | MassTransit contract |
+| `src/Warehouse.ServiceModel/DTOs/EventLog/` | DTOs | Event log domain DTOs |
+| `src/Warehouse.ServiceModel/Requests/EventLog/SearchEventsRequest.cs` | Request | Unified event search request |
+| `src/Warehouse.Mapping/Profiles/EventLog/EventLogMappingProfile.cs` | Mapping | AutoMapper profile |
+| `src/Infrastructure/EventLog/Warehouse.EventLog.API.Tests/` | Tests | Unit and integration tests |
+
 ### SDD-INFRA-001 — Shared Infrastructure Library
 
 | File | Type | Role |
@@ -403,3 +471,35 @@ This document provides a bidirectional mapping between SDD specifications and so
 | `src/Gateway/Warehouse.Gateway/Warehouse.Gateway.csproj` | Project | Package references (YARP, NLog, HealthChecks.Uris) |
 | `src/Warehouse.Infrastructure/Middleware/CorrelationIdMiddleware.cs` | Middleware | Correlation ID generation and propagation |
 | `src/Warehouse.Infrastructure/Extensions/ServiceCollectionExtensions.cs` | Extension | Provides `AddWarehouseTracing()` used by gateway |
+
+### Section 2 Addendum — New UI Specs
+
+| Source File | Spec ID(s) |
+|---|---|
+| `frontend/src/features/purchasing/api/*` | SDD-UI-004 |
+| `frontend/src/features/purchasing/types/*` | SDD-UI-004 |
+| `frontend/src/features/purchasing/composables/*` | SDD-UI-004 |
+| `frontend/src/features/purchasing/views/**/*` | SDD-UI-004 |
+| `frontend/src/features/purchasing/components/organisms/*` | SDD-UI-004 |
+| `frontend/src/app/router/purchasing.routes.ts` | SDD-UI-004 |
+| `frontend/src/features/fulfillment/api/*` | SDD-UI-005 |
+| `frontend/src/features/fulfillment/types/*` | SDD-UI-005 |
+| `frontend/src/features/fulfillment/composables/*` | SDD-UI-005 |
+| `frontend/src/features/fulfillment/views/**/*` | SDD-UI-005 |
+| `frontend/src/features/fulfillment/components/organisms/*` | SDD-UI-005 |
+| `frontend/src/app/router/fulfillment.routes.ts` | SDD-UI-005 |
+| `frontend/src/shared/i18n/locales/en.ts` | SDD-UI-001, SDD-UI-002, SDD-UI-003, SDD-UI-004, SDD-UI-005 |
+| `frontend/src/shared/i18n/locales/bg.ts` | SDD-UI-001, SDD-UI-002, SDD-UI-003, SDD-UI-004, SDD-UI-005 |
+| `frontend/src/shared/components/templates/DefaultLayout.vue` | SDD-UI-001, SDD-UI-002, SDD-UI-003, SDD-UI-004, SDD-UI-005 |
+| `src/Infrastructure/EventLog/Warehouse.EventLog.API/**/*` | SDD-EVTLOG-001 |
+| `src/Databases/Warehouse.EventLog.DBModel/**/*` | SDD-EVTLOG-001 |
+| `src/Warehouse.ServiceModel/Events/AuthAuditLoggedEvent.cs` | SDD-EVTLOG-001 |
+| `src/Warehouse.ServiceModel/Events/PurchaseEventOccurredEvent.cs` | SDD-EVTLOG-001 |
+| `src/Warehouse.ServiceModel/Events/FulfillmentEventOccurredEvent.cs` | SDD-EVTLOG-001 |
+| `src/Warehouse.ServiceModel/Events/InventoryEventOccurredEvent.cs` | SDD-EVTLOG-001 |
+| `src/Warehouse.ServiceModel/Events/CustomerEventOccurredEvent.cs` | SDD-EVTLOG-001 |
+| `src/Warehouse.ServiceModel/DTOs/EventLog/*` | SDD-EVTLOG-001 |
+| `src/Warehouse.ServiceModel/Requests/EventLog/*` | SDD-EVTLOG-001 |
+| `src/Interfaces/Auth/Warehouse.Auth.API/Services/AuditService.cs` | SDD-AUTH-001, SDD-EVTLOG-001 |
+| `src/Interfaces/Purchasing/Warehouse.Purchasing.API/Services/PurchaseEventService.cs` | SDD-PURCH-001, SDD-EVTLOG-001 |
+| `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Services/FulfillmentEventService.cs` | SDD-FULF-001, SDD-EVTLOG-001 |

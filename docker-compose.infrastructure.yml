@@ -170,7 +170,7 @@ services:
       context: .
       dockerfile: docker/dotnet.Dockerfile
       args:
-        PROJECT_PATH: Interfaces/EventLog/Warehouse.EventLog.API/Warehouse.EventLog.API.csproj
+        PROJECT_PATH: Infrastructure/EventLog/Warehouse.EventLog.API/Warehouse.EventLog.API.csproj
         ASSEMBLY_NAME: Warehouse.EventLog.API.dll
     container_name: warehouse-eventlog-api
     ports:
