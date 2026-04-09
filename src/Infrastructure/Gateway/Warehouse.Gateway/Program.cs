@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using NLog;
 using NLog.Web;
 using Warehouse.Infrastructure.Extensions;
+using Warehouse.Gateway;
 using Warehouse.Infrastructure.Middleware;
 
 Logger logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
@@ -17,7 +18,11 @@ try
     builder.Host.UseNLog();
 
     builder.Services.AddReverseProxy()
-        .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+        .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
+        .AddTransforms(context =>
+        {
+            context.RequestTransforms.Add(new CorrelationIdRequestTransform());
+        });
 
     builder.Services.AddWarehouseTracing(builder.Configuration, "warehouse-gateway");
 
