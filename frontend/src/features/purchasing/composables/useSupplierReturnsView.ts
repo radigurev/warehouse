@@ -107,12 +107,7 @@ export function useSupplierReturnsView() {
   }
 
   function handleDetail(returnItem: SupplierReturnDto): void {
-    if (layout.isPageMode) {
-      router.push({ name: 'supplier-return-detail', params: { id: returnItem.id } });
-    } else {
-      selectedReturn.value = returnItem;
-      showDetailDialog.value = true;
-    }
+    router.push({ name: 'supplier-return-detail', params: { id: returnItem.id } });
   }
 
   function openConfirmDialog(returnItem: SupplierReturnDto): void {

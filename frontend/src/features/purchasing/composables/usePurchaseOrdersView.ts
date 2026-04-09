@@ -60,7 +60,7 @@ export function usePurchaseOrdersView() {
     { title: t('purchaseOrders.columns.expectedDeliveryDate'), key: 'expectedDeliveryDate', sortable: true },
     { title: t('purchaseOrders.columns.totalAmount'), key: 'totalAmount', sortable: true, align: 'end' as const },
     { title: t('purchaseOrders.columns.createdAt'), key: 'createdAtUtc', sortable: true },
-    { title: t('common.actions'), key: 'actions', sortable: false, align: 'end' as const, minWidth: '280px' },
+    { title: t('common.actions'), key: 'actions', sortable: false, align: 'end' as const, minWidth: '380px' },
   ]);
 
   onMounted(() => loadOrders());
@@ -133,12 +133,7 @@ export function usePurchaseOrdersView() {
   }
 
   function handleDetail(order: PurchaseOrderDto): void {
-    if (layout.isPageMode) {
-      router.push({ name: 'purchase-order-detail', params: { id: order.id } });
-    } else {
-      selectedOrder.value = order;
-      showDetailDialog.value = true;
-    }
+    router.push({ name: 'purchase-order-detail', params: { id: order.id } });
   }
 
   function openConfirmDialog(order: PurchaseOrderDto): void {

@@ -102,12 +102,7 @@ export function useSuppliersView() {
   }
 
   function handleDetail(supplier: SupplierDto): void {
-    if (layout.isPageMode) {
-      router.push({ name: 'supplier-detail', params: { id: supplier.id } });
-    } else {
-      selectedSupplier.value = supplier;
-      showDetailDialog.value = true;
-    }
+    router.push({ name: 'supplier-detail', params: { id: supplier.id } });
   }
 
   function openDeactivateDialog(supplier: SupplierDto): void {
