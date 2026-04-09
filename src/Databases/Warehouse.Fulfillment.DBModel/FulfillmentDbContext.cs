@@ -158,12 +158,12 @@ public sealed class FulfillmentDbContext : DbContext
             e.HasOne(so => so.Carrier)
                 .WithMany()
                 .HasForeignKey(so => so.CarrierId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.NoAction);
 
             e.HasOne(so => so.CarrierServiceLevel)
                 .WithMany()
                 .HasForeignKey(so => so.CarrierServiceLevelId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.NoAction);
         });
     }
 
@@ -406,12 +406,12 @@ public sealed class FulfillmentDbContext : DbContext
             e.HasOne(s => s.Carrier)
                 .WithMany()
                 .HasForeignKey(s => s.CarrierId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.NoAction);
 
             e.HasOne(s => s.CarrierServiceLevel)
                 .WithMany()
                 .HasForeignKey(s => s.CarrierServiceLevelId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.NoAction);
         });
     }
 
