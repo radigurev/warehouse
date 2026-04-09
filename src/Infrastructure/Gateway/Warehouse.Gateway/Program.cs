@@ -48,11 +48,15 @@ try
     string authUrl = builder.Configuration["HealthChecks:AuthApi"] ?? "http://localhost:5001";
     string customersUrl = builder.Configuration["HealthChecks:CustomersApi"] ?? "http://localhost:5002";
     string inventoryUrl = builder.Configuration["HealthChecks:InventoryApi"] ?? "http://localhost:5003";
+    string purchasingUrl = builder.Configuration["HealthChecks:PurchasingApi"] ?? "http://localhost:5004";
+    string fulfillmentUrl = builder.Configuration["HealthChecks:FulfillmentApi"] ?? "http://localhost:5005";
 
     builder.Services.AddHealthChecks()
         .AddUrlGroup(new Uri($"{authUrl}/health/ready"), "auth-api", tags: ["ready"])
         .AddUrlGroup(new Uri($"{customersUrl}/health/ready"), "customers-api", tags: ["ready"])
-        .AddUrlGroup(new Uri($"{inventoryUrl}/health/ready"), "inventory-api", tags: ["ready"]);
+        .AddUrlGroup(new Uri($"{inventoryUrl}/health/ready"), "inventory-api", tags: ["ready"])
+        .AddUrlGroup(new Uri($"{purchasingUrl}/health/ready"), "purchasing-api", tags: ["ready"])
+        .AddUrlGroup(new Uri($"{fulfillmentUrl}/health/ready"), "fulfillment-api", tags: ["ready"]);
 
     WebApplication app = builder.Build();
 

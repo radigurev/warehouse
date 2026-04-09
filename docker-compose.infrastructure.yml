@@ -169,6 +169,70 @@ services:
       - jaeger
     restart: unless-stopped
 
+  purchasing-api:
+    build:
+      context: .
+      dockerfile: docker/dotnet.Dockerfile
+      args:
+        PROJECT_PATH: Interfaces/Purchasing/Warehouse.Purchasing.API/Warehouse.Purchasing.API.csproj
+        ASSEMBLY_NAME: Warehouse.Purchasing.API.dll
+    container_name: warehouse-purchasing-api
+    ports:
+      - "5004:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__WarehouseDb=Server=sqlserver;Database=Warehouse;User Id=sa;Password=Warehouse@Dev123;TrustServerCertificate=True
+      - ConnectionStrings__Redis=redis:6379
+      - Jwt__SecretKey=WarehouseDevSecretKey_MinLength32!
+      - Jwt__Issuer=Warehouse.Auth.API
+      - Jwt__Audience=Warehouse
+      - Jwt__AccessTokenExpirationMinutes=30
+      - Jwt__RefreshTokenExpirationDays=7
+      - OpenTelemetry__OtlpEndpoint=http://jaeger:4317
+      - RabbitMQ__Host=rabbitmq
+      - PermissionValidation__AuthApiBaseAddress=http://auth-api:8080
+      - LOKI_ENDPOINT=http://loki:3100
+    depends_on:
+      - sqlserver
+      - redis
+      - rabbitmq
+      - auth-api
+      - loki
+      - jaeger
+    restart: unless-stopped
+
+  fulfillment-api:
+    build:
+      context: .
+      dockerfile: docker/dotnet.Dockerfile
+      args:
+        PROJECT_PATH: Interfaces/Fulfillment/Warehouse.Fulfillment.API/Warehouse.Fulfillment.API.csproj
+        ASSEMBLY_NAME: Warehouse.Fulfillment.API.dll
+    container_name: warehouse-fulfillment-api
+    ports:
+      - "5005:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__WarehouseDb=Server=sqlserver;Database=Warehouse;User Id=sa;Password=Warehouse@Dev123;TrustServerCertificate=True
+      - ConnectionStrings__Redis=redis:6379
+      - Jwt__SecretKey=WarehouseDevSecretKey_MinLength32!
+      - Jwt__Issuer=Warehouse.Auth.API
+      - Jwt__Audience=Warehouse
+      - Jwt__AccessTokenExpirationMinutes=30
+      - Jwt__RefreshTokenExpirationDays=7
+      - OpenTelemetry__OtlpEndpoint=http://jaeger:4317
+      - RabbitMQ__Host=rabbitmq
+      - PermissionValidation__AuthApiBaseAddress=http://auth-api:8080
+      - LOKI_ENDPOINT=http://loki:3100
+    depends_on:
+      - sqlserver
+      - redis
+      - rabbitmq
+      - auth-api
+      - loki
+      - jaeger
+    restart: unless-stopped
+
   eventlog-api:
     build:
       context: .
@@ -218,16 +282,22 @@ services:
       - ReverseProxy__Clusters__customers-cluster__Destinations__customers-api__Address=http://customers-api:8080
       - ReverseProxy__Clusters__inventory-cluster__Destinations__inventory-api__Address=http://inventory-api:8080
       - ReverseProxy__Clusters__eventlog-cluster__Destinations__eventlog-api__Address=http://eventlog-api:8080
+      - ReverseProxy__Clusters__purchasing-cluster__Destinations__purchasing-api__Address=http://purchasing-api:8080
+      - ReverseProxy__Clusters__fulfillment-cluster__Destinations__fulfillment-api__Address=http://fulfillment-api:8080
       - HealthChecks__AuthApi=http://auth-api:8080
       - HealthChecks__CustomersApi=http://customers-api:8080
       - HealthChecks__InventoryApi=http://inventory-api:8080
       - HealthChecks__EventLogApi=http://eventlog-api:8080
+      - HealthChecks__PurchasingApi=http://purchasing-api:8080
+      - HealthChecks__FulfillmentApi=http://fulfillment-api:8080
       - LOKI_ENDPOINT=http://loki:3100
     depends_on:
       - auth-api
       - customers-api
       - inventory-api
       - eventlog-api
+      - purchasing-api
+      - fulfillment-api
       - jaeger
     restart: unless-stopped
 

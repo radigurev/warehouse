@@ -162,6 +162,84 @@
         "Match": {
           "Path": "/api/v1/events/{**catch-all}"
         }
+      },
+      "suppliers-route": {
+        "ClusterId": "purchasing-cluster",
+        "Match": {
+          "Path": "/api/v1/suppliers/{**catch-all}"
+        }
+      },
+      "supplier-categories-route": {
+        "ClusterId": "purchasing-cluster",
+        "Match": {
+          "Path": "/api/v1/supplier-categories/{**catch-all}"
+        }
+      },
+      "purchase-orders-route": {
+        "ClusterId": "purchasing-cluster",
+        "Match": {
+          "Path": "/api/v1/purchase-orders/{**catch-all}"
+        }
+      },
+      "goods-receipts-route": {
+        "ClusterId": "purchasing-cluster",
+        "Match": {
+          "Path": "/api/v1/goods-receipts/{**catch-all}"
+        }
+      },
+      "supplier-returns-route": {
+        "ClusterId": "purchasing-cluster",
+        "Match": {
+          "Path": "/api/v1/supplier-returns/{**catch-all}"
+        }
+      },
+      "purchase-events-route": {
+        "ClusterId": "purchasing-cluster",
+        "Match": {
+          "Path": "/api/v1/purchase-events/{**catch-all}"
+        }
+      },
+      "sales-orders-route": {
+        "ClusterId": "fulfillment-cluster",
+        "Match": {
+          "Path": "/api/v1/sales-orders/{**catch-all}"
+        }
+      },
+      "pick-lists-route": {
+        "ClusterId": "fulfillment-cluster",
+        "Match": {
+          "Path": "/api/v1/pick-lists/{**catch-all}"
+        }
+      },
+      "packing-route": {
+        "ClusterId": "fulfillment-cluster",
+        "Match": {
+          "Path": "/api/v1/packing/{**catch-all}"
+        }
+      },
+      "shipments-route": {
+        "ClusterId": "fulfillment-cluster",
+        "Match": {
+          "Path": "/api/v1/shipments/{**catch-all}"
+        }
+      },
+      "carriers-route": {
+        "ClusterId": "fulfillment-cluster",
+        "Match": {
+          "Path": "/api/v1/carriers/{**catch-all}"
+        }
+      },
+      "customer-returns-route": {
+        "ClusterId": "fulfillment-cluster",
+        "Match": {
+          "Path": "/api/v1/customer-returns/{**catch-all}"
+        }
+      },
+      "fulfillment-events-route": {
+        "ClusterId": "fulfillment-cluster",
+        "Match": {
+          "Path": "/api/v1/fulfillment-events/{**catch-all}"
+        }
       }
     },
     "Clusters": {
@@ -190,6 +268,20 @@
         "Destinations": {
           "eventlog-api": {
             "Address": "<EVENTLOG_API_URL>"
+          }
+        }
+      },
+      "purchasing-cluster": {
+        "Destinations": {
+          "purchasing-api": {
+            "Address": "<PURCHASING_API_URL>"
+          }
+        }
+      },
+      "fulfillment-cluster": {
+        "Destinations": {
+          "fulfillment-api": {
+            "Address": "<FULFILLMENT_API_URL>"
           }
         }
       }
