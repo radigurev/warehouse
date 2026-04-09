@@ -1,10 +1,15 @@
 using AutoMapper;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
 using Warehouse.Auth.API.Interfaces;
-using Warehouse.Common.Models;
 using Warehouse.Auth.DBModel;
 using Warehouse.Auth.DBModel.Models;
+using Warehouse.Common.Models;
+using Warehouse.Infrastructure.Authorization;
 using Warehouse.ServiceModel.DTOs.Auth;
+using Warehouse.ServiceModel.Events;
 using Warehouse.ServiceModel.Requests.Auth;
 using Warehouse.ServiceModel.Responses;
 
@@ -19,6 +24,9 @@ public sealed class RoleService : IRoleService
     private readonly AuthDbContext _context;
     private readonly IAuditService _auditService;
     private readonly IMapper _mapper;
+    private readonly IDistributedCache _cache;
+    private readonly IPublishEndpoint _publishEndpoint;
+    private readonly ILogger<RoleService> _logger;
 
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
@@ -26,11 +34,17 @@ public sealed class RoleService : IRoleService
     public RoleService(
         AuthDbContext context,
         IAuditService auditService,
-        IMapper mapper)
+        IMapper mapper,
+        IDistributedCache cache,
+        IPublishEndpoint publishEndpoint,
+        ILogger<RoleService> logger)
     {
         _context = context;
         _auditService = auditService;
         _mapper = mapper;
+        _cache = cache;
+        _publishEndpoint = publishEndpoint;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -181,6 +195,7 @@ public sealed class RoleService : IRoleService
 
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         await _auditService.LogAsync(null, "AssignPermissions", "roles", null, ipAddress, cancellationToken).ConfigureAwait(false);
+        await InvalidateRoleUsersCacheAsync(roleId, cancellationToken).ConfigureAwait(false);
         return Result.Success();
     }
 
@@ -203,6 +218,7 @@ public sealed class RoleService : IRoleService
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         await _auditService.LogAsync(null, "RemovePermission", "roles", null, ipAddress, cancellationToken).ConfigureAwait(false);
+        await InvalidateRoleUsersCacheAsync(roleId, cancellationToken).ConfigureAwait(false);
         return Result.Success();
     }
 
@@ -212,5 +228,37 @@ public sealed class RoleService : IRoleService
             .Include(r => r.RolePermissions).ThenInclude(rp => rp.Permission)
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken)
             .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Invalidates Redis permission caches for all users assigned to the specified role
+    /// and publishes a change event for each affected user.
+    /// </summary>
+    private async Task InvalidateRoleUsersCacheAsync(int roleId, CancellationToken cancellationToken)
+    {
+        List<int> affectedUserIds = await _context.UserRoles
+            .Where(ur => ur.RoleId == roleId)
+            .Select(ur => ur.UserId)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        foreach (int userId in affectedUserIds)
+        {
+            string cacheKey = UserPermissionService.BuildCacheKey(userId);
+            await _cache.RemoveAsync(cacheKey, cancellationToken).ConfigureAwait(false);
+
+            try
+            {
+                await _publishEndpoint.Publish(new UserPermissionsChangedEvent
+                {
+                    UserId = userId,
+                    OccurredAt = DateTime.UtcNow
+                }, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to publish UserPermissionsChangedEvent for user {UserId}", userId);
+            }
+        }
     }
 }

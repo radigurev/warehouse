@@ -1,5 +1,5 @@
 import apiClient from '@shared/api/client';
-import type { UserDto, UserDetailDto, CreateUserRequest, CreateUserResponse, UpdateUserRequest, ChangePasswordRequest, AssignRolesRequest } from '@features/auth/types/user';
+import type { UserDto, UserDetailDto, CreateUserRequest, CreateUserResponse, UpdateUserRequest, ChangePasswordRequest, AssignRolesRequest, UserPermissionsResponse } from '@features/auth/types/user';
 import type { RoleDto } from '@features/auth/types/role';
 import type { PaginatedResponse } from '@shared/types/api';
 
@@ -29,6 +29,10 @@ export function changePassword(id: number, request: ChangePasswordRequest): Prom
 
 export function resetPassword(id: number): Promise<CreateUserResponse> {
   return apiClient.post<CreateUserResponse>(`/users/${id}/reset-password`).then((r) => r.data);
+}
+
+export function getUserPermissions(id: number): Promise<UserPermissionsResponse> {
+  return apiClient.get<UserPermissionsResponse>(`/users/${id}/permissions`).then((r) => r.data);
 }
 
 export function getUserRoles(id: number): Promise<RoleDto[]> {

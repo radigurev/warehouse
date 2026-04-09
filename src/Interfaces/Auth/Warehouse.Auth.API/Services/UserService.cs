@@ -1,10 +1,14 @@
 using AutoMapper;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using Warehouse.Auth.API.Interfaces;
-using Warehouse.Common.Models;
 using Warehouse.Auth.DBModel;
 using Warehouse.Auth.DBModel.Models;
+using Warehouse.Common.Models;
+using Warehouse.Infrastructure.Authorization;
 using Warehouse.ServiceModel.DTOs.Auth;
+using Warehouse.ServiceModel.Events;
 using Warehouse.ServiceModel.Requests.Auth;
 using Warehouse.ServiceModel.Responses;
 using Warehouse.ServiceModel.Responses.Auth;
@@ -21,6 +25,9 @@ public sealed class UserService : IUserService
     private readonly IPasswordHasher _passwordHasher;
     private readonly IAuditService _auditService;
     private readonly IMapper _mapper;
+    private readonly IDistributedCache _cache;
+    private readonly IPublishEndpoint _publishEndpoint;
+    private readonly ILogger<UserService> _logger;
 
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
@@ -29,12 +36,18 @@ public sealed class UserService : IUserService
         AuthDbContext context,
         IPasswordHasher passwordHasher,
         IAuditService auditService,
-        IMapper mapper)
+        IMapper mapper,
+        IDistributedCache cache,
+        IPublishEndpoint publishEndpoint,
+        ILogger<UserService> logger)
     {
         _context = context;
         _passwordHasher = passwordHasher;
         _auditService = auditService;
         _mapper = mapper;
+        _cache = cache;
+        _publishEndpoint = publishEndpoint;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -280,6 +293,7 @@ public sealed class UserService : IUserService
 
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         await _auditService.LogAsync(userId, "AssignRoles", "users", null, ipAddress, cancellationToken).ConfigureAwait(false);
+        await InvalidateUserPermissionsCacheAsync(userId, cancellationToken).ConfigureAwait(false);
         return Result.Success();
     }
 
@@ -302,7 +316,29 @@ public sealed class UserService : IUserService
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         await _auditService.LogAsync(userId, "RemoveRole", "users", null, ipAddress, cancellationToken).ConfigureAwait(false);
+        await InvalidateUserPermissionsCacheAsync(userId, cancellationToken).ConfigureAwait(false);
         return Result.Success();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<IReadOnlyList<string>>> GetResolvedPermissionsAsync(int userId, CancellationToken cancellationToken)
+    {
+        User? user = await _context.Users
+            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role).ThenInclude(r => r.RolePermissions).ThenInclude(rp => rp.Permission)
+            .FirstOrDefaultAsync(u => u.Id == userId && u.IsActive, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (user is null)
+            return Result<IReadOnlyList<string>>.Failure("USER_NOT_FOUND", "User not found.", 404);
+
+        IReadOnlyList<string> permissions = user.UserRoles
+            .SelectMany(ur => ur.Role.RolePermissions)
+            .Select(rp => $"{rp.Permission.Resource}:{rp.Permission.Action}")
+            .Distinct()
+            .OrderBy(p => p)
+            .ToList();
+
+        return Result<IReadOnlyList<string>>.Success(permissions);
     }
 
     private async Task<User?> GetUserWithRolesAsync(int id, CancellationToken cancellationToken)
@@ -311,5 +347,27 @@ public sealed class UserService : IUserService
             .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
             .FirstOrDefaultAsync(u => u.Id == id && u.IsActive, cancellationToken)
             .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Invalidates the Redis permission cache for a user and publishes a change event.
+    /// </summary>
+    private async Task InvalidateUserPermissionsCacheAsync(int userId, CancellationToken cancellationToken)
+    {
+        string cacheKey = UserPermissionService.BuildCacheKey(userId);
+        await _cache.RemoveAsync(cacheKey, cancellationToken).ConfigureAwait(false);
+
+        try
+        {
+            await _publishEndpoint.Publish(new UserPermissionsChangedEvent
+            {
+                UserId = userId,
+                OccurredAt = DateTime.UtcNow
+            }, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to publish UserPermissionsChangedEvent for user {UserId}", userId);
+        }
     }
 }

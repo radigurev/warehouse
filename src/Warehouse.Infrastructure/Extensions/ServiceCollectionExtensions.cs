@@ -63,7 +63,44 @@ public static class ServiceCollectionExtensions
         services.AddAuthorization();
 
         services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
-        services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+        services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers the real-time permission validation service that resolves user permissions
+    /// via Redis cache with HTTP fallback to Auth.API.
+    /// Must be called after <see cref="AddWarehouseAuthentication"/> and <see cref="AddWarehouseRedisCache"/>.
+    /// </summary>
+    public static IServiceCollection AddWarehousePermissionValidation(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        string authApiBaseAddress = configuration["PermissionValidation:AuthApiBaseAddress"]
+            ?? "http://localhost:5001";
+
+        services.AddCorrelationId();
+
+        services.AddHttpClient<IUserPermissionService, UserPermissionService>(client =>
+            {
+                client.BaseAddress = new Uri(authApiBaseAddress);
+            })
+            .AddHttpMessageHandler<CorrelationIdDelegatingHandler>()
+            .AddStandardResilienceHandler(options =>
+            {
+                options.Retry.MaxRetryAttempts = 2;
+                options.Retry.Delay = TimeSpan.FromMilliseconds(200);
+                options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
+                options.Retry.UseJitter = true;
+
+                options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
+                options.CircuitBreaker.MinimumThroughput = 5;
+                options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(15);
+
+                options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(5);
+                options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(10);
+            });
 
         return services;
     }

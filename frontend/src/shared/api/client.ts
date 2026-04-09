@@ -81,6 +81,19 @@ apiClient.interceptors.response.use(
       localStorage.setItem('refreshToken', newRefreshToken);
       localStorage.setItem('expiresAt', expiresAt);
 
+      // Re-fetch permissions after token refresh
+      const userIdStr = localStorage.getItem('userId');
+      if (userIdStr) {
+        try {
+          const permResponse = await apiClient.get(`/users/${userIdStr}/permissions`, {
+            headers: { Authorization: `Bearer ${newAccessToken}` },
+          });
+          localStorage.setItem('permissions', JSON.stringify(permResponse.data.permissions));
+        } catch {
+          // Permission refresh is best-effort during token refresh
+        }
+      }
+
       processQueue(null, newAccessToken);
 
       originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;

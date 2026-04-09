@@ -52,6 +52,7 @@ static void ConfigureServices(WebApplicationBuilder builder)
     ConfigureDatabase(services, configuration);
     services.AddCorrelationId();
     services.AddWarehouseAuthentication(configuration);
+    services.AddWarehousePermissionValidation(configuration);
     services.AddWarehouseApiVersioning();
     services.AddWarehouseSwagger("Warehouse Inventory API", "Inventory management service for the Warehouse system.");
     ConfigureFluentValidation(services);

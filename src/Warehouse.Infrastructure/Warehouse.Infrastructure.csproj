@@ -33,5 +33,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Warehouse.Common\Warehouse.Common.csproj" />
+    <ProjectReference Include="..\Warehouse.ServiceModel\Warehouse.ServiceModel.csproj" />
   </ItemGroup>
 </Project>

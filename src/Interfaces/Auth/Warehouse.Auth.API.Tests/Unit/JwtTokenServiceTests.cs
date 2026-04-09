@@ -82,19 +82,19 @@ public sealed class JwtTokenServiceTests
     }
 
     [Test]
-    public void GenerateAccessToken_ContainsEmailClaim()
+    public void GenerateAccessToken_DoesNotContainEmailClaim()
     {
         User user = CreateTestUser();
 
         (string token, DateTime _) = _service.GenerateAccessToken(user);
 
         JwtSecurityToken jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
-        string emailClaim = jwt.Claims.First(c => c.Type == JwtRegisteredClaimNames.Email).Value;
-        emailClaim.Should().Be("test@warehouse.local");
+        List<Claim> emailClaims = jwt.Claims.Where(c => c.Type == JwtRegisteredClaimNames.Email).ToList();
+        emailClaims.Should().BeEmpty("JWT should contain only identity claims — no email");
     }
 
     [Test]
-    public void GenerateAccessToken_ContainsRoleClaims()
+    public void GenerateAccessToken_DoesNotContainRoleClaims()
     {
         User user = CreateTestUser();
 
@@ -105,7 +105,35 @@ public sealed class JwtTokenServiceTests
             .Where(c => c.Type == ClaimTypes.Role)
             .Select(c => c.Value)
             .ToList();
-        roles.Should().Contain("Admin");
+        roles.Should().BeEmpty("JWT should not contain role claims — permissions are resolved at request time");
+    }
+
+    [Test]
+    public void GenerateAccessToken_DoesNotContainPermissionClaims()
+    {
+        User user = CreateTestUser();
+
+        (string token, DateTime _) = _service.GenerateAccessToken(user);
+
+        JwtSecurityToken jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
+        List<Claim> permissionClaims = jwt.Claims.Where(c => c.Type == "permission").ToList();
+        permissionClaims.Should().BeEmpty("JWT should not contain permission claims — permissions are resolved at request time");
+    }
+
+    [Test]
+    public void GenerateAccessToken_ContainsOnlyIdentityClaims()
+    {
+        User user = CreateTestUser();
+
+        (string token, DateTime _) = _service.GenerateAccessToken(user);
+
+        JwtSecurityToken jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
+        HashSet<string> allowedClaimTypes = new(["sub", "username", "jti", "iat", "exp", "iss", "aud", "nbf"]);
+        List<string> unexpectedClaims = jwt.Claims
+            .Where(c => !allowedClaimTypes.Contains(c.Type))
+            .Select(c => c.Type)
+            .ToList();
+        unexpectedClaims.Should().BeEmpty("JWT should contain only identity claims (sub, username, jti, iat)");
     }
 
     [Test]

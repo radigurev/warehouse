@@ -17,6 +17,9 @@
     "EnableDatabaseSeeding": true,
     "EnableSeedDefaultAdmin": true
   },
+  "PermissionValidation": {
+    "AuthApiBaseAddress": "http://localhost:5001"
+  },
   "Jwt": {
     "SecretKey": "<JWT_SECRET_KEY_MIN_32_CHARS>",
     "Issuer": "Warehouse.Auth.API",

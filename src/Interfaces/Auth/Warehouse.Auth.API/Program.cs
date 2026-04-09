@@ -6,6 +6,7 @@ using NLog.Web;
 using Warehouse.Auth.API.Interfaces;
 using Warehouse.Auth.API.Services;
 using Warehouse.Auth.DBModel;
+using Warehouse.Infrastructure.Authorization;
 using Warehouse.Infrastructure.Extensions;
 using Warehouse.Mapping.Profiles.Auth;
 
@@ -94,6 +95,7 @@ static void ConfigureApplicationServices(IServiceCollection services)
     services.AddScoped<IAuditService, AuditService>();
     services.AddScoped<IJwtTokenService, JwtTokenService>();
     services.AddSingleton<IPasswordHasher, PasswordHasher>();
+    services.AddScoped<IUserPermissionService, LocalUserPermissionService>();
 
     services.AddScoped<DatabaseSeeder>();
 }

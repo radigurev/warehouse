@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import * as authApi from '@features/auth/api/auth';
+import { getUserPermissions } from '@features/auth/api/users';
 import type { LoginRequest } from '@features/auth/types/auth';
 
 function parseJwtPayload(token: string): Record<string, unknown> {
@@ -11,17 +12,16 @@ function parseJwtPayload(token: string): Record<string, unknown> {
   }
 }
 
-function parseJwtRoles(token: string): string[] {
-  const payload = parseJwtPayload(token);
-  const roles = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || payload['roles'] || [];
-  return Array.isArray(roles) ? (roles as string[]) : [roles as string];
-}
-
 function parseJwtUserId(token: string): number | null {
   const payload = parseJwtPayload(token);
   const sub = payload['sub'];
   const id = Number(sub);
   return id > 0 ? id : null;
+}
+
+function parseJwtUsername(token: string): string | null {
+  const payload = parseJwtPayload(token);
+  return (payload['username'] as string) ?? null;
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -30,7 +30,7 @@ export const useAuthStore = defineStore('auth', () => {
   const expiresAt = ref<string | null>(localStorage.getItem('expiresAt'));
   const username = ref<string | null>(localStorage.getItem('username'));
   const userId = ref<number | null>(Number(localStorage.getItem('userId')) || null);
-  const roles = ref<string[]>(JSON.parse(localStorage.getItem('roles') || '[]'));
+  const permissions = ref<string[]>(JSON.parse(localStorage.getItem('permissions') || '[]'));
 
   const isAuthenticated = computed(() => {
     if (!accessToken.value || !expiresAt.value) {
@@ -40,23 +40,42 @@ export const useAuthStore = defineStore('auth', () => {
   });
 
   const hasRefreshToken = computed(() => !!refreshTokenValue.value);
-  const isAdmin = computed(() => roles.value.includes('Admin'));
+
+  function hasPermission(permission: string): boolean {
+    const resource = permission.split(':')[0];
+    return permissions.value.includes(permission) || permissions.value.includes(`${resource}:all`);
+  }
+
+  const isAdmin = computed(() => hasPermission('users:all') || hasPermission('roles:all'));
+
+  async function fetchPermissions(uid: number): Promise<void> {
+    try {
+      const response = await getUserPermissions(uid);
+      permissions.value = response.permissions;
+      localStorage.setItem('permissions', JSON.stringify(response.permissions));
+    } catch {
+      permissions.value = [];
+      localStorage.removeItem('permissions');
+    }
+  }
 
   async function login(request: LoginRequest): Promise<void> {
     const response = await authApi.login(request);
     accessToken.value = response.accessToken;
     refreshTokenValue.value = response.refreshToken;
     expiresAt.value = response.expiresAt;
-    username.value = request.username;
     userId.value = parseJwtUserId(response.accessToken);
-    roles.value = parseJwtRoles(response.accessToken);
+    username.value = parseJwtUsername(response.accessToken) ?? request.username;
 
     localStorage.setItem('accessToken', response.accessToken);
     localStorage.setItem('refreshToken', response.refreshToken);
     localStorage.setItem('expiresAt', response.expiresAt);
-    localStorage.setItem('username', request.username);
+    localStorage.setItem('username', username.value ?? '');
     localStorage.setItem('userId', String(userId.value ?? ''));
-    localStorage.setItem('roles', JSON.stringify(roles.value));
+
+    if (userId.value) {
+      await fetchPermissions(userId.value);
+    }
   }
 
   async function logout(): Promise<void> {
@@ -76,13 +95,14 @@ export const useAuthStore = defineStore('auth', () => {
     expiresAt.value = null;
     username.value = null;
     userId.value = null;
-    roles.value = [];
+    permissions.value = [];
 
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('expiresAt');
     localStorage.removeItem('username');
     localStorage.removeItem('userId');
+    localStorage.removeItem('permissions');
     localStorage.removeItem('roles');
   }
 
@@ -92,10 +112,12 @@ export const useAuthStore = defineStore('auth', () => {
     expiresAt,
     username,
     userId,
-    roles,
+    permissions,
     isAuthenticated,
     hasRefreshToken,
     isAdmin,
+    hasPermission,
+    fetchPermissions,
     login,
     logout,
     clearState,

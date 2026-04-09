@@ -49,3 +49,8 @@ export interface ChangePasswordRequest {
 export interface AssignRolesRequest {
   roleIds: number[];
 }
+
+export interface UserPermissionsResponse {
+  userId: number;
+  permissions: string[];
+}

@@ -128,10 +128,12 @@ services:
       - Jwt__RefreshTokenExpirationDays=7
       - OpenTelemetry__OtlpEndpoint=http://jaeger:4317
       - RabbitMQ__Host=rabbitmq
+      - PermissionValidation__AuthApiBaseAddress=http://auth-api:8080
       - LOKI_ENDPOINT=http://loki:3100
     depends_on:
       - sqlserver
       - redis
+      - auth-api
       - loki
       - jaeger
     restart: unless-stopped
@@ -157,10 +159,12 @@ services:
       - Jwt__RefreshTokenExpirationDays=7
       - OpenTelemetry__OtlpEndpoint=http://jaeger:4317
       - RabbitMQ__Host=rabbitmq
+      - PermissionValidation__AuthApiBaseAddress=http://auth-api:8080
       - LOKI_ENDPOINT=http://loki:3100
     depends_on:
       - sqlserver
       - redis
+      - auth-api
       - loki
       - jaeger
     restart: unless-stopped
@@ -186,11 +190,13 @@ services:
       - Jwt__RefreshTokenExpirationDays=7
       - OpenTelemetry__OtlpEndpoint=http://jaeger:4317
       - RabbitMQ__Host=rabbitmq
+      - PermissionValidation__AuthApiBaseAddress=http://auth-api:8080
       - LOKI_ENDPOINT=http://loki:3100
     depends_on:
       - sqlserver
       - redis
       - rabbitmq
+      - auth-api
       - loki
       - jaeger
     restart: unless-stopped

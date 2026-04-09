@@ -4,9 +4,9 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Warehouse.Infrastructure.Configuration;
 using Warehouse.Auth.API.Interfaces;
 using Warehouse.Auth.DBModel.Models;
+using Warehouse.Infrastructure.Configuration;
 
 namespace Warehouse.Auth.API.Services;
 
@@ -62,18 +62,9 @@ public sealed class JwtTokenService : IJwtTokenService
         [
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim("username", user.Username),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
         ];
-
-        foreach (UserRole userRole in user.UserRoles)
-        {
-            claims.Add(new Claim(ClaimTypes.Role, userRole.Role.Name));
-
-            foreach (RolePermission rolePermission in userRole.Role.RolePermissions)
-                claims.Add(new Claim("permission", $"{rolePermission.Permission.Resource}:{rolePermission.Permission.Action}"));
-        }
 
         return claims;
     }

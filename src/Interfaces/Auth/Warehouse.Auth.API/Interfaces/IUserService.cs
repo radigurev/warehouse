@@ -60,4 +60,9 @@ public interface IUserService
     /// Removes a specific role from a user.
     /// </summary>
     Task<Result> RemoveRoleAsync(int userId, int roleId, string? ipAddress, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Gets the fully resolved permission set for a user (all permissions from all assigned roles).
+    /// </summary>
+    Task<Result<IReadOnlyList<string>>> GetResolvedPermissionsAsync(int userId, CancellationToken cancellationToken);
 }

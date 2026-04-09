@@ -161,6 +161,30 @@ public sealed class UsersController : BaseApiController
     }
 
     /// <summary>
+    /// Gets the fully resolved permission set for a user (all permissions from all assigned roles).
+    /// This is an infrastructure endpoint used by the shared permission validation library.
+    /// </summary>
+    [HttpGet("{id:int}/permissions")]
+    [Authorize]
+    [ProducesResponseType(typeof(UserPermissionsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetUserPermissionsAsync(int id, CancellationToken cancellationToken)
+    {
+        Result<IReadOnlyList<string>> result = await _userService.GetResolvedPermissionsAsync(id, cancellationToken);
+
+        if (!result.IsSuccess)
+            return ToActionResult(result);
+
+        UserPermissionsResponse response = new()
+        {
+            UserId = id,
+            Permissions = result.Value!
+        };
+
+        return Ok(response);
+    }
+
+    /// <summary>
     /// Gets the roles assigned to a user.
     /// </summary>
     [HttpGet("{id:int}/roles")]
