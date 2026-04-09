@@ -46,7 +46,7 @@ export const useAuthStore = defineStore('auth', () => {
     return permissions.value.includes(permission) || permissions.value.includes(`${resource}:all`);
   }
 
-  const isAdmin = computed(() => hasPermission('users:all') || hasPermission('roles:all'));
+  const isAdmin = computed(() => hasPermission('users:read') || hasPermission('roles:read'));
 
   async function fetchPermissions(uid: number): Promise<void> {
     try {
