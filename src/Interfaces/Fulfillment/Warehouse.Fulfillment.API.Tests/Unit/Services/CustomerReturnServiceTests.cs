@@ -94,7 +94,7 @@ public sealed class CustomerReturnServiceTests : FulfillmentTestBase
 
         // Assert
         _mockEventService.Verify(
-            e => e.RecordEventAsync("CustomerReturnCreated", "CustomerReturn", It.IsAny<int>(), 1, null, CancellationToken.None),
+            e => e.RecordEventAsync("CustomerReturnCreated", "CustomerReturn", It.IsAny<int>(), 1, null, CancellationToken.None, null, null),
             Times.Once);
     }
 

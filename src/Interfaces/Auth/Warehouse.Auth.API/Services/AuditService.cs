@@ -1,10 +1,12 @@
 using AutoMapper;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Warehouse.Auth.API.Interfaces;
 using Warehouse.Common.Models;
 using Warehouse.Auth.DBModel;
 using Warehouse.Auth.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Auth;
+using Warehouse.ServiceModel.Events;
 using Warehouse.ServiceModel.Responses;
 
 namespace Warehouse.Auth.API.Services;
@@ -17,14 +19,22 @@ public sealed class AuditService : IAuditService
 {
     private readonly AuthDbContext _context;
     private readonly IMapper _mapper;
+    private readonly IPublishEndpoint _publishEndpoint;
+    private readonly ILogger<AuditService> _logger;
 
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
-    public AuditService(AuthDbContext context, IMapper mapper)
+    public AuditService(
+        AuthDbContext context,
+        IMapper mapper,
+        IPublishEndpoint publishEndpoint,
+        ILogger<AuditService> logger)
     {
         _context = context;
         _mapper = mapper;
+        _publishEndpoint = publishEndpoint;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -34,7 +44,8 @@ public sealed class AuditService : IAuditService
         string resource,
         string? details,
         string? ipAddress,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? username = null)
     {
         UserActionLog entry = new()
         {
@@ -47,6 +58,24 @@ public sealed class AuditService : IAuditService
 
         _context.UserActionLogs.Add(entry);
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        try
+        {
+            await _publishEndpoint.Publish(new AuthAuditLoggedEvent
+            {
+                UserId = userId,
+                Action = action,
+                Resource = resource,
+                Details = details,
+                IpAddress = ipAddress,
+                Username = username,
+                OccurredAtUtc = entry.CreatedAt
+            }, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to publish AuthAuditLoggedEvent for {Action} on {Resource}", action, resource);
+        }
     }
 
     /// <inheritdoc />

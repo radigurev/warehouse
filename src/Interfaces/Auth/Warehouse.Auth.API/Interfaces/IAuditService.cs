@@ -12,7 +12,7 @@ public interface IAuditService
     /// <summary>
     /// Logs an audit entry for a user action.
     /// </summary>
-    Task LogAsync(int? userId, string action, string resource, string? details, string? ipAddress, CancellationToken cancellationToken);
+    Task LogAsync(int? userId, string action, string resource, string? details, string? ipAddress, CancellationToken cancellationToken, string? username = null);
 
     /// <summary>
     /// Gets paginated audit log entries with optional filters.

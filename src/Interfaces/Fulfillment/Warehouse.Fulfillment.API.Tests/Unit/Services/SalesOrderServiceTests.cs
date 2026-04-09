@@ -116,7 +116,7 @@ public sealed class SalesOrderServiceTests : FulfillmentTestBase
 
         // Assert
         _mockEventService.Verify(
-            e => e.RecordEventAsync("SalesOrderCreated", "SalesOrder", It.IsAny<int>(), 1, null, CancellationToken.None),
+            e => e.RecordEventAsync("SalesOrderCreated", "SalesOrder", It.IsAny<int>(), 1, null, CancellationToken.None, null, null),
             Times.Once);
     }
 

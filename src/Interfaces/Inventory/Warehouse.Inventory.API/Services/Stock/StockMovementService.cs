@@ -71,6 +71,17 @@ public sealed class StockMovementService : BaseInventoryEntityService, IStockMov
                 CreatedByUserId = userId,
                 Timestamp = movement.CreatedAtUtc
             }, cancellationToken).ConfigureAwait(false);
+
+            await _publishEndpoint.Publish(new InventoryEventOccurredEvent
+            {
+                EventType = "StockMovementRecorded",
+                EntityType = "StockMovement",
+                EntityId = movement.Id,
+                UserId = userId,
+                OccurredAtUtc = movement.CreatedAtUtc,
+                WarehouseName = request.WarehouseId.ToString(),
+                ProductInfo = request.ProductId.ToString()
+            }, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception)
         {

@@ -1,5 +1,8 @@
 using FluentAssertions;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Moq;
 using Warehouse.Common.Models;
 using Warehouse.Purchasing.API.Services;
 using Warehouse.Purchasing.API.Tests.Fixtures;
@@ -19,12 +22,16 @@ namespace Warehouse.Purchasing.API.Tests.Unit.Services;
 public sealed class PurchaseEventServiceTests : PurchasingTestBase
 {
     private PurchaseEventService _sut = null!;
+    private Mock<IPublishEndpoint> _mockPublishEndpoint = null!;
+    private Mock<ILogger<PurchaseEventService>> _mockLogger = null!;
 
     [SetUp]
     public override void SetUp()
     {
         base.SetUp();
-        _sut = new PurchaseEventService(Context, Mapper);
+        _mockPublishEndpoint = new Mock<IPublishEndpoint>();
+        _mockLogger = new Mock<ILogger<PurchaseEventService>>();
+        _sut = new PurchaseEventService(Context, Mapper, _mockPublishEndpoint.Object, _mockLogger.Object);
     }
 
     [Test]

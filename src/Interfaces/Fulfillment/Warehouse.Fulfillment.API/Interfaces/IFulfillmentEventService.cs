@@ -14,7 +14,7 @@ public interface IFulfillmentEventService
     /// <summary>
     /// Records an immutable fulfillment event.
     /// </summary>
-    Task RecordEventAsync(string eventType, string entityType, int entityId, int userId, string? payload, CancellationToken cancellationToken);
+    Task RecordEventAsync(string eventType, string entityType, int entityId, int userId, string? payload, CancellationToken cancellationToken, string? customerName = null, string? documentNumber = null);
 
     /// <summary>
     /// Searches fulfillment events with filters and pagination.

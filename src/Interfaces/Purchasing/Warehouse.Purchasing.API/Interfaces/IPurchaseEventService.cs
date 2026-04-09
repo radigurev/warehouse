@@ -14,7 +14,7 @@ public interface IPurchaseEventService
     /// <summary>
     /// Records an immutable purchase event.
     /// </summary>
-    Task RecordEventAsync(string eventType, string entityType, int entityId, int userId, string? payload, CancellationToken cancellationToken);
+    Task RecordEventAsync(string eventType, string entityType, int entityId, int userId, string? payload, CancellationToken cancellationToken, string? supplierName = null, string? documentNumber = null);
 
     /// <summary>
     /// Searches purchase events with filters and pagination.

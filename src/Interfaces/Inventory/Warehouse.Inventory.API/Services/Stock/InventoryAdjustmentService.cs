@@ -204,6 +204,15 @@ public sealed class InventoryAdjustmentService : BaseInventoryEntityService, IIn
                 AppliedByUserId = userId,
                 AppliedAt = adjustment.AppliedAtUtc!.Value
             }, cancellationToken).ConfigureAwait(false);
+
+            await _publishEndpoint.Publish(new InventoryEventOccurredEvent
+            {
+                EventType = "AdjustmentApplied",
+                EntityType = "InventoryAdjustment",
+                EntityId = adjustment.Id,
+                UserId = userId,
+                OccurredAtUtc = adjustment.AppliedAtUtc!.Value
+            }, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception)
         {

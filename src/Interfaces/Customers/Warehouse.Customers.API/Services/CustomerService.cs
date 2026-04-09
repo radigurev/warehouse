@@ -122,6 +122,17 @@ public sealed class CustomerService : BaseCustomerEntityService, ICustomerServic
                 CreatedByUserId = userId,
                 CreatedAt = customer.CreatedAtUtc
             }, cancellationToken).ConfigureAwait(false);
+
+            await _publishEndpoint.Publish(new CustomerEventOccurredEvent
+            {
+                EventType = "CustomerCreated",
+                EntityType = "Customer",
+                EntityId = customer.Id,
+                UserId = userId,
+                OccurredAtUtc = customer.CreatedAtUtc,
+                CustomerName = customer.Name,
+                CustomerCode = customer.Code
+            }, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception)
         {

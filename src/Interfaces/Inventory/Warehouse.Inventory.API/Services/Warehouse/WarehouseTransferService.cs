@@ -157,6 +157,15 @@ public sealed class WarehouseTransferService : BaseInventoryEntityService, IWare
                 CompletedByUserId = userId,
                 CompletedAt = transfer.CompletedAtUtc!.Value
             }, cancellationToken).ConfigureAwait(false);
+
+            await _publishEndpoint.Publish(new InventoryEventOccurredEvent
+            {
+                EventType = "TransferCompleted",
+                EntityType = "WarehouseTransfer",
+                EntityId = transfer.Id,
+                UserId = userId,
+                OccurredAtUtc = transfer.CompletedAtUtc!.Value
+            }, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception)
         {

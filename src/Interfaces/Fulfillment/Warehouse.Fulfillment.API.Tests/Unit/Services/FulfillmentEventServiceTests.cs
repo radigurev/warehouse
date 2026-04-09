@@ -1,3 +1,6 @@
+using MassTransit;
+using Microsoft.Extensions.Logging;
+using Moq;
 using Warehouse.Common.Models;
 using Warehouse.Fulfillment.API.Services;
 using Warehouse.Fulfillment.API.Tests.Fixtures;
@@ -17,12 +20,16 @@ namespace Warehouse.Fulfillment.API.Tests.Unit.Services;
 public sealed class FulfillmentEventServiceTests : FulfillmentTestBase
 {
     private FulfillmentEventService _sut = null!;
+    private Mock<IPublishEndpoint> _mockPublishEndpoint = null!;
+    private Mock<ILogger<FulfillmentEventService>> _mockLogger = null!;
 
     [SetUp]
     public override void SetUp()
     {
         base.SetUp();
-        _sut = new FulfillmentEventService(Context, Mapper);
+        _mockPublishEndpoint = new Mock<IPublishEndpoint>();
+        _mockLogger = new Mock<ILogger<FulfillmentEventService>>();
+        _sut = new FulfillmentEventService(Context, Mapper, _mockPublishEndpoint.Object, _mockLogger.Object);
     }
 
     [Test]
