@@ -17,6 +17,7 @@
     <ProjectReference Include="..\Databases\Warehouse.Inventory.DBModel\Warehouse.Inventory.DBModel.csproj" />
     <ProjectReference Include="..\Databases\Warehouse.Purchasing.DBModel\Warehouse.Purchasing.DBModel.csproj" />
     <ProjectReference Include="..\Databases\Warehouse.Fulfillment.DBModel\Warehouse.Fulfillment.DBModel.csproj" />
+    <ProjectReference Include="..\Databases\Warehouse.EventLog.DBModel\Warehouse.EventLog.DBModel.csproj" />
   </ItemGroup>
 
 </Project>
