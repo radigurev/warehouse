@@ -71,6 +71,18 @@ public sealed class GoodsReceiptService : BasePurchasingEntityService, IGoodsRec
             receipt.Lines.Add(line);
         }
 
+        foreach (GoodsReceiptLine grLine in receipt.Lines)
+        {
+            PurchaseOrderLine? poLine = po.Lines.FirstOrDefault(l => l.Id == grLine.PurchaseOrderLineId);
+            if (poLine is not null)
+                poLine.ReceivedQuantity += grLine.ReceivedQuantity;
+        }
+
+        bool allReceived = po.Lines.All(l => l.ReceivedQuantity >= l.OrderedQuantity);
+        bool anyReceived = po.Lines.Any(l => l.ReceivedQuantity > 0);
+        if (allReceived) po.Status = nameof(PurchaseOrderStatus.Received);
+        else if (anyReceived) po.Status = nameof(PurchaseOrderStatus.PartiallyReceived);
+
         Context.GoodsReceipts.Add(receipt);
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
