@@ -90,6 +90,7 @@ Test classes reference spec IDs: `{TestClassName}_SDD_{DOMAIN}_{NNN}_{Descriptio
 | CHG-ENH-002 | Audit UX and Navigation Improvements | SDD-UI-001, SDD-AUTH-001 | Implemented |
 | CHG-ENH-003 | Server-Side Pagination | SDD-AUTH-001, SDD-CUST-001, SDD-INV-001 | Implemented |
 | CHG-REFAC-001 | Infrastructure Extraction and Service Split | SDD-AUTH-001 | Implemented |
+| CHG-ENH-005 | Error Code Localization Contract | SDD-INFRA-001, SDD-AUTH-001, SDD-CUST-001, SDD-INV-001–004, SDD-UI-001 | Draft |
 
 ## Status Legend
 
@@ -114,7 +115,7 @@ Test classes reference spec IDs: `{TestClassName}_SDD_{DOMAIN}_{NNN}_{Descriptio
 | `SDD-INFRA` | 003 |
 | `SDD-OBS` | 002 |
 | `CHG-FEAT` | 001 |
-| `CHG-ENH` | 004 |
+| `CHG-ENH` | 006 |
 | `CHG-FIX` | 001 |
 | `CHG-REFAC` | 002 |
 | `CHG-DEBT` | 001 |
