@@ -66,6 +66,9 @@
         </template>
       </v-data-table-server>
     </v-card>
+
+    <TransferFormDialog v-model="vm.showFormDialog" @saved="vm.loadTransfers" />
+    <TransferDetailDialog v-model="vm.showDetailDialog" :transfer-id="vm.selectedTransfer?.id ?? null" />
   </div>
 </template>
 
@@ -74,6 +77,8 @@ import { reactive } from 'vue';
 import { useTransfersView } from '@features/inventory/composables/useTransfersView';
 import ActionChip from '@shared/components/atoms/ActionChip.vue';
 import ColumnFilter from '@shared/components/molecules/ColumnFilter.vue';
+import TransferFormDialog from '@features/inventory/components/organisms/TransferFormDialog.vue';
+import TransferDetailDialog from '@features/inventory/components/organisms/TransferDetailDialog.vue';
 
 const vm = reactive(useTransfersView());
 </script>

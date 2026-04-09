@@ -94,12 +94,25 @@ export function useStocktakeView() {
     }
   }
 
+  const selectedSession = ref<StocktakeSessionDto | null>(null);
+  const showFormDialog = ref(false);
+  const showDetailDialog = ref(false);
+
   function handleCreate(): void {
-    router.push({ name: 'stocktake-create' });
+    if (layout.isPageMode) {
+      router.push({ name: 'stocktake-create' });
+    } else {
+      showFormDialog.value = true;
+    }
   }
 
   function handleDetail(session: StocktakeSessionDto): void {
-    router.push({ name: 'stocktake-detail', params: { id: session.id } });
+    if (layout.isPageMode) {
+      router.push({ name: 'stocktake-detail', params: { id: session.id } });
+    } else {
+      selectedSession.value = session;
+      showDetailDialog.value = true;
+    }
   }
 
   function handlePageChange(newPage: number): void {
@@ -122,6 +135,9 @@ export function useStocktakeView() {
     columnFilters,
     filteredItems,
     headers,
+    selectedSession,
+    showFormDialog,
+    showDetailDialog,
     loadSessions,
     formatDate,
     translateStatus,

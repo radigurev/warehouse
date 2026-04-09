@@ -59,6 +59,9 @@
         </template>
       </v-data-table-server>
     </v-card>
+
+    <AdjustmentFormDialog v-model="vm.showFormDialog" @saved="vm.loadAdjustments" />
+    <AdjustmentDetailDialog v-model="vm.showDetailDialog" :adjustment-id="vm.selectedAdjustment?.id ?? null" />
   </div>
 </template>
 
@@ -67,6 +70,8 @@ import { reactive } from 'vue';
 import { useAdjustmentsView } from '@features/inventory/composables/useAdjustmentsView';
 import ActionChip from '@shared/components/atoms/ActionChip.vue';
 import ColumnFilter from '@shared/components/molecules/ColumnFilter.vue';
+import AdjustmentFormDialog from '@features/inventory/components/organisms/AdjustmentFormDialog.vue';
+import AdjustmentDetailDialog from '@features/inventory/components/organisms/AdjustmentDetailDialog.vue';
 
 const vm = reactive(useAdjustmentsView());
 </script>

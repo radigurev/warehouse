@@ -74,12 +74,25 @@ export function useTransfersView() {
     });
   }
 
+  const selectedTransfer = ref<WarehouseTransferDto | null>(null);
+  const showFormDialog = ref(false);
+  const showDetailDialog = ref(false);
+
   function handleCreate(): void {
-    router.push({ name: 'transfer-create' });
+    if (layout.isPageMode) {
+      router.push({ name: 'transfer-create' });
+    } else {
+      showFormDialog.value = true;
+    }
   }
 
   function handleDetail(transfer: WarehouseTransferDto): void {
-    router.push({ name: 'transfer-detail', params: { id: transfer.id } });
+    if (layout.isPageMode) {
+      router.push({ name: 'transfer-detail', params: { id: transfer.id } });
+    } else {
+      selectedTransfer.value = transfer;
+      showDetailDialog.value = true;
+    }
   }
 
   function statusColor(status: string): string {
@@ -111,6 +124,9 @@ export function useTransfersView() {
     columnFilters,
     filteredItems,
     headers,
+    selectedTransfer,
+    showFormDialog,
+    showDetailDialog,
     loadTransfers,
     formatDate,
     handleCreate,

@@ -91,12 +91,25 @@ export function useAdjustmentsView() {
     }
   }
 
+  const selectedAdjustment = ref<InventoryAdjustmentDto | null>(null);
+  const showFormDialog = ref(false);
+  const showDetailDialog = ref(false);
+
   function handleCreate(): void {
-    router.push({ name: 'adjustment-create' });
+    if (layout.isPageMode) {
+      router.push({ name: 'adjustment-create' });
+    } else {
+      showFormDialog.value = true;
+    }
   }
 
   function handleDetail(adjustment: InventoryAdjustmentDto): void {
-    router.push({ name: 'adjustment-detail', params: { id: adjustment.id } });
+    if (layout.isPageMode) {
+      router.push({ name: 'adjustment-detail', params: { id: adjustment.id } });
+    } else {
+      selectedAdjustment.value = adjustment;
+      showDetailDialog.value = true;
+    }
   }
 
   function handlePageChange(newPage: number): void {
@@ -119,6 +132,9 @@ export function useAdjustmentsView() {
     columnFilters,
     filteredItems,
     headers,
+    selectedAdjustment,
+    showFormDialog,
+    showDetailDialog,
     loadAdjustments,
     formatDate,
     translateStatus,

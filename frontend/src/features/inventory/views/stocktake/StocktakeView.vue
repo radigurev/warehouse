@@ -66,6 +66,9 @@
         </template>
       </v-data-table-server>
     </v-card>
+
+    <StocktakeFormDialog v-model="vm.showFormDialog" @saved="vm.loadSessions" />
+    <StocktakeDetailDialog v-model="vm.showDetailDialog" :session-id="vm.selectedSession?.id ?? null" />
   </div>
 </template>
 
@@ -74,6 +77,8 @@ import { reactive } from 'vue';
 import { useStocktakeView } from '@features/inventory/composables/useStocktakeView';
 import ActionChip from '@shared/components/atoms/ActionChip.vue';
 import ColumnFilter from '@shared/components/molecules/ColumnFilter.vue';
+import StocktakeFormDialog from '@features/inventory/components/organisms/StocktakeFormDialog.vue';
+import StocktakeDetailDialog from '@features/inventory/components/organisms/StocktakeDetailDialog.vue';
 
 const vm = reactive(useStocktakeView());
 </script>
