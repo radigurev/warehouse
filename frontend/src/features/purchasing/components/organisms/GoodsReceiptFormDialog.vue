@@ -105,23 +105,49 @@
                   variant="underlined"
                 />
               </td>
-              <td style="min-width: 140px">
-                <v-text-field
-                  v-model="line.manufacturingDate"
-                  type="date"
-                  :density="layout.vuetifyDensity"
-                  hide-details
-                  variant="underlined"
-                />
+              <td style="min-width: 160px">
+                <v-menu v-model="line.mfgDateMenu" :close-on-content-click="false">
+                  <template #activator="{ props: menuProps }">
+                    <v-text-field
+                      v-bind="menuProps"
+                      :model-value="line.manufacturingDate"
+                      :density="layout.vuetifyDensity"
+                      hide-details
+                      variant="underlined"
+                      prepend-inner-icon="mdi-calendar"
+                      readonly
+                      clearable
+                      @click:clear="line.manufacturingDate = ''"
+                    />
+                  </template>
+                  <v-date-picker
+                    :model-value="line.manufacturingDate ? new Date(line.manufacturingDate) : undefined"
+                    color="primary"
+                    @update:model-value="(v: unknown) => { line.manufacturingDate = formatDateValue(v); line.mfgDateMenu = false; }"
+                  />
+                </v-menu>
               </td>
-              <td style="min-width: 140px">
-                <v-text-field
-                  v-model="line.expiryDate"
-                  type="date"
-                  :density="layout.vuetifyDensity"
-                  hide-details
-                  variant="underlined"
-                />
+              <td style="min-width: 160px">
+                <v-menu v-model="line.expDateMenu" :close-on-content-click="false">
+                  <template #activator="{ props: menuProps }">
+                    <v-text-field
+                      v-bind="menuProps"
+                      :model-value="line.expiryDate"
+                      :density="layout.vuetifyDensity"
+                      hide-details
+                      variant="underlined"
+                      prepend-inner-icon="mdi-calendar"
+                      readonly
+                      clearable
+                      @click:clear="line.expiryDate = ''"
+                    />
+                  </template>
+                  <v-date-picker
+                    :model-value="line.expiryDate ? new Date(line.expiryDate) : undefined"
+                    color="primary"
+                    @update:model-value="(v: unknown) => { line.expiryDate = formatDateValue(v); line.expDateMenu = false; }"
+                  />
+                </v-menu>
               </td>
             </tr>
           </tbody>
@@ -172,6 +198,15 @@ interface ReceiptLineForm {
   batchNumber: string;
   manufacturingDate: string;
   expiryDate: string;
+  mfgDateMenu: boolean;
+  expDateMenu: boolean;
+}
+
+function formatDateValue(date: unknown): string {
+  if (date instanceof Date) {
+    return date.toISOString().split('T')[0];
+  }
+  return '';
 }
 
 const { t } = useI18n();
@@ -276,6 +311,8 @@ async function onPurchaseOrderSelected(): Promise<void> {
         batchNumber: '',
         manufacturingDate: '',
         expiryDate: '',
+        mfgDateMenu: false,
+        expDateMenu: false,
       }));
   } catch (err) {
     notification.error(getApiErrorMessage(err, t));
