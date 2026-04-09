@@ -6,7 +6,9 @@ import { useNotificationStore } from '@shared/stores/notification';
 import { useColumnFilters } from '@shared/composables/useColumnFilters';
 import { buildFilterString } from '@shared/utils/buildFilterString';
 import { searchPurchaseOrders, confirmPurchaseOrder, cancelPurchaseOrder, closePurchaseOrder } from '@features/purchasing/api/purchase-orders';
+import { searchWarehouses } from '@features/inventory/api/warehouses';
 import type { PurchaseOrderDto, SearchPurchaseOrdersRequest } from '@features/purchasing/types/purchasing';
+import type { WarehouseDto } from '@features/inventory/types/inventory';
 import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 export function usePurchaseOrdersView() {
@@ -16,6 +18,7 @@ export function usePurchaseOrdersView() {
   const notification = useNotificationStore();
 
   const orders = ref<PurchaseOrderDto[]>([]);
+  const warehouseMap = ref<Map<number, string>>(new Map());
   const loading = ref(false);
   const totalCount = ref(0);
   const totalPages = computed(() => Math.ceil(totalCount.value / (searchParams.value.pageSize || 25)));
@@ -63,7 +66,25 @@ export function usePurchaseOrdersView() {
     { title: t('common.actions'), key: 'actions', sortable: false, align: 'end' as const, minWidth: '380px' },
   ]);
 
-  onMounted(() => loadOrders());
+  onMounted(() => {
+    loadOrders();
+    loadWarehouses();
+  });
+
+  async function loadWarehouses(): Promise<void> {
+    try {
+      const response = await searchWarehouses({ includeDeleted: false, sortBy: 'name', sortDescending: false, page: 1, pageSize: 1000 });
+      const map = new Map<number, string>();
+      response.items.forEach((w: WarehouseDto) => map.set(w.id, w.name));
+      warehouseMap.value = map;
+    } catch {
+      // silent — warehouse names will fall back to ID
+    }
+  }
+
+  function getWarehouseName(id: number): string {
+    return warehouseMap.value.get(id) || String(id);
+  }
 
   async function loadOrders(): Promise<void> {
     loading.value = true;
@@ -232,6 +253,7 @@ export function usePurchaseOrdersView() {
     headers,
     loadOrders,
     formatDate,
+    getWarehouseName,
     getStatusColor,
     canEdit,
     canConfirm,

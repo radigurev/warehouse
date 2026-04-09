@@ -533,7 +533,7 @@ export default {
       id: 'ID',
       status: 'Status',
       sourceWarehouse: 'Source',
-      destinationWarehouse: 'Destination',
+      destinationWarehouse: 'Warehouse',
       createdAt: 'Created',
     },
     form: {
@@ -831,7 +831,7 @@ export default {
       supplierName: 'Supplier',
       status: 'Status',
       warehouse: 'Warehouse',
-      destinationWarehouse: 'Destination',
+      destinationWarehouse: 'Warehouse',
       expectedDelivery: 'Expected Delivery',
       expectedDeliveryDate: 'Expected Delivery',
       totalAmount: 'Total Amount',

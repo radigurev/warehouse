@@ -533,7 +533,7 @@ export default {
       id: 'ID',
       status: 'Статус',
       sourceWarehouse: 'Източник',
-      destinationWarehouse: 'Дестинация',
+      destinationWarehouse: 'Склад',
       createdAt: 'Създаден',
     },
     form: {
@@ -831,7 +831,7 @@ export default {
       supplierName: 'Доставчик',
       status: 'Статус',
       warehouse: 'Склад',
-      destinationWarehouse: 'Дестинация',
+      destinationWarehouse: 'Склад',
       expectedDelivery: 'Очаквана доставка',
       expectedDeliveryDate: 'Очаквана доставка',
       totalAmount: 'Обща сума',

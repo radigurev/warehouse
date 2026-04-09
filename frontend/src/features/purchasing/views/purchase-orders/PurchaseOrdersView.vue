@@ -43,6 +43,10 @@
           </div>
         </template>
 
+        <template #item.destinationWarehouseId="{ item }">
+          {{ vm.getWarehouseName(item.destinationWarehouseId) }}
+        </template>
+
         <template #item.status="{ item }">
           <v-chip :color="poStatusColor(item.status)" size="small" label>
             {{ vm.t(`purchaseOrders.status.${item.status}`) }}
