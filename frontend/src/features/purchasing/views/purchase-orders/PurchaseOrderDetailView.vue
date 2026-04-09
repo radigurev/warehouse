@@ -159,6 +159,9 @@
       :loading="closing"
       @confirm="handleClose"
     />
+
+    <!-- Goods Receipt Dialog (modal mode) -->
+    <GoodsReceiptFormDialog v-model="showGoodsReceiptDialog" :pre-selected-po-id="vm.poId" @saved="onGoodsReceiptSaved" />
   </div>
 </template>
 
@@ -166,17 +169,21 @@
 import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { usePurchaseOrderDetailView } from '@features/purchasing/composables/usePurchaseOrderDetailView';
+import { useLayoutStore } from '@shared/stores/layout';
 import { useNotificationStore } from '@shared/stores/notification';
 import ConfirmDialog from '@shared/components/molecules/ConfirmDialog.vue';
+import GoodsReceiptFormDialog from '@features/purchasing/components/organisms/GoodsReceiptFormDialog.vue';
 import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 const router = useRouter();
+const layout = useLayoutStore();
 const notification = useNotificationStore();
 const vm = reactive(usePurchaseOrderDetailView());
 
 const showConfirmDialog = ref(false);
 const showCancelDialog = ref(false);
 const showCloseDialog = ref(false);
+const showGoodsReceiptDialog = ref(false);
 const confirming = ref(false);
 const cancelling = ref(false);
 const closing = ref(false);
@@ -198,7 +205,16 @@ function handleEdit(): void {
 }
 
 function handleCreateGoodsReceipt(): void {
-  router.push({ name: 'goods-receipt-create', query: { poId: vm.poId } });
+  if (layout.isPageMode) {
+    router.push({ name: 'goods-receipt-create', query: { poId: String(vm.poId), returnTo: String(vm.poId) } });
+  } else {
+    showGoodsReceiptDialog.value = true;
+  }
+}
+
+async function onGoodsReceiptSaved(): Promise<void> {
+  showGoodsReceiptDialog.value = false;
+  await vm.loadPurchaseOrder();
 }
 
 async function handleConfirm(): Promise<void> {
