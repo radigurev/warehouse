@@ -625,4 +625,38 @@ public sealed class SalesOrderServiceTests : FulfillmentTestBase
         // Assert
         Assert.That(result.Value!.TotalCount, Is.EqualTo(1));
     }
+
+    [Test]
+    public async Task RemoveLineAsync_RecalculatesTotalAmount()
+    {
+        // Arrange
+        SalesOrder so = await SeedSalesOrderAsync(status: nameof(SalesOrderStatus.Draft), productId: 100, orderedQuantity: 10, unitPrice: 25);
+        SalesOrderLine secondLine = new()
+        {
+            SalesOrderId = so.Id,
+            ProductId = 200,
+            OrderedQuantity = 5,
+            UnitPrice = 50,
+            LineTotal = 250m,
+            PickedQuantity = 0,
+            PackedQuantity = 0,
+            ShippedQuantity = 0
+        };
+        Context.SalesOrderLines.Add(secondLine);
+        so.TotalAmount = 500m;
+        await Context.SaveChangesAsync(CancellationToken.None);
+
+        int firstLineId = so.Lines.First(l => l.ProductId == 100).Id;
+
+        // Act
+        Result result = await _sut.RemoveLineAsync(so.Id, firstLineId, CancellationToken.None);
+
+        // Assert
+        await Context.Entry(so).ReloadAsync(CancellationToken.None);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.IsSuccess, Is.True);
+            Assert.That(so.TotalAmount, Is.EqualTo(250m));
+        });
+    }
 }

@@ -486,4 +486,37 @@ public sealed class PurchaseOrderServiceTests : PurchasingTestBase
         result.ErrorCode.Should().Be("PO_ALREADY_CLOSED");
         result.StatusCode.Should().Be(409);
     }
+
+    [Test]
+    public async Task SearchAsync_DefaultSort_SortsByCreatedDateDescending()
+    {
+        // Arrange
+        Supplier supplier = await SeedSupplierAsync(code: "SRCH-SORT-SUPP").ConfigureAwait(false);
+
+        PurchaseOrder oldest = await SeedPurchaseOrderAsync(supplier.Id, productId: 101).ConfigureAwait(false);
+        oldest.CreatedAtUtc = DateTime.UtcNow.AddHours(-3);
+        Context.PurchaseOrders.Update(oldest);
+
+        PurchaseOrder middle = await SeedPurchaseOrderAsync(supplier.Id, productId: 102).ConfigureAwait(false);
+        middle.CreatedAtUtc = DateTime.UtcNow.AddHours(-2);
+        Context.PurchaseOrders.Update(middle);
+
+        PurchaseOrder newest = await SeedPurchaseOrderAsync(supplier.Id, productId: 103).ConfigureAwait(false);
+        newest.CreatedAtUtc = DateTime.UtcNow.AddHours(-1);
+        Context.PurchaseOrders.Update(newest);
+
+        await Context.SaveChangesAsync(CancellationToken.None).ConfigureAwait(false);
+
+        SearchPurchaseOrdersRequest request = new() { SupplierId = supplier.Id };
+
+        // Act
+        Result<PaginatedResponse<PurchaseOrderDto>> result = await _sut.SearchAsync(request, CancellationToken.None).ConfigureAwait(false);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.Items.Should().HaveCount(3);
+        result.Value.Items[0].CreatedAtUtc.Should().Be(newest.CreatedAtUtc);
+        result.Value.Items[1].CreatedAtUtc.Should().Be(middle.CreatedAtUtc);
+        result.Value.Items[2].CreatedAtUtc.Should().Be(oldest.CreatedAtUtc);
+    }
 }

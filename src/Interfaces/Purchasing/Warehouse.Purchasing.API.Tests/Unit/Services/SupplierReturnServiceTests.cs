@@ -210,4 +210,25 @@ public sealed class SupplierReturnServiceTests : PurchasingTestBase
         result.IsSuccess.Should().BeTrue();
         result.Value!.TotalCount.Should().Be(1);
     }
+
+    [Test]
+    public async Task CreateAsync_NoLines_ReturnsValidationError()
+    {
+        // Arrange
+        Supplier supplier = await SeedSupplierAsync(code: "SR-NOLINE-SUPP").ConfigureAwait(false);
+        CreateSupplierReturnRequest request = new()
+        {
+            SupplierId = supplier.Id,
+            Reason = "Damaged batch",
+            Lines = []
+        };
+
+        // Act
+        Result<SupplierReturnDetailDto> result = await _sut.CreateAsync(request, 1, CancellationToken.None).ConfigureAwait(false);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorCode.Should().Be("RETURN_MUST_HAVE_LINES");
+        result.StatusCode.Should().Be(422);
+    }
 }

@@ -38,6 +38,8 @@ public sealed class SupplierReturnService : BasePurchasingEntityService, ISuppli
     /// <inheritdoc />
     public async Task<Result<SupplierReturnDetailDto>> CreateAsync(CreateSupplierReturnRequest request, int userId, CancellationToken cancellationToken)
     {
+        if (!request.Lines.Any()) return Result<SupplierReturnDetailDto>.Failure("RETURN_MUST_HAVE_LINES", "Supplier return must have at least one line.", 422);
+
         Supplier? supplier = await Context.Suppliers.FirstOrDefaultAsync(s => s.Id == request.SupplierId && !s.IsDeleted, cancellationToken).ConfigureAwait(false);
         if (supplier is null) return Result<SupplierReturnDetailDto>.Failure("SUPPLIER_NOT_FOUND", "Supplier not found.", 404);
         if (!supplier.IsActive) return Result<SupplierReturnDetailDto>.Failure("SUPPLIER_INACTIVE", "The supplier is inactive.", 409);

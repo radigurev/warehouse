@@ -384,4 +384,23 @@ public sealed class CustomerReturnServiceTests : FulfillmentTestBase
         // Assert
         Assert.That(result.Value!.TotalCount, Is.EqualTo(1));
     }
+
+    [Test]
+    public async Task GetByIdAsync_ExistingReturn_ReturnsReturnWithLines()
+    {
+        // Arrange
+        CustomerReturn cr = await SeedCustomerReturnAsync(customerId: 1, productId: 100, quantity: 5m);
+
+        // Act
+        Result<CustomerReturnDetailDto> result = await _sut.GetByIdAsync(cr.Id, CancellationToken.None);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.IsSuccess, Is.True);
+            Assert.That(result.Value!.Id, Is.EqualTo(cr.Id));
+            Assert.That(result.Value.ReturnNumber, Is.EqualTo(cr.ReturnNumber));
+            Assert.That(result.Value.Lines, Has.Count.EqualTo(1));
+        });
+    }
 }

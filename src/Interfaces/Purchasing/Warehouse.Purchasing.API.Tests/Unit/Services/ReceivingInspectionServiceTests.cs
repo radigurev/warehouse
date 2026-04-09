@@ -174,4 +174,27 @@ public sealed class ReceivingInspectionServiceTests : PurchasingTestBase
         result.ErrorCode.Should().Be("LINE_NOT_QUARANTINED");
         result.StatusCode.Should().Be(409);
     }
+
+    [Test]
+    public async Task InspectAsync_RejectedLine_DoesNotCountTowardReceivedTotal()
+    {
+        // Arrange
+        Supplier supplier = await SeedSupplierAsync(code: "RI-REJRCV-SUPP").ConfigureAwait(false);
+        PurchaseOrder po = await SeedPurchaseOrderAsync(supplier.Id, status: nameof(PurchaseOrderStatus.Confirmed), orderedQuantity: 20m).ConfigureAwait(false);
+        PurchaseOrderLine poLine = po.Lines.First();
+        GoodsReceipt receipt = await SeedGoodsReceiptAsync(po.Id, poLine.Id, receivedQuantity: 20m, inspectionStatus: nameof(InspectionStatus.Pending)).ConfigureAwait(false);
+        GoodsReceiptLine grLine = receipt.Lines.First();
+        InspectLineRequest request = new() { InspectionStatus = nameof(InspectionStatus.Rejected), InspectionNote = "Damaged beyond use" };
+
+        // Act
+        Result<GoodsReceiptLineDto> result = await _sut.InspectAsync(receipt.Id, grLine.Id, request, 1, CancellationToken.None).ConfigureAwait(false);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.InspectionStatus.Should().Be(nameof(InspectionStatus.Rejected));
+
+        PurchaseOrderLine? reloadedPoLine = await Context.PurchaseOrderLines.FindAsync(new object[] { poLine.Id }, CancellationToken.None).ConfigureAwait(false);
+        reloadedPoLine.Should().NotBeNull();
+        reloadedPoLine!.ReceivedQuantity.Should().Be(0m);
+    }
 }
