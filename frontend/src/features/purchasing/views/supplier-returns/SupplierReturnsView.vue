@@ -85,6 +85,7 @@
       :loading="vm.cancelling"
       @confirm="vm.handleCancel"
     />
+    <SupplierReturnDetailDialog v-model="vm.showDetailDialog" :return-id="vm.selectedReturn?.id ?? null" />
   </div>
 </template>
 
@@ -95,6 +96,7 @@ import ActionChip from '@shared/components/atoms/ActionChip.vue';
 import ColumnFilter from '@shared/components/molecules/ColumnFilter.vue';
 import ConfirmDialog from '@shared/components/molecules/ConfirmDialog.vue';
 import SupplierReturnFormDialog from '@features/purchasing/components/organisms/SupplierReturnFormDialog.vue';
+import SupplierReturnDetailDialog from '@features/purchasing/components/organisms/SupplierReturnDetailDialog.vue';
 
 const vm = reactive(useSupplierReturnsView());
 

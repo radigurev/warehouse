@@ -80,6 +80,7 @@
       :loading="vm.deactivating"
       @confirm="vm.handleDeactivate"
     />
+    <SupplierDetailDialog v-model="vm.showDetailDialog" :supplier-id="vm.selectedSupplier?.id ?? null" />
   </div>
 </template>
 
@@ -91,6 +92,7 @@ import ActionChip from '@shared/components/atoms/ActionChip.vue';
 import ColumnFilter from '@shared/components/molecules/ColumnFilter.vue';
 import ConfirmDialog from '@shared/components/molecules/ConfirmDialog.vue';
 import SupplierFormDialog from '@features/purchasing/components/organisms/SupplierFormDialog.vue';
+import SupplierDetailDialog from '@features/purchasing/components/organisms/SupplierDetailDialog.vue';
 
 const vm = reactive(useSuppliersView());
 </script>

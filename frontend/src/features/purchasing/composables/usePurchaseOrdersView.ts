@@ -133,7 +133,12 @@ export function usePurchaseOrdersView() {
   }
 
   function handleDetail(order: PurchaseOrderDto): void {
-    router.push({ name: 'purchase-order-detail', params: { id: order.id } });
+    if (layout.isPageMode) {
+      router.push({ name: 'purchase-order-detail', params: { id: order.id } });
+    } else {
+      selectedOrder.value = order;
+      showDetailDialog.value = true;
+    }
   }
 
   function openConfirmDialog(order: PurchaseOrderDto): void {

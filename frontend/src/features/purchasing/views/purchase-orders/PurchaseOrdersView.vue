@@ -113,6 +113,7 @@
       :loading="vm.closing"
       @confirm="vm.handleClose"
     />
+    <PurchaseOrderDetailDialog v-model="vm.showDetailDialog" :po-id="vm.selectedOrder?.id ?? null" />
   </div>
 </template>
 
@@ -123,6 +124,7 @@ import ActionChip from '@shared/components/atoms/ActionChip.vue';
 import ColumnFilter from '@shared/components/molecules/ColumnFilter.vue';
 import ConfirmDialog from '@shared/components/molecules/ConfirmDialog.vue';
 import PurchaseOrderFormDialog from '@features/purchasing/components/organisms/PurchaseOrderFormDialog.vue';
+import PurchaseOrderDetailDialog from '@features/purchasing/components/organisms/PurchaseOrderDetailDialog.vue';
 
 const vm = reactive(usePurchaseOrdersView());
 
