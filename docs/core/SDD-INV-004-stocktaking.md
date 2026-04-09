@@ -1,7 +1,7 @@
 # SDD-INV-004 — Stocktaking
 
 > Status: Active
-> Last updated: 2026-04-05
+> Last updated: 2026-04-09
 > Owner: TBD
 > Category: Core
 
@@ -77,7 +77,10 @@ This spec defines the Stocktaking sub-domain for the Warehouse Inventory system.
 - The system MUST support creating an inventory adjustment (SDD-INV-002) from a completed stocktake.
 - The adjustment MUST include one line per count entry that has a non-zero variance.
 - Only completed sessions MAY generate adjustments.
-- The generated adjustment MUST reference the stocktake session ID.
+- The generated adjustment MUST set `SourceStocktakeSessionId` to the stocktake session ID, linking it back to the originating session.
+- The adjustment reason MUST be set to `"Stocktake variance"` and notes MUST include the session ID and name.
+- The adjustment MUST be created with status `Pending` (requiring approval before application).
+- If no count entries have a non-zero variance, the system MUST return a 400 Bad Request error with code `NO_VARIANCE`.
 
 **ISA-95 Immutable Event Chain:** Per ISA-95 operations event model, stocktake variances MUST ultimately produce immutable stock movement records. This is achieved through the adjustment approval workflow:
 1. Stocktake session is completed with variance counts
@@ -157,6 +160,7 @@ This three-step process ensures human oversight of variance corrections while ma
 | E9 | Variance report from non-completed | 409 | `SESSION_NOT_COMPLETED` | Variance reports can only be generated from completed sessions. |
 | E10 | Validation failure (field-level) | 400 | `VALIDATION_ERROR` | One or more fields are invalid. |
 | E11 | Insufficient permissions | 403 | `FORBIDDEN` | You do not have permission to perform this action. |
+| E12 | Create adjustment with no variance | 400 | `NO_VARIANCE` | No count entries have a non-zero variance. |
 
 All error responses MUST use ProblemDetails (RFC 7807) format.
 
@@ -248,6 +252,12 @@ All error responses MUST use ProblemDetails (RFC 7807) format.
   - Confirmed separate StocktakeCountsController for count entry endpoints
   - Status changed from Draft to Active
 
+- **v3 — Stocktake-to-adjustment linkage and NO_VARIANCE error (2026-04-09)** (non-breaking)
+  - Documented `SourceStocktakeSessionId` linkage on generated adjustments
+  - Documented default reason text and notes format for generated adjustments
+  - Added `NO_VARIANCE` (400) error rule (E12) when creating adjustment from session with no variance
+  - Added `CreateAdjustmentAsync_NoVariance_ReturnsBadRequest` test plan entry
+
 ---
 
 ## 8. Test Plan
@@ -264,6 +274,8 @@ All error responses MUST use ProblemDetails (RFC 7807) format.
 - `CancelAsync_CompletedSession_ReturnsConflict` [Unit]
 - `CreateAdjustmentAsync_CompletedSession_CreatesAdjustment` [Unit]
 - `CreateAdjustmentAsync_NonCompletedSession_ReturnsConflict` [Unit]
+- `CreateAdjustmentAsync_NoVariance_ReturnsBadRequest` [Unit]
+- `CreateAdjustmentAsync_SetsSourceStocktakeSessionId` [Unit]
 - `GetVarianceReportAsync_CompletedSession_ReturnsReport` [Unit]
 - `SearchAsync_WithFilters_ReturnsFilteredResults` [Unit]
 

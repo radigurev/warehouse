@@ -1,6 +1,6 @@
 # Cross-Reference Map
 
-> Last updated: 2026-04-07
+> Last updated: 2026-04-09
 >
 > Note: Updated all paths for domain-split restructure (Auth.DBModel, Customers.DBModel, Interfaces/Auth/, Interfaces/Customers/)
 

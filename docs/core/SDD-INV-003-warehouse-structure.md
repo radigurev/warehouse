@@ -1,7 +1,7 @@
 # SDD-INV-003 — Warehouse Structure
 
 > Status: Active
-> Last updated: 2026-04-05
+> Last updated: 2026-04-09
 > Owner: TBD
 > Category: Core
 
@@ -37,9 +37,8 @@ This spec defines the Warehouse Structure sub-domain for the Warehouse Inventory
 
 #### 2.1.1 Create Warehouse
 
-- The system MUST support creating a warehouse with a code, name, address, and active status.
+- The system MUST support creating a warehouse with a code, name, address, and optional notes.
 - The system MUST enforce unique warehouse codes.
-- The system MUST set `IsActive = true` by default on creation.
 - The system MUST record `CreatedAtUtc` and `CreatedByUserId` on creation.
 
 **Edge cases:**
@@ -54,7 +53,8 @@ This spec defines the Warehouse Structure sub-domain for the Warehouse Inventory
 
 #### 2.1.3 Get Warehouse
 
-- The system MUST support retrieving a single warehouse by ID with its zones.
+- The system MUST support retrieving a single warehouse by ID as a detail DTO that includes its zones.
+- The response MUST include a computed `IsActive` field derived from `!IsDeleted`.
 - Retrieving a soft-deleted warehouse MUST return a 404 Not Found error.
 
 #### 2.1.4 List Warehouses
@@ -70,6 +70,13 @@ This spec defines the Warehouse Structure sub-domain for the Warehouse Inventory
 
 **Edge cases:**
 - Deactivating an already soft-deleted warehouse MUST return a 404 Not Found error.
+
+#### 2.1.6 Reactivate Warehouse
+
+- The system MUST support reactivating a soft-deleted warehouse by setting `IsDeleted = false` and `DeletedAtUtc = null`.
+- The system MUST update `ModifiedAtUtc` and `ModifiedByUserId` on reactivation.
+- Reactivating a warehouse that is already active (not soft-deleted) MUST return a 400 Bad Request error with code `WAREHOUSE_ALREADY_ACTIVE`.
+- Reactivating a non-existent warehouse MUST return a 404 Not Found error.
 
 ### 2.2 Zones
 
@@ -205,6 +212,7 @@ This spec defines the Warehouse Structure sub-domain for the Warehouse Inventory
 | E1 | Warehouse not found (or soft-deleted) | 404 | `WAREHOUSE_NOT_FOUND` | Warehouse not found. |
 | E2 | Duplicate warehouse code | 409 | `DUPLICATE_WAREHOUSE_CODE` | A warehouse with this code already exists. |
 | E3 | Deactivate warehouse with stock | 409 | `WAREHOUSE_HAS_STOCK` | Cannot deactivate warehouse -- it has non-zero stock levels. |
+| E17 | Reactivate already active warehouse | 400 | `WAREHOUSE_ALREADY_ACTIVE` | Warehouse is already active. |
 | E4 | Zone not found | 404 | `ZONE_NOT_FOUND` | Zone not found. |
 | E5 | Duplicate zone code in warehouse | 409 | `DUPLICATE_ZONE_CODE` | A zone with this code already exists in this warehouse. |
 | E6 | Delete zone with locations | 409 | `ZONE_HAS_LOCATIONS` | Cannot delete zone -- it has {count} storage location(s). |
@@ -233,6 +241,7 @@ All error responses MUST use ProblemDetails (RFC 7807) format.
 | GET | `/api/v1/warehouses/{id}` | Get warehouse by ID | Yes | `warehouses:read` |
 | PUT | `/api/v1/warehouses/{id}` | Update warehouse | Yes | `warehouses:update` |
 | DELETE | `/api/v1/warehouses/{id}` | Soft-delete warehouse | Yes | `warehouses:delete` |
+| POST | `/api/v1/warehouses/{id}/reactivate` | Reactivate soft-deleted warehouse | Yes | `warehouses:update` |
 | **Zones** | | | | |
 | POST | `/api/v1/warehouses/{warehouseId}/zones` | Create zone | Yes | `zones:create` |
 | GET | `/api/v1/warehouses/{warehouseId}/zones` | List zones for warehouse | Yes | `zones:read` |
@@ -268,7 +277,6 @@ All error responses MUST use ProblemDetails (RFC 7807) format.
 | Name | NVARCHAR(200) | NOT NULL |
 | Address | NVARCHAR(500) | NULL |
 | Notes | NVARCHAR(2000) | NULL |
-| IsActive | BIT | NOT NULL, DEFAULT 1 |
 | IsDeleted | BIT | NOT NULL, DEFAULT 0 |
 | DeletedAtUtc | DATETIME2(7) | NULL |
 | CreatedAtUtc | DATETIME2(7) | NOT NULL, DEFAULT SYSUTCDATETIME() |
@@ -359,6 +367,14 @@ All error responses MUST use ProblemDetails (RFC 7807) format.
   - Transfer insufficient stock error code changed from `TRANSFER_INSUFFICIENT_STOCK` to `INSUFFICIENT_STOCK` for consistency with SDD-INV-002
   - Status changed from Draft to Active
 
+- **v3 — Warehouse reactivation and schema cleanup (2026-04-09)** (breaking)
+  - Removed `IsActive` column from `inventory.Warehouses` table — active state is now derived from `!IsDeleted`
+  - DTO `IsActive` field is computed via AutoMapper mapping (`!IsDeleted`) — no API contract change for consumers
+  - Added `POST /api/v1/warehouses/{id}/reactivate` endpoint (permission: `warehouses:update`)
+  - Added `WAREHOUSE_ALREADY_ACTIVE` (400) error rule
+  - Get Warehouse by ID now returns `WarehouseDetailDto` including zones
+  - Added reactivate test plan entries
+
 ---
 
 ## 8. Test Plan
@@ -373,6 +389,9 @@ All error responses MUST use ProblemDetails (RFC 7807) format.
 - `GetByIdAsync_SoftDeletedWarehouse_ReturnsNotFound` [Unit]
 - `DeactivateAsync_ActiveWarehouse_SetsIsDeletedAndDeletedAt` [Unit]
 - `DeactivateAsync_AlreadyDeleted_ReturnsNotFound` [Unit]
+- `ReactivateAsync_SoftDeletedWarehouse_ClearsDeletedFlags` [Unit]
+- `ReactivateAsync_AlreadyActive_ReturnsBadRequest` [Unit]
+- `ReactivateAsync_NonExistent_ReturnsNotFound` [Unit]
 - `SearchAsync_WithFilters_ReturnsFilteredResults` [Unit]
 
 ### Unit Tests -- ZoneServiceTests
@@ -423,6 +442,8 @@ All error responses MUST use ProblemDetails (RFC 7807) format.
 - `GetWarehouse_ExistingId_Returns200` [Integration]
 - `UpdateWarehouse_ValidPayload_Returns200` [Integration]
 - `DeleteWarehouse_ActiveWarehouse_Returns204` [Integration]
+- `ReactivateWarehouse_SoftDeleted_Returns200` [Integration]
+- `ReactivateWarehouse_AlreadyActive_Returns400` [Integration]
 
 ### Integration Tests -- ZonesControllerTests
 
