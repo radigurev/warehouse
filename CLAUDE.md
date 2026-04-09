@@ -353,15 +353,15 @@ Warehouse/
 │   │       ├── Warehouse.Inventory.API/           ← Controllers, services, DI root
 │   │       └── Warehouse.Inventory.API.Tests/     ← NUnit tests
 │   ├── Infrastructure/
-│   │   └── EventLog/                              ← Infrastructure: centralized event log service
-│   │       ├── Warehouse.EventLog.API/            ← MassTransit consumers, query endpoints (port 5006)
-│   │       └── Warehouse.EventLog.API.Tests/      ← NUnit tests
+│   │   ├── EventLog/                              ← Infrastructure: centralized event log service
+│   │   │   ├── Warehouse.EventLog.API/            ← MassTransit consumers, query endpoints (port 5006)
+│   │   │   └── Warehouse.EventLog.API.Tests/      ← NUnit tests
+│   │   └── Gateway/
+│   │       └── Warehouse.Gateway/                 ← YARP API Gateway (port 5000), routes to backend services
 │   ├── Warehouse.Common/                          ← Shared enums, helpers, extensions
 │   │   ├── Enums/
 │   │   ├── Extensions/
 │   │   └── Helpers/
-│   ├── Gateway/
-│   │   └── Warehouse.Gateway/                     ← YARP API Gateway (port 5000), routes to backend services
 │   ├── Warehouse.GenericFiltering/                ← Reusable IQueryable dynamic filter library
 │   ├── Warehouse.Mapping/                         ← AutoMapper profiles
 │   │   └── Profiles/
@@ -739,7 +739,7 @@ Describe proposed changes. Live in `docs/changes/`.
 | Purpose | Path |
 |---|---|
 | Solution file | `src/Warehouse.slnx` |
-| API Gateway | `src/Gateway/Warehouse.Gateway/` |
+| API Gateway | `src/Infrastructure/Gateway/Warehouse.Gateway/` |
 | Auth API | `src/Interfaces/Auth/Warehouse.Auth.API/` |
 | Auth API tests | `src/Interfaces/Auth/Warehouse.Auth.API.Tests/` |
 | Auth DB models | `src/Databases/Warehouse.Auth.DBModel/Models/` |

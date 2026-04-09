@@ -1,7 +1,7 @@
 # CHG-ENH-003 — Server-Side Pagination for Unpaginated List Endpoints
 
-> Status: Draft
-> Last updated: 2026-04-06
+> Status: Implemented
+> Last updated: 2026-04-09
 > Owner: TBD
 > Priority: P2
 

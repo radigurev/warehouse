@@ -14,7 +14,9 @@ COPY src/Databases/Warehouse.Customers.DBModel/Warehouse.Customers.DBModel.cspro
 COPY src/Databases/Warehouse.Inventory.DBModel/Warehouse.Inventory.DBModel.csproj Databases/Warehouse.Inventory.DBModel/
 COPY src/Databases/Warehouse.Purchasing.DBModel/Warehouse.Purchasing.DBModel.csproj Databases/Warehouse.Purchasing.DBModel/
 COPY src/Databases/Warehouse.Fulfillment.DBModel/Warehouse.Fulfillment.DBModel.csproj Databases/Warehouse.Fulfillment.DBModel/
-COPY src/Gateway/Warehouse.Gateway/Warehouse.Gateway.csproj Gateway/Warehouse.Gateway/
+COPY src/Databases/Warehouse.EventLog.DBModel/Warehouse.EventLog.DBModel.csproj Databases/Warehouse.EventLog.DBModel/
+COPY src/Infrastructure/EventLog/Warehouse.EventLog.API/Warehouse.EventLog.API.csproj Infrastructure/EventLog/Warehouse.EventLog.API/
+COPY src/Infrastructure/Gateway/Warehouse.Gateway/Warehouse.Gateway.csproj Infrastructure/Gateway/Warehouse.Gateway/
 COPY src/Interfaces/Auth/Warehouse.Auth.API/Warehouse.Auth.API.csproj Interfaces/Auth/Warehouse.Auth.API/
 COPY src/Interfaces/Customers/Warehouse.Customers.API/Warehouse.Customers.API.csproj Interfaces/Customers/Warehouse.Customers.API/
 COPY src/Interfaces/Inventory/Warehouse.Inventory.API/Warehouse.Inventory.API.csproj Interfaces/Inventory/Warehouse.Inventory.API/

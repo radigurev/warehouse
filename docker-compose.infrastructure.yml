@@ -200,7 +200,7 @@ services:
       context: .
       dockerfile: docker/dotnet.Dockerfile
       args:
-        PROJECT_PATH: Gateway/Warehouse.Gateway/Warehouse.Gateway.csproj
+        PROJECT_PATH: Infrastructure/Gateway/Warehouse.Gateway/Warehouse.Gateway.csproj
         ASSEMBLY_NAME: Warehouse.Gateway.dll
     container_name: warehouse-gateway
     ports:
