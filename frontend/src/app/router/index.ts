@@ -3,6 +3,7 @@ import type { RouteRecordRaw } from 'vue-router';
 import { authRoutes } from './auth.routes';
 import { customerRoutes } from './customers.routes';
 import { inventoryRoutes } from './inventory.routes';
+import { purchasingRoutes } from './purchasing.routes';
 import { settingsRoutes } from './settings.routes';
 
 const routes: RouteRecordRaw[] = [
@@ -16,7 +17,7 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     component: () => import('@shared/components/templates/DefaultLayout.vue'),
     meta: { requiresAuth: true },
-    children: [...authRoutes, ...customerRoutes, ...inventoryRoutes, ...settingsRoutes],
+    children: [...authRoutes, ...customerRoutes, ...inventoryRoutes, ...purchasingRoutes, ...settingsRoutes],
   },
 ];
 

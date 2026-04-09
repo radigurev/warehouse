@@ -356,6 +356,126 @@
           </v-expand-transition>
         </template>
 
+        <!-- Purchasing section -->
+        <v-list-group v-if="!layout.sidebarCollapsed" value="purchasing">
+          <template #activator="{ props: groupProps }">
+            <v-list-item
+              v-bind="groupProps"
+              prepend-icon="mdi-cart"
+              :title="t('nav.purchasing')"
+              rounded="xl"
+            />
+          </template>
+
+          <v-list-item
+            to="/purchasing/purchase-orders"
+            prepend-icon="mdi-file-document-outline"
+            :title="t('nav.purchaseOrders')"
+            :active="route.path === '/purchasing/purchase-orders'"
+            rounded="xl"
+          />
+          <v-list-item
+            to="/purchasing/suppliers"
+            prepend-icon="mdi-domain"
+            :title="t('nav.suppliers')"
+            :active="route.path === '/purchasing/suppliers'"
+            rounded="xl"
+          />
+          <v-list-item
+            to="/purchasing/supplier-categories"
+            prepend-icon="mdi-tag-multiple-outline"
+            :title="t('nav.supplierCategories')"
+            :active="route.path === '/purchasing/supplier-categories'"
+            rounded="xl"
+          />
+          <v-list-item
+            to="/purchasing/goods-receipts"
+            prepend-icon="mdi-package-down"
+            :title="t('nav.goodsReceipts')"
+            :active="route.path === '/purchasing/goods-receipts'"
+            rounded="xl"
+          />
+          <v-list-item
+            to="/purchasing/supplier-returns"
+            prepend-icon="mdi-package-up"
+            :title="t('nav.supplierReturns')"
+            :active="route.path === '/purchasing/supplier-returns'"
+            rounded="xl"
+          />
+          <v-list-item
+            to="/purchasing/purchase-events"
+            prepend-icon="mdi-history"
+            :title="t('nav.purchaseEvents')"
+            :active="route.path === '/purchasing/purchase-events'"
+            rounded="xl"
+          />
+        </v-list-group>
+
+        <template v-else>
+          <v-list-item
+            prepend-icon="mdi-cart"
+            density="compact"
+            rounded="xl"
+            :class="['mt-2', { 'rail-admin-parent': purchasingRailExpanded }]"
+            @click="purchasingRailExpanded = !purchasingRailExpanded"
+          >
+            <template #append>
+              <v-icon
+                icon="mdi-chevron-down"
+                size="x-small"
+                :class="['rail-arrow', { 'rail-arrow--open': purchasingRailExpanded }]"
+              />
+            </template>
+          </v-list-item>
+
+          <v-expand-transition>
+            <div v-show="purchasingRailExpanded" class="rail-admin-items">
+              <v-list-item
+                to="/purchasing/purchase-orders"
+                prepend-icon="mdi-file-document-outline"
+                :active="route.path === '/purchasing/purchase-orders'"
+                rounded="xl"
+                class="rail-admin-item"
+              />
+              <v-list-item
+                to="/purchasing/suppliers"
+                prepend-icon="mdi-domain"
+                :active="route.path === '/purchasing/suppliers'"
+                rounded="xl"
+                class="rail-admin-item"
+              />
+              <v-list-item
+                to="/purchasing/supplier-categories"
+                prepend-icon="mdi-tag-multiple-outline"
+                :active="route.path === '/purchasing/supplier-categories'"
+                rounded="xl"
+                class="rail-admin-item"
+              />
+              <v-list-item
+                to="/purchasing/goods-receipts"
+                prepend-icon="mdi-package-down"
+                :active="route.path === '/purchasing/goods-receipts'"
+                rounded="xl"
+                class="rail-admin-item"
+              />
+              <v-list-item
+                to="/purchasing/supplier-returns"
+                prepend-icon="mdi-package-up"
+                :active="route.path === '/purchasing/supplier-returns'"
+                rounded="xl"
+                class="rail-admin-item"
+              />
+              <v-list-item
+                to="/purchasing/purchase-events"
+                prepend-icon="mdi-history"
+                :active="route.path === '/purchasing/purchase-events'"
+                rounded="xl"
+                class="rail-admin-item"
+              />
+            </div>
+          </v-expand-transition>
+        </template>
+
         <!-- Inventory — Operations section -->
         <v-list-group v-if="!layout.sidebarCollapsed" value="inventory-operations">
           <template #activator="{ props: groupProps }">
@@ -564,11 +684,12 @@ const adminRailExpanded = ref(true);
 const customerRailExpanded = ref(true);
 const productsRailExpanded = ref(true);
 const warehouseRailExpanded = ref(true);
+const purchasingRailExpanded = ref(true);
 const operationsRailExpanded = ref(true);
 
 const currentLocale = computed(() => locale.value);
 
-const formPageRoutes = ['user-create', 'user-edit', 'user-password', 'user-roles', 'role-create', 'role-edit', 'role-permissions', 'permission-create', 'customer-create', 'customer-edit', 'category-create', 'category-edit', 'settings-edit-profile', 'settings-change-password', 'product-create', 'product-edit', 'product-category-create', 'product-category-edit', 'unit-create', 'unit-edit', 'warehouse-create', 'warehouse-edit', 'batch-create', 'batch-edit', 'adjustment-create', 'transfer-create', 'stocktake-create'];
+const formPageRoutes = ['user-create', 'user-edit', 'user-password', 'user-roles', 'role-create', 'role-edit', 'role-permissions', 'permission-create', 'customer-create', 'customer-edit', 'category-create', 'category-edit', 'settings-edit-profile', 'settings-change-password', 'product-create', 'product-edit', 'product-category-create', 'product-category-edit', 'unit-create', 'unit-edit', 'warehouse-create', 'warehouse-edit', 'batch-create', 'batch-edit', 'adjustment-create', 'transfer-create', 'stocktake-create', 'purchase-order-create', 'purchase-order-edit', 'supplier-create', 'supplier-edit', 'supplier-category-create', 'supplier-category-edit', 'goods-receipt-create', 'supplier-return-create'];
 const isFormPage = computed(() => formPageRoutes.includes(route.name as string));
 
 const pageTitle = computed(() => {
