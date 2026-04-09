@@ -1,6 +1,6 @@
 # SDD-OBS-001 — Observability (Centralized Logging & Distributed Tracing)
 
-> Status: Active
+> Status: Implemented
 > Last updated: 2026-04-07
 > Owner: TBD
 > Category: Infrastructure

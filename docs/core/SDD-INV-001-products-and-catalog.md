@@ -1,6 +1,6 @@
 # SDD-INV-001 — Products and Catalog
 
-> Status: Active
+> Status: Implemented
 > Last updated: 2026-04-08
 > Owner: TBD
 > Category: Core

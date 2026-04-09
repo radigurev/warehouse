@@ -1,6 +1,6 @@
 # SDD-INFRA-001 — Shared Infrastructure Library
 
-> Status: Active
+> Status: Implemented
 > Last updated: 2026-04-07
 > Owner: TBD
 > Category: Infrastructure

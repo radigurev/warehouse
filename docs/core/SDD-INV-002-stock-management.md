@@ -1,6 +1,6 @@
 # SDD-INV-002 — Stock Management
 
-> Status: Active
+> Status: Implemented
 > Last updated: 2026-04-08
 > Owner: TBD
 > Category: Core

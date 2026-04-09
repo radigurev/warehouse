@@ -1,6 +1,6 @@
 # SDD-INFRA-002 — API Gateway
 
-> Status: Active
+> Status: Implemented
 > Last updated: 2026-04-07
 > Owner: TBD
 > Category: Infrastructure
