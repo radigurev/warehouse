@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AutoMapper;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +22,9 @@ namespace Warehouse.Auth.API.Services;
 /// </summary>
 public sealed class RoleService : IRoleService
 {
+    private const string CacheKey = "auth:roles:all";
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(30);
+
     private readonly AuthDbContext _context;
     private readonly IAuditService _auditService;
     private readonly IMapper _mapper;
@@ -63,29 +67,21 @@ public sealed class RoleService : IRoleService
         PaginationParams pagination,
         CancellationToken cancellationToken)
     {
-        IQueryable<Role> query = _context.Roles
+        IReadOnlyList<RoleDto>? cached = await GetCachedListAsync(cancellationToken).ConfigureAwait(false);
+
+        if (cached is not null)
+            return PaginateFromList(cached, pagination);
+
+        List<Role> roles = await _context.Roles
             .AsNoTracking()
-            .OrderBy(r => r.Name);
-
-        int totalCount = await query.CountAsync(cancellationToken).ConfigureAwait(false);
-
-        List<Role> roles = await query
-            .Skip(pagination.Skip)
-            .Take(pagination.EffectivePageSize)
+            .OrderBy(r => r.Name)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        IReadOnlyList<RoleDto> dtos = _mapper.Map<IReadOnlyList<RoleDto>>(roles);
+        IReadOnlyList<RoleDto> allDtos = _mapper.Map<IReadOnlyList<RoleDto>>(roles);
+        await SetCacheAsync(allDtos, cancellationToken).ConfigureAwait(false);
 
-        PaginatedResponse<RoleDto> response = new()
-        {
-            Items = dtos,
-            Page = pagination.Page,
-            PageSize = pagination.EffectivePageSize,
-            TotalCount = totalCount
-        };
-
-        return Result<PaginatedResponse<RoleDto>>.Success(response);
+        return PaginateFromList(allDtos, pagination);
     }
 
     /// <inheritdoc />
@@ -106,6 +102,7 @@ public sealed class RoleService : IRoleService
         _context.Roles.Add(role);
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         await _auditService.LogAsync(null, "CreateRole", "roles", null, ipAddress, cancellationToken).ConfigureAwait(false);
+        await InvalidateRolesCacheAsync(cancellationToken).ConfigureAwait(false);
 
         Role? loaded = await GetRoleWithPermissionsAsync(role.Id, cancellationToken).ConfigureAwait(false);
         RoleDetailDto dto = _mapper.Map<RoleDetailDto>(loaded!);
@@ -132,6 +129,7 @@ public sealed class RoleService : IRoleService
 
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         await _auditService.LogAsync(null, "UpdateRole", "roles", null, ipAddress, cancellationToken).ConfigureAwait(false);
+        await InvalidateRolesCacheAsync(cancellationToken).ConfigureAwait(false);
 
         RoleDetailDto dto = _mapper.Map<RoleDetailDto>(role);
         return Result<RoleDetailDto>.Success(dto);
@@ -154,6 +152,7 @@ public sealed class RoleService : IRoleService
         _context.Roles.Remove(role);
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         await _auditService.LogAsync(null, "DeleteRole", "roles", null, ipAddress, cancellationToken).ConfigureAwait(false);
+        await InvalidateRolesCacheAsync(cancellationToken).ConfigureAwait(false);
         return Result.Success();
     }
 
@@ -220,6 +219,51 @@ public sealed class RoleService : IRoleService
         await _auditService.LogAsync(null, "RemovePermission", "roles", null, ipAddress, cancellationToken).ConfigureAwait(false);
         await InvalidateRoleUsersCacheAsync(roleId, cancellationToken).ConfigureAwait(false);
         return Result.Success();
+    }
+
+    /// <summary>
+    /// Paginates an in-memory list of DTOs.
+    /// </summary>
+    private static Result<PaginatedResponse<RoleDto>> PaginateFromList(
+        IReadOnlyList<RoleDto> items,
+        PaginationParams pagination)
+    {
+        PaginatedResponse<RoleDto> response = new()
+        {
+            Items = items.Skip(pagination.Skip).Take(pagination.EffectivePageSize).ToList(),
+            Page = pagination.Page,
+            PageSize = pagination.EffectivePageSize,
+            TotalCount = items.Count
+        };
+
+        return Result<PaginatedResponse<RoleDto>>.Success(response);
+    }
+
+    /// <summary>
+    /// Attempts to read the full roles list from cache.
+    /// </summary>
+    private async Task<IReadOnlyList<RoleDto>?> GetCachedListAsync(CancellationToken cancellationToken)
+    {
+        byte[]? cached = await _cache.GetAsync(CacheKey, cancellationToken).ConfigureAwait(false);
+        return cached is null ? null : JsonSerializer.Deserialize<List<RoleDto>>(cached);
+    }
+
+    /// <summary>
+    /// Stores the full roles list in cache.
+    /// </summary>
+    private async Task SetCacheAsync(IReadOnlyList<RoleDto> items, CancellationToken cancellationToken)
+    {
+        byte[] serialized = JsonSerializer.SerializeToUtf8Bytes(items);
+        DistributedCacheEntryOptions options = new() { AbsoluteExpirationRelativeToNow = CacheDuration };
+        await _cache.SetAsync(CacheKey, serialized, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Removes the roles list from cache.
+    /// </summary>
+    private async Task InvalidateRolesCacheAsync(CancellationToken cancellationToken)
+    {
+        await _cache.RemoveAsync(CacheKey, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<Role?> GetRoleWithPermissionsAsync(int id, CancellationToken cancellationToken)
