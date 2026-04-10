@@ -54,6 +54,7 @@ static void ConfigureServices(WebApplicationBuilder builder)
     services.AddWarehouseHealthChecks(configuration);
     services.AddWarehouseRedisCache(configuration);
     services.AddWarehouseMessageBus(configuration);
+    services.AddSequenceGenerator<CustomersDbContext>();
     services.AddWarehouseTracing(configuration, "warehouse-customers-api");
     ConfigureApplicationServices(services);
 

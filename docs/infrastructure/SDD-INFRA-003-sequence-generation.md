@@ -1,7 +1,7 @@
 # SDD-INFRA-003 — Centralized Sequence Generation
 
-> Status: Draft
-> Last updated: 2026-04-09
+> Status: Implemented
+> Last updated: 2026-04-10
 > Owner: TBD
 > Category: Infrastructure
 
@@ -324,7 +324,7 @@ COMMIT TRANSACTION;
   - Covers all 12 sequence definitions (PO, GR, SR, SO, PL, PKG, SHP, CR, SUPP, PROD, CUST, BATCH)
   - Defines database schema, atomic increment strategy, DI registration, and concurrency guarantees
   - Introduces `SHP-` prefix for shipments (replacing inline `SH-`) and `CR-` prefix for customer returns (replacing inline `RMA-`)
-  - Status: Draft (not yet implemented)
+  - Status: Implemented
 
 ---
 
@@ -387,5 +387,7 @@ COMMIT TRANSACTION;
 | `src/Warehouse.Infrastructure/Sequences/ISequenceGenerator.cs` | Service interface with `NextAsync` and `NextBatchNumberAsync` |
 | `src/Warehouse.Infrastructure/Sequences/SequenceGenerator.cs` | Implementation with raw SQL atomic increment |
 | `src/Warehouse.Infrastructure/Sequences/SequenceDefinition.cs` | Configuration record for a sequence pattern |
+| `src/Warehouse.Infrastructure/Sequences/SequenceDefinitions.cs` | Built-in definitions for all 12 sequence keys |
 | `src/Warehouse.Common/Enums/SequenceResetPolicy.cs` | Enum: `Daily`, `Monthly`, `Never` |
-| `src/Warehouse.Infrastructure/Extensions/ServiceCollectionExtensions.cs` | Modified -- add `AddSequenceGenerator()` |
+| `src/Warehouse.Infrastructure/Extensions/ServiceCollectionExtensions.cs` | Modified -- add `AddSequenceGenerator<TContext>()` |
+| `src/Databases/Scripts/v1.0.0_AddInfrastructureSequencesTable.sql` | Shared SQL migration script for `infrastructure.Sequences` table |

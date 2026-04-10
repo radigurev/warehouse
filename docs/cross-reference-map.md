@@ -504,8 +504,12 @@ This document provides a bidirectional mapping between SDD specifications and so
 | `src/Warehouse.Infrastructure/Sequences/ISequenceGenerator.cs` | Interface | Service interface with `NextAsync` and `NextBatchNumberAsync` |
 | `src/Warehouse.Infrastructure/Sequences/SequenceGenerator.cs` | Service | Implementation with raw SQL atomic increment |
 | `src/Warehouse.Infrastructure/Sequences/SequenceDefinition.cs` | Configuration | Sequence pattern definition record |
+| `src/Warehouse.Infrastructure/Sequences/SequenceDefinitions.cs` | Configuration | Built-in definitions for all 12 sequence keys |
 | `src/Warehouse.Common/Enums/SequenceResetPolicy.cs` | Enum | Reset policy: `Daily`, `Monthly`, `Never` |
-| `src/Warehouse.Infrastructure/Extensions/ServiceCollectionExtensions.cs` | Extension | `AddSequenceGenerator()` DI registration |
+| `src/Warehouse.Infrastructure/Extensions/ServiceCollectionExtensions.cs` | Extension | `AddSequenceGenerator<TContext>()` DI registration |
+| `src/Databases/Scripts/v1.0.0_AddInfrastructureSequencesTable.sql` | Migration | Shared SQL script for `infrastructure.Sequences` table |
+| `src/Warehouse.Infrastructure.Tests/Sequences/SequenceGeneratorTests.cs` | Test | Unit and integration tests for sequence generation |
+| `src/Warehouse.Infrastructure.Tests/Sequences/SequenceDefinitionTests.cs` | Test | Validation tests for sequence definitions |
 
 ### Section 2 Addendum — New UI Specs
 
@@ -538,7 +542,11 @@ This document provides a bidirectional mapping between SDD specifications and so
 | `src/Warehouse.Infrastructure/Sequences/ISequenceGenerator.cs` | SDD-INFRA-003 |
 | `src/Warehouse.Infrastructure/Sequences/SequenceGenerator.cs` | SDD-INFRA-003 |
 | `src/Warehouse.Infrastructure/Sequences/SequenceDefinition.cs` | SDD-INFRA-003 |
+| `src/Warehouse.Infrastructure/Sequences/SequenceDefinitions.cs` | SDD-INFRA-003 |
 | `src/Warehouse.Common/Enums/SequenceResetPolicy.cs` | SDD-INFRA-003 |
+| `src/Databases/Scripts/v1.0.0_AddInfrastructureSequencesTable.sql` | SDD-INFRA-003 |
+| `src/Warehouse.Infrastructure.Tests/Sequences/SequenceGeneratorTests.cs` | SDD-INFRA-003 |
+| `src/Warehouse.Infrastructure.Tests/Sequences/SequenceDefinitionTests.cs` | SDD-INFRA-003 |
 | `src/Interfaces/Auth/Warehouse.Auth.API/Services/AuditService.cs` | SDD-AUTH-001, SDD-EVTLOG-001 |
 | `src/Interfaces/Purchasing/Warehouse.Purchasing.API/Services/PurchaseEventService.cs` | SDD-PURCH-001, SDD-EVTLOG-001 |
 | `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Services/FulfillmentEventService.cs` | SDD-FULF-001, SDD-EVTLOG-001 |

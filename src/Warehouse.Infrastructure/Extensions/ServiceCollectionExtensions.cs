@@ -2,6 +2,7 @@ using System.Text;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -14,6 +15,7 @@ using OpenTelemetry.Trace;
 using Warehouse.Infrastructure.Authorization;
 using Warehouse.Infrastructure.Configuration;
 using Warehouse.Infrastructure.Http;
+using Warehouse.Infrastructure.Sequences;
 
 namespace Warehouse.Infrastructure.Extensions;
 
@@ -328,6 +330,33 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddWarehouseFeatureFlags(this IServiceCollection services)
     {
         services.AddFeatureManagement();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers the centralized <see cref="ISequenceGenerator"/> service (scoped)
+    /// with all built-in sequence definitions. The generator executes raw SQL against
+    /// the <typeparamref name="TContext"/> database connection.
+    /// </summary>
+    /// <typeparam name="TContext">
+    /// The calling service's <see cref="DbContext"/> type (e.g., <c>InventoryDbContext</c>).
+    /// </typeparam>
+    public static IServiceCollection AddSequenceGenerator<TContext>(this IServiceCollection services)
+        where TContext : DbContext
+    {
+        IReadOnlyDictionary<string, SequenceDefinition> definitions =
+            SequenceDefinitions.GetBuiltInDefinitions();
+
+        services.AddSingleton(definitions);
+
+        services.AddScoped<ISequenceGenerator>(sp =>
+        {
+            TContext context = sp.GetRequiredService<TContext>();
+            IReadOnlyDictionary<string, SequenceDefinition> defs =
+                sp.GetRequiredService<IReadOnlyDictionary<string, SequenceDefinition>>();
+            return new SequenceGenerator(context, defs);
+        });
 
         return services;
     }
