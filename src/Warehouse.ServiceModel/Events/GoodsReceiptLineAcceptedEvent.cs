@@ -52,6 +52,16 @@ public sealed record GoodsReceiptLineAcceptedEvent
     public DateOnly? ExpiryDate { get; init; }
 
     /// <summary>
+    /// Gets the purchase order number for movement reference traceability.
+    /// </summary>
+    public required string PurchaseOrderNumber { get; init; }
+
+    /// <summary>
+    /// Gets the goods receipt number for movement notes traceability.
+    /// </summary>
+    public required string GoodsReceiptNumber { get; init; }
+
+    /// <summary>
     /// Gets the user who accepted the line.
     /// </summary>
     public required int AcceptedByUserId { get; init; }

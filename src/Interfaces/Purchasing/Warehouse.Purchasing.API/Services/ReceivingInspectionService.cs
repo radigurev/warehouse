@@ -64,6 +64,7 @@ public sealed class ReceivingInspectionService : BasePurchasingEntityService, IR
     {
         GoodsReceiptLine? line = await Context.GoodsReceiptLines
             .Include(l => l.GoodsReceipt)
+                .ThenInclude(gr => gr.PurchaseOrder)
             .Include(l => l.PurchaseOrderLine)
             .FirstOrDefaultAsync(l => l.Id == lineId && l.GoodsReceiptId == receiptId, cancellationToken).ConfigureAwait(false);
         if (line is null) return Result<GoodsReceiptLineDto>.Failure("RECEIPT_LINE_NOT_FOUND", "Goods receipt line not found.", 404);
@@ -89,6 +90,8 @@ public sealed class ReceivingInspectionService : BasePurchasingEntityService, IR
                     WarehouseId = line.GoodsReceipt.WarehouseId, LocationId = line.GoodsReceipt.LocationId,
                     Quantity = line.ReceivedQuantity, BatchNumber = line.BatchNumber,
                     ManufacturingDate = line.ManufacturingDate, ExpiryDate = line.ExpiryDate,
+                    PurchaseOrderNumber = line.GoodsReceipt.PurchaseOrder.OrderNumber,
+                    GoodsReceiptNumber = line.GoodsReceipt.ReceiptNumber,
                     AcceptedByUserId = userId, AcceptedAtUtc = DateTime.UtcNow
                 }, cancellationToken).ConfigureAwait(false);
             }
