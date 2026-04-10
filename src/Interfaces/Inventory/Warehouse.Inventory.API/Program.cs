@@ -4,10 +4,13 @@ using Microsoft.EntityFrameworkCore;
 using NLog;
 using NLog.Web;
 using Warehouse.Infrastructure.Extensions;
+using Warehouse.Inventory.API.Consumers;
+using Warehouse.Inventory.API.Interfaces;
 using Warehouse.Inventory.API.Interfaces.Products;
 using Warehouse.Inventory.API.Interfaces.Stock;
 using Warehouse.Inventory.API.Interfaces.Stocktake;
 using Warehouse.Inventory.API.Interfaces.Warehouse;
+using Warehouse.Inventory.API.Services;
 using Warehouse.Inventory.API.Services.Products;
 using Warehouse.Inventory.API.Services.Stock;
 using Warehouse.Inventory.API.Services.Stocktake;
@@ -59,7 +62,12 @@ static void ConfigureServices(WebApplicationBuilder builder)
     ConfigureAutoMapper(services);
     services.AddWarehouseHealthChecks(configuration);
     services.AddWarehouseRedisCache(configuration);
-    services.AddWarehouseMessageBus(configuration);
+    services.AddWarehouseMessageBus(configuration, bus =>
+    {
+        bus.AddConsumer<GoodsReceiptCompletedConsumer>();
+        bus.AddConsumer<GoodsReceiptLineAcceptedConsumer>();
+    });
+    services.AddSequenceGenerator<InventoryDbContext>();
     services.AddWarehouseTracing(configuration, "warehouse-inventory-api");
     ConfigureApplicationServices(services);
 
@@ -89,6 +97,7 @@ static void ConfigureAutoMapper(IServiceCollection services)
 
 static void ConfigureApplicationServices(IServiceCollection services)
 {
+    services.AddScoped<IReceiptStockIntakeService, ReceiptStockIntakeService>();
     services.AddScoped<IProductService, ProductService>();
     services.AddScoped<IProductCategoryService, ProductCategoryService>();
     services.AddScoped<IUnitOfMeasureService, UnitOfMeasureService>();

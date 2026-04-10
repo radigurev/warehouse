@@ -1,7 +1,7 @@
 # SDD-INV-005 --- Batch Creation on Goods Receipt
 
-> Status: Draft
-> Last updated: 2026-04-09
+> Status: Implemented
+> Last updated: 2026-04-10
 > Owner: TBD
 > Category: Core
 
@@ -230,6 +230,7 @@ Since the consumer operates as an asynchronous event handler (no HTTP boundary),
 | Version | Date | Type | Description |
 |---|---|---|---|
 | v1 | 2026-04-09 | Initial | Initial specification for batch creation on goods receipt flow. Covers `GoodsReceiptCompletedEvent` and `GoodsReceiptLineAcceptedEvent` consumers, batch resolution, stock movement creation, stock level upsert, idempotency, and partial failure handling. |
+| v2 | 2026-04-10 | Implemented | Implemented consumers, ReceiptStockIntakeService, and ReceiptLineContext. Added `PurchaseOrderNumber` and `GoodsReceiptNumber` to `GoodsReceiptLineAcceptedEvent` for movement traceability. Updated ReceivingInspectionService publisher. |
 
 ---
 
@@ -304,7 +305,7 @@ Since the consumer operates as an asynchronous event handler (no HTTP boundary),
 | `src/Interfaces/Inventory/Warehouse.Inventory.API/Consumers/GoodsReceiptCompletedConsumer.cs` | Consumer | MassTransit consumer for `GoodsReceiptCompletedEvent` |
 | `src/Interfaces/Inventory/Warehouse.Inventory.API/Consumers/GoodsReceiptLineAcceptedConsumer.cs` | Consumer | MassTransit consumer for `GoodsReceiptLineAcceptedEvent` |
 | `src/Interfaces/Inventory/Warehouse.Inventory.API/Services/ReceiptStockIntakeService.cs` | Service | Shared logic for batch resolution, movement creation, stock level upsert |
-| `src/Interfaces/Inventory/Warehouse.Inventory.API/Interfaces/IReceiptStockIntakeService.cs` | Interface | Service interface for receipt stock intake |
+| `src/Interfaces/Inventory/Warehouse.Inventory.API/Interfaces/IReceiptStockIntakeService.cs` | Interface | Service interface and `ReceiptLineContext` parameter object |
 | `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Consumers/GoodsReceiptCompletedConsumerTests.cs` | Test | Unit tests for the consumer |
 | `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Consumers/GoodsReceiptLineAcceptedConsumerTests.cs` | Test | Unit tests for the accepted line consumer |
 | `src/Interfaces/Inventory/Warehouse.Inventory.API.Tests/Unit/Services/ReceiptStockIntakeServiceTests.cs` | Test | Unit tests for batch resolution logic |
@@ -315,13 +316,14 @@ Since the consumer operates as an asynchronous event handler (no HTTP boundary),
 | File | Type | Change |
 |---|---|---|
 | `src/Interfaces/Inventory/Warehouse.Inventory.API/Program.cs` | DI root | Register consumers and `IReceiptStockIntakeService` |
+| `src/Warehouse.ServiceModel/Events/GoodsReceiptLineAcceptedEvent.cs` | Event | Added `PurchaseOrderNumber` and `GoodsReceiptNumber` for movement traceability |
+| `src/Interfaces/Purchasing/Warehouse.Purchasing.API/Services/ReceivingInspectionService.cs` | Service | Updated publisher to populate new event fields; added PurchaseOrder ThenInclude |
 
 ### Existing Files Referenced
 
 | File | Type | Role |
 |---|---|---|
 | `src/Warehouse.ServiceModel/Events/GoodsReceiptCompletedEvent.cs` | Event | Event contract (already exists) |
-| `src/Warehouse.ServiceModel/Events/GoodsReceiptLineAcceptedEvent.cs` | Event | Event contract (already exists) |
 | `src/Databases/Warehouse.Inventory.DBModel/Models/Batch.cs` | Entity | Batch entity |
 | `src/Databases/Warehouse.Inventory.DBModel/Models/StockMovement.cs` | Entity | Stock movement entity |
 | `src/Databases/Warehouse.Inventory.DBModel/Models/StockLevel.cs` | Entity | Stock level entity |
