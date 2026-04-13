@@ -1,7 +1,7 @@
 # CHG-ENH-005 — Error Code Localization Contract
 
-> Status: Draft
-> Last updated: 2026-04-09
+> Status: Implemented
+> Last updated: 2026-04-13
 > Owner: TBD
 > Priority: P2
 
