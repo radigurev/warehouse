@@ -15,7 +15,12 @@ using Warehouse.Inventory.API.Services.Products;
 using Warehouse.Inventory.API.Services.Stock;
 using Warehouse.Inventory.API.Services.Stocktake;
 using Warehouse.Inventory.API.Services.Warehouse;
+using Warehouse.Common.Workflow;
+using Warehouse.Inventory.API.Workflow.Adjustment;
+using Warehouse.Inventory.API.Workflow.Stocktake;
+using Warehouse.Inventory.API.Workflow.Transfer;
 using Warehouse.Inventory.DBModel;
+using Warehouse.Inventory.DBModel.Models;
 using Warehouse.Mapping.Profiles.Inventory;
 
 NLog.Logger logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
@@ -114,4 +119,26 @@ static void ConfigureApplicationServices(IServiceCollection services)
     services.AddScoped<IWarehouseTransferService, WarehouseTransferService>();
     services.AddScoped<IStocktakeSessionService, StocktakeSessionService>();
     services.AddScoped<IStocktakeCountService, StocktakeCountService>();
+
+    ConfigureWorkflowEngines(services);
+}
+
+static void ConfigureWorkflowEngines(IServiceCollection services)
+{
+    services.AddSingleton<IWorkflowState<InventoryAdjustment>, AdjustmentPendingState>();
+    services.AddSingleton<IWorkflowState<InventoryAdjustment>, AdjustmentApprovedState>();
+    services.AddSingleton<IWorkflowState<InventoryAdjustment>, AdjustmentRejectedState>();
+    services.AddSingleton<IWorkflowState<InventoryAdjustment>, AdjustmentAppliedState>();
+    services.AddSingleton<IWorkflowEngine<InventoryAdjustment>, WorkflowEngine<InventoryAdjustment>>();
+
+    services.AddSingleton<IWorkflowState<WarehouseTransfer>, TransferDraftState>();
+    services.AddSingleton<IWorkflowState<WarehouseTransfer>, TransferCompletedState>();
+    services.AddSingleton<IWorkflowState<WarehouseTransfer>, TransferCancelledState>();
+    services.AddSingleton<IWorkflowEngine<WarehouseTransfer>, WorkflowEngine<WarehouseTransfer>>();
+
+    services.AddSingleton<IWorkflowState<StocktakeSession>, SessionDraftState>();
+    services.AddSingleton<IWorkflowState<StocktakeSession>, SessionInProgressState>();
+    services.AddSingleton<IWorkflowState<StocktakeSession>, SessionCompletedState>();
+    services.AddSingleton<IWorkflowState<StocktakeSession>, SessionCancelledState>();
+    services.AddSingleton<IWorkflowEngine<StocktakeSession>, WorkflowEngine<StocktakeSession>>();
 }

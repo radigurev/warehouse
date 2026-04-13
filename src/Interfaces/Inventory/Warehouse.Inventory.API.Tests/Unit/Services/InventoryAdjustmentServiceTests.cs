@@ -2,8 +2,10 @@ using FluentAssertions;
 using MassTransit;
 using Moq;
 using Warehouse.Common.Models;
+using Warehouse.Common.Workflow;
 using Warehouse.Inventory.API.Services.Stock;
 using Warehouse.Inventory.API.Tests.Fixtures;
+using Warehouse.Inventory.API.Workflow.Adjustment;
 using Warehouse.Inventory.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Inventory;
 using Warehouse.ServiceModel.Requests.Inventory;
@@ -26,7 +28,23 @@ public sealed class InventoryAdjustmentServiceTests : InventoryTestBase
     {
         base.SetUp();
         _mockPublishEndpoint = new Mock<IPublishEndpoint>();
-        _sut = new InventoryAdjustmentService(Context, Mapper, _mockPublishEndpoint.Object);
+        IWorkflowEngine<InventoryAdjustment> workflowEngine = CreateAdjustmentWorkflowEngine();
+        _sut = new InventoryAdjustmentService(Context, Mapper, _mockPublishEndpoint.Object, workflowEngine);
+    }
+
+    /// <summary>
+    /// Creates a workflow engine with all adjustment states registered.
+    /// </summary>
+    private static IWorkflowEngine<InventoryAdjustment> CreateAdjustmentWorkflowEngine()
+    {
+        List<IWorkflowState<InventoryAdjustment>> states =
+        [
+            new AdjustmentPendingState(),
+            new AdjustmentApprovedState(),
+            new AdjustmentRejectedState(),
+            new AdjustmentAppliedState()
+        ];
+        return new WorkflowEngine<InventoryAdjustment>(states);
     }
 
     [Test]

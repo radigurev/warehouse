@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Warehouse.Common.Enums;
 using Warehouse.Common.Models;
+using Warehouse.Common.Workflow;
 using Warehouse.GenericFiltering;
 using Warehouse.Inventory.API.Interfaces.Stock;
 using Warehouse.Inventory.API.Services.Base;
@@ -18,19 +19,26 @@ namespace Warehouse.Inventory.API.Services.Stock;
 
 /// <summary>
 /// Implements inventory adjustment operations: create, approve, reject, apply, get, and search.
+/// Uses the workflow engine for state transition validation and field assignments.
 /// <para>See <see cref="IInventoryAdjustmentService"/>.</para>
 /// </summary>
 public sealed class InventoryAdjustmentService : BaseInventoryEntityService, IInventoryAdjustmentService
 {
     private readonly IPublishEndpoint _publishEndpoint;
+    private readonly IWorkflowEngine<InventoryAdjustment> _workflowEngine;
 
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
-    public InventoryAdjustmentService(InventoryDbContext context, IMapper mapper, IPublishEndpoint publishEndpoint)
+    public InventoryAdjustmentService(
+        InventoryDbContext context,
+        IMapper mapper,
+        IPublishEndpoint publishEndpoint,
+        IWorkflowEngine<InventoryAdjustment> workflowEngine)
         : base(context, mapper)
     {
         _publishEndpoint = publishEndpoint;
+        _workflowEngine = workflowEngine;
     }
 
     /// <inheritdoc />
@@ -123,12 +131,11 @@ public sealed class InventoryAdjustmentService : BaseInventoryEntityService, IIn
         if (adjustment is null)
             return Result<InventoryAdjustmentDetailDto>.Failure("ADJUSTMENT_NOT_FOUND", "Inventory adjustment not found.", 404);
 
-        if (adjustment.Status != "Pending")
+        if (!_workflowEngine.CanTransition(adjustment.Status, "Approved"))
             return Result<InventoryAdjustmentDetailDto>.Failure("ADJUSTMENT_NOT_PENDING", "Only pending adjustments can be approved.", 409);
 
-        adjustment.Status = "Approved";
-        adjustment.ApprovedAtUtc = DateTime.UtcNow;
-        adjustment.ApprovedByUserId = userId;
+        WorkflowContext context = new() { UserId = userId, TimestampUtc = DateTime.UtcNow };
+        await _workflowEngine.TransitionAsync(adjustment, adjustment.Status, "Approved", context, cancellationToken).ConfigureAwait(false);
 
         if (!string.IsNullOrWhiteSpace(request.Notes))
             adjustment.Notes = $"{adjustment.Notes}\n[Approval] {request.Notes}".Trim();
@@ -151,12 +158,11 @@ public sealed class InventoryAdjustmentService : BaseInventoryEntityService, IIn
         if (adjustment is null)
             return Result<InventoryAdjustmentDetailDto>.Failure("ADJUSTMENT_NOT_FOUND", "Inventory adjustment not found.", 404);
 
-        if (adjustment.Status != "Pending")
+        if (!_workflowEngine.CanTransition(adjustment.Status, "Rejected"))
             return Result<InventoryAdjustmentDetailDto>.Failure("ADJUSTMENT_NOT_PENDING", "Only pending adjustments can be rejected.", 409);
 
-        adjustment.Status = "Rejected";
-        adjustment.RejectedAtUtc = DateTime.UtcNow;
-        adjustment.RejectedByUserId = userId;
+        WorkflowContext context = new() { UserId = userId, TimestampUtc = DateTime.UtcNow };
+        await _workflowEngine.TransitionAsync(adjustment, adjustment.Status, "Rejected", context, cancellationToken).ConfigureAwait(false);
         adjustment.RejectionReason = request.Notes;
 
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -176,7 +182,7 @@ public sealed class InventoryAdjustmentService : BaseInventoryEntityService, IIn
         if (adjustment is null)
             return Result<InventoryAdjustmentDetailDto>.Failure("ADJUSTMENT_NOT_FOUND", "Inventory adjustment not found.", 404);
 
-        if (adjustment.Status != "Approved")
+        if (!_workflowEngine.CanTransition(adjustment.Status, "Applied"))
             return Result<InventoryAdjustmentDetailDto>.Failure("ADJUSTMENT_NOT_APPROVED", "Only approved adjustments can be applied.", 409);
 
         await using IDbContextTransaction transaction = await Context.Database
@@ -189,9 +195,8 @@ public sealed class InventoryAdjustmentService : BaseInventoryEntityService, IIn
             return Result<InventoryAdjustmentDetailDto>.Failure(stockValidation.ErrorCode!, stockValidation.ErrorMessage!, stockValidation.StatusCode!.Value);
         }
 
-        adjustment.Status = "Applied";
-        adjustment.AppliedAtUtc = DateTime.UtcNow;
-        adjustment.AppliedByUserId = userId;
+        WorkflowContext context = new() { UserId = userId, TimestampUtc = DateTime.UtcNow };
+        await _workflowEngine.TransitionAsync(adjustment, adjustment.Status, "Applied", context, cancellationToken).ConfigureAwait(false);
 
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);

@@ -2,8 +2,10 @@ using FluentAssertions;
 using MassTransit;
 using Moq;
 using Warehouse.Common.Models;
+using Warehouse.Common.Workflow;
 using Warehouse.Inventory.API.Services.Warehouse;
 using Warehouse.Inventory.API.Tests.Fixtures;
+using Warehouse.Inventory.API.Workflow.Transfer;
 using Warehouse.Inventory.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Inventory;
 using Warehouse.ServiceModel.Requests.Inventory;
@@ -12,7 +14,7 @@ namespace Warehouse.Inventory.API.Tests.Unit.Services;
 
 /// <summary>
 /// Unit tests for warehouse transfer state machine: create, complete, cancel.
-/// <para>Links to specification SDD-INV-002.</para>
+/// <para>Links to specification SDD-INV-003.</para>
 /// </summary>
 [TestFixture]
 [Category("SDD-INV-003")]
@@ -26,7 +28,22 @@ public sealed class WarehouseTransferServiceTests : InventoryTestBase
     {
         base.SetUp();
         _mockPublishEndpoint = new Mock<IPublishEndpoint>();
-        _sut = new WarehouseTransferService(Context, Mapper, _mockPublishEndpoint.Object);
+        IWorkflowEngine<WarehouseTransfer> workflowEngine = CreateTransferWorkflowEngine();
+        _sut = new WarehouseTransferService(Context, Mapper, _mockPublishEndpoint.Object, workflowEngine);
+    }
+
+    /// <summary>
+    /// Creates a workflow engine with all transfer states registered.
+    /// </summary>
+    private static IWorkflowEngine<WarehouseTransfer> CreateTransferWorkflowEngine()
+    {
+        List<IWorkflowState<WarehouseTransfer>> states =
+        [
+            new TransferDraftState(),
+            new TransferCompletedState(),
+            new TransferCancelledState()
+        ];
+        return new WorkflowEngine<WarehouseTransfer>(states);
     }
 
     [Test]

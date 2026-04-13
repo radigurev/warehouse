@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Warehouse.Common.Enums;
 using Warehouse.Common.Models;
+using Warehouse.Common.Workflow;
 using Warehouse.GenericFiltering;
 using Warehouse.Inventory.API.Interfaces.Warehouse;
 using Warehouse.Inventory.API.Services.Base;
@@ -18,19 +19,26 @@ namespace Warehouse.Inventory.API.Services.Warehouse;
 
 /// <summary>
 /// Implements warehouse transfer operations: create, complete, cancel, get, and search.
+/// Uses the workflow engine for state transition validation and field assignments.
 /// <para>See <see cref="IWarehouseTransferService"/>.</para>
 /// </summary>
 public sealed class WarehouseTransferService : BaseInventoryEntityService, IWarehouseTransferService
 {
     private readonly IPublishEndpoint _publishEndpoint;
+    private readonly IWorkflowEngine<WarehouseTransfer> _workflowEngine;
 
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
-    public WarehouseTransferService(InventoryDbContext context, IMapper mapper, IPublishEndpoint publishEndpoint)
+    public WarehouseTransferService(
+        InventoryDbContext context,
+        IMapper mapper,
+        IPublishEndpoint publishEndpoint,
+        IWorkflowEngine<WarehouseTransfer> workflowEngine)
         : base(context, mapper)
     {
         _publishEndpoint = publishEndpoint;
+        _workflowEngine = workflowEngine;
     }
 
     /// <inheritdoc />
@@ -124,7 +132,7 @@ public sealed class WarehouseTransferService : BaseInventoryEntityService, IWare
         if (transfer is null)
             return Result<WarehouseTransferDetailDto>.Failure("TRANSFER_NOT_FOUND", "Warehouse transfer not found.", 404);
 
-        if (transfer.Status != "Draft")
+        if (!_workflowEngine.CanTransition(transfer.Status, "Completed"))
             return Result<WarehouseTransferDetailDto>.Failure("TRANSFER_NOT_DRAFT", "Only draft transfers can be completed.", 409);
 
         await using IDbContextTransaction transaction = await Context.Database
@@ -137,9 +145,8 @@ public sealed class WarehouseTransferService : BaseInventoryEntityService, IWare
             return Result<WarehouseTransferDetailDto>.Failure(stockValidation.ErrorCode!, stockValidation.ErrorMessage!, stockValidation.StatusCode!.Value);
         }
 
-        transfer.Status = "Completed";
-        transfer.CompletedAtUtc = DateTime.UtcNow;
-        transfer.CompletedByUserId = userId;
+        WorkflowContext context = new() { UserId = userId, TimestampUtc = DateTime.UtcNow };
+        await _workflowEngine.TransitionAsync(transfer, transfer.Status, "Completed", context, cancellationToken).ConfigureAwait(false);
 
         if (!string.IsNullOrWhiteSpace(request.Notes))
             transfer.Notes = $"{transfer.Notes}\n[Completion] {request.Notes}".Trim();
@@ -185,10 +192,12 @@ public sealed class WarehouseTransferService : BaseInventoryEntityService, IWare
         if (transfer is null)
             return Result.Failure("TRANSFER_NOT_FOUND", "Warehouse transfer not found.", 404);
 
-        if (transfer.Status != "Draft")
+        if (!_workflowEngine.CanTransition(transfer.Status, "Cancelled"))
             return Result.Failure("TRANSFER_NOT_DRAFT", "Only draft transfers can be cancelled.", 409);
 
-        transfer.Status = "Cancelled";
+        WorkflowContext context = new() { UserId = 0, TimestampUtc = DateTime.UtcNow };
+        await _workflowEngine.TransitionAsync(transfer, transfer.Status, "Cancelled", context, cancellationToken).ConfigureAwait(false);
+
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return Result.Success();
     }

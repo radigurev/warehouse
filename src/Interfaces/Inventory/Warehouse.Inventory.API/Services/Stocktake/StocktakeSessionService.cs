@@ -1,6 +1,7 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Warehouse.Common.Models;
+using Warehouse.Common.Workflow;
 using Warehouse.GenericFiltering;
 using Warehouse.Inventory.API.Interfaces.Stocktake;
 using Warehouse.Inventory.API.Services.Base;
@@ -14,16 +15,20 @@ namespace Warehouse.Inventory.API.Services.Stocktake;
 
 /// <summary>
 /// Implements stocktake session lifecycle operations: create, start, complete, cancel, get, and search.
+/// Uses the workflow engine for state transition validation and field assignments.
 /// <para>See <see cref="IStocktakeSessionService"/>.</para>
 /// </summary>
 public sealed class StocktakeSessionService : BaseInventoryEntityService, IStocktakeSessionService
 {
+    private readonly IWorkflowEngine<StocktakeSession> _workflowEngine;
+
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
-    public StocktakeSessionService(InventoryDbContext context, IMapper mapper)
+    public StocktakeSessionService(InventoryDbContext context, IMapper mapper, IWorkflowEngine<StocktakeSession> workflowEngine)
         : base(context, mapper)
     {
+        _workflowEngine = workflowEngine;
     }
 
     /// <inheritdoc />
@@ -100,11 +105,11 @@ public sealed class StocktakeSessionService : BaseInventoryEntityService, IStock
         if (session is null)
             return Result<StocktakeSessionDetailDto>.Failure("SESSION_NOT_FOUND", "Stocktake session not found.", 404);
 
-        if (session.Status != "Draft")
+        if (!_workflowEngine.CanTransition(session.Status, "InProgress"))
             return Result<StocktakeSessionDetailDto>.Failure("SESSION_NOT_DRAFT", "Only draft sessions can be started. Current status: " + session.Status + ".", 409);
 
-        session.Status = "InProgress";
-        session.StartedAtUtc = DateTime.UtcNow;
+        WorkflowContext context = new() { UserId = 0, TimestampUtc = DateTime.UtcNow };
+        await _workflowEngine.TransitionAsync(session, session.Status, "InProgress", context, cancellationToken).ConfigureAwait(false);
 
         await SnapshotStockLevelsAsync(session, cancellationToken).ConfigureAwait(false);
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -125,12 +130,11 @@ public sealed class StocktakeSessionService : BaseInventoryEntityService, IStock
         if (session is null)
             return Result<StocktakeSessionDetailDto>.Failure("SESSION_NOT_FOUND", "Stocktake session not found.", 404);
 
-        if (session.Status != "InProgress")
+        if (!_workflowEngine.CanTransition(session.Status, "Completed"))
             return Result<StocktakeSessionDetailDto>.Failure("SESSION_NOT_IN_PROGRESS", "Only in-progress sessions can be completed. Current status: " + session.Status + ".", 409);
 
-        session.Status = "Completed";
-        session.CompletedAtUtc = DateTime.UtcNow;
-        session.CompletedByUserId = userId;
+        WorkflowContext context = new() { UserId = userId, TimestampUtc = DateTime.UtcNow };
+        await _workflowEngine.TransitionAsync(session, session.Status, "Completed", context, cancellationToken).ConfigureAwait(false);
 
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
@@ -148,10 +152,12 @@ public sealed class StocktakeSessionService : BaseInventoryEntityService, IStock
         if (session is null)
             return Result.Failure("SESSION_NOT_FOUND", "Stocktake session not found.", 404);
 
-        if (session.Status == "Completed" || session.Status == "Cancelled")
+        if (!_workflowEngine.CanTransition(session.Status, "Cancelled"))
             return Result.Failure("SESSION_CANNOT_CANCEL", "Cannot cancel a session with status: " + session.Status + ".", 409);
 
-        session.Status = "Cancelled";
+        WorkflowContext context = new() { UserId = 0, TimestampUtc = DateTime.UtcNow };
+        await _workflowEngine.TransitionAsync(session, session.Status, "Cancelled", context, cancellationToken).ConfigureAwait(false);
+
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return Result.Success();
     }

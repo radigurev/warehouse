@@ -1,7 +1,9 @@
 using FluentAssertions;
 using Warehouse.Common.Models;
+using Warehouse.Common.Workflow;
 using Warehouse.Inventory.API.Services.Stocktake;
 using Warehouse.Inventory.API.Tests.Fixtures;
+using Warehouse.Inventory.API.Workflow.Stocktake;
 using Warehouse.Inventory.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Inventory;
 using Warehouse.ServiceModel.Requests.Inventory;
@@ -22,7 +24,23 @@ public sealed class StocktakeSessionServiceTests : InventoryTestBase
     public override void SetUp()
     {
         base.SetUp();
-        _sut = new StocktakeSessionService(Context, Mapper);
+        IWorkflowEngine<StocktakeSession> workflowEngine = CreateStocktakeWorkflowEngine();
+        _sut = new StocktakeSessionService(Context, Mapper, workflowEngine);
+    }
+
+    /// <summary>
+    /// Creates a workflow engine with all stocktake session states registered.
+    /// </summary>
+    private static IWorkflowEngine<StocktakeSession> CreateStocktakeWorkflowEngine()
+    {
+        List<IWorkflowState<StocktakeSession>> states =
+        [
+            new SessionDraftState(),
+            new SessionInProgressState(),
+            new SessionCompletedState(),
+            new SessionCancelledState()
+        ];
+        return new WorkflowEngine<StocktakeSession>(states);
     }
 
     [Test]
