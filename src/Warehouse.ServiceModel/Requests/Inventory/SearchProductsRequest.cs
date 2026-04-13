@@ -1,9 +1,11 @@
+using Warehouse.ServiceModel.Requests;
+
 namespace Warehouse.ServiceModel.Requests.Inventory;
 
 /// <summary>
 /// Request payload for searching and filtering products with pagination.
 /// </summary>
-public sealed record SearchProductsRequest
+public sealed record SearchProductsRequest : IPaginationParams
 {
     /// <summary>
     /// Gets the name filter (contains match). Optional.

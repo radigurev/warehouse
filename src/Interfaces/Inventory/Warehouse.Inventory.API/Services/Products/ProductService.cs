@@ -2,8 +2,8 @@ using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Warehouse.Common.Models;
 using Warehouse.GenericFiltering;
+using Warehouse.Infrastructure.Services;
 using Warehouse.Inventory.API.Interfaces.Products;
-using Warehouse.Inventory.API.Services.Base;
 using Warehouse.Inventory.DBModel;
 using Warehouse.Inventory.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Inventory;
@@ -14,9 +14,11 @@ namespace Warehouse.Inventory.API.Services.Products;
 
 /// <summary>
 /// Implements product lifecycle operations: CRUD, search, soft-delete, and reactivation.
+/// Inherits search/paginate template from SearchableServiceBase.
 /// <para>See <see cref="IProductService"/>.</para>
 /// </summary>
-public sealed class ProductService : BaseInventoryEntityService, IProductService
+public sealed class ProductService
+    : SearchableServiceBase<InventoryDbContext, Product, ProductDto, SearchProductsRequest>, IProductService
 {
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
@@ -43,29 +45,7 @@ public sealed class ProductService : BaseInventoryEntityService, IProductService
         SearchProductsRequest request,
         CancellationToken cancellationToken)
     {
-        IQueryable<Product> query = BuildSearchQuery(request);
-
-        int totalCount = await query.CountAsync(cancellationToken).ConfigureAwait(false);
-
-        query = ApplySorting(query, request.SortBy, request.SortDescending);
-
-        List<Product> items = await query
-            .Skip((request.Page - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
-
-        IReadOnlyList<ProductDto> dtos = Mapper.Map<IReadOnlyList<ProductDto>>(items);
-
-        PaginatedResponse<ProductDto> response = new()
-        {
-            Items = dtos,
-            Page = request.Page,
-            PageSize = request.PageSize,
-            TotalCount = totalCount
-        };
-
-        return Result<PaginatedResponse<ProductDto>>.Success(response);
+        return await SearchEntitiesAsync(request, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -216,7 +196,7 @@ public sealed class ProductService : BaseInventoryEntityService, IProductService
     /// <summary>
     /// Builds the search query with optional filters.
     /// </summary>
-    private IQueryable<Product> BuildSearchQuery(SearchProductsRequest request)
+    protected override IQueryable<Product> BuildSearchQuery(SearchProductsRequest request)
     {
         IQueryable<Product> query = Context.Products
             .AsNoTracking()
@@ -241,18 +221,15 @@ public sealed class ProductService : BaseInventoryEntityService, IProductService
     }
 
     /// <summary>
-    /// Applies sorting to the query based on the sort field.
+    /// Applies sorting to the query based on the sort field from the request.
     /// </summary>
-    private static IQueryable<Product> ApplySorting(
-        IQueryable<Product> query,
-        string? sortBy,
-        bool sortDescending)
+    protected override IQueryable<Product> ApplySorting(IQueryable<Product> query, SearchProductsRequest request)
     {
-        return sortBy?.ToLowerInvariant() switch
+        return request.SortBy?.ToLowerInvariant() switch
         {
-            "code" => sortDescending ? query.OrderByDescending(p => p.Code) : query.OrderBy(p => p.Code),
-            "createdatutc" => sortDescending ? query.OrderByDescending(p => p.CreatedAtUtc) : query.OrderBy(p => p.CreatedAtUtc),
-            _ => sortDescending ? query.OrderByDescending(p => p.Name) : query.OrderBy(p => p.Name)
+            "code" => request.SortDescending ? query.OrderByDescending(p => p.Code) : query.OrderBy(p => p.Code),
+            "createdatutc" => request.SortDescending ? query.OrderByDescending(p => p.CreatedAtUtc) : query.OrderBy(p => p.CreatedAtUtc),
+            _ => request.SortDescending ? query.OrderByDescending(p => p.Name) : query.OrderBy(p => p.Name)
         };
     }
 
