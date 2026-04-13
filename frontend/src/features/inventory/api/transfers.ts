@@ -1,4 +1,5 @@
 import apiClient from '@shared/api/client';
+import { createCrudApi } from '@shared/api/createCrudApi';
 import type {
   WarehouseTransferDto,
   WarehouseTransferDetailDto,
@@ -6,19 +7,14 @@ import type {
   CompleteTransferRequest,
   SearchTransfersRequest,
 } from '@features/inventory/types/inventory';
-import type { PaginatedResponse } from '@shared/types/api';
 
-export function searchTransfers(params: SearchTransfersRequest): Promise<PaginatedResponse<WarehouseTransferDto>> {
-  return apiClient.get<PaginatedResponse<WarehouseTransferDto>>('/transfers', { params }).then((r) => r.data);
-}
+const base = createCrudApi<WarehouseTransferDto, WarehouseTransferDetailDto, CreateTransferRequest, never, SearchTransfersRequest>(
+  '/transfers',
+);
 
-export function getTransferById(id: number): Promise<WarehouseTransferDetailDto> {
-  return apiClient.get<WarehouseTransferDetailDto>(`/transfers/${id}`).then((r) => r.data);
-}
-
-export function createTransfer(request: CreateTransferRequest): Promise<WarehouseTransferDetailDto> {
-  return apiClient.post<WarehouseTransferDetailDto>('/transfers', request).then((r) => r.data);
-}
+export const searchTransfers = base.search;
+export const getTransferById = base.getById;
+export const createTransfer = base.create;
 
 export function completeTransfer(id: number, request: CompleteTransferRequest): Promise<WarehouseTransferDetailDto> {
   return apiClient.post<WarehouseTransferDetailDto>(`/transfers/${id}/complete`, request).then((r) => r.data);

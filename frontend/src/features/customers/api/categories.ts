@@ -1,4 +1,5 @@
 import apiClient from '@shared/api/client';
+import { createCrudApi } from '@shared/api/createCrudApi';
 import type { PaginatedResponse } from '@shared/types/api';
 import type {
   CustomerCategoryDto,
@@ -6,10 +7,12 @@ import type {
   UpdateCategoryRequest,
 } from '@features/customers/types/customer';
 
+const base = createCrudApi<CustomerCategoryDto, CustomerCategoryDto, CreateCategoryRequest, UpdateCategoryRequest, { page: number; pageSize: number }>(
+  '/customer-categories',
+);
+
 export function getCategories(page = 1, pageSize = 25): Promise<PaginatedResponse<CustomerCategoryDto>> {
-  return apiClient
-    .get<PaginatedResponse<CustomerCategoryDto>>('/customer-categories', { params: { page, pageSize } })
-    .then((r) => r.data);
+  return base.search({ page, pageSize });
 }
 
 export function getAllCategories(): Promise<CustomerCategoryDto[]> {
@@ -18,18 +21,7 @@ export function getAllCategories(): Promise<CustomerCategoryDto[]> {
     .then((r) => r.data.items);
 }
 
-export function getCategoryById(id: number): Promise<CustomerCategoryDto> {
-  return apiClient.get<CustomerCategoryDto>(`/customer-categories/${id}`).then((r) => r.data);
-}
-
-export function createCategory(request: CreateCategoryRequest): Promise<CustomerCategoryDto> {
-  return apiClient.post<CustomerCategoryDto>('/customer-categories', request).then((r) => r.data);
-}
-
-export function updateCategory(id: number, request: UpdateCategoryRequest): Promise<CustomerCategoryDto> {
-  return apiClient.put<CustomerCategoryDto>(`/customer-categories/${id}`, request).then((r) => r.data);
-}
-
-export function deleteCategory(id: number): Promise<void> {
-  return apiClient.delete(`/customer-categories/${id}`).then(() => undefined);
-}
+export const getCategoryById = base.getById;
+export const createCategory = base.create;
+export const updateCategory = base.update;
+export const deleteCategory = base.remove;

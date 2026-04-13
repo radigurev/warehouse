@@ -1,4 +1,5 @@
 import apiClient from '@shared/api/client';
+import { createCrudApi } from '@shared/api/createCrudApi';
 import type {
   WarehouseDto,
   WarehouseDetailDto,
@@ -6,27 +7,16 @@ import type {
   UpdateWarehouseRequest,
   SearchWarehousesRequest,
 } from '@features/inventory/types/inventory';
-import type { PaginatedResponse } from '@shared/types/api';
 
-export function searchWarehouses(params: SearchWarehousesRequest): Promise<PaginatedResponse<WarehouseDto>> {
-  return apiClient.get<PaginatedResponse<WarehouseDto>>('/warehouses', { params }).then((r) => r.data);
-}
+const base = createCrudApi<WarehouseDto, WarehouseDetailDto, CreateWarehouseRequest, UpdateWarehouseRequest, SearchWarehousesRequest>(
+  '/warehouses',
+);
 
-export function getWarehouseById(id: number): Promise<WarehouseDetailDto> {
-  return apiClient.get<WarehouseDetailDto>(`/warehouses/${id}`).then((r) => r.data);
-}
-
-export function createWarehouse(request: CreateWarehouseRequest): Promise<WarehouseDetailDto> {
-  return apiClient.post<WarehouseDetailDto>('/warehouses', request).then((r) => r.data);
-}
-
-export function updateWarehouse(id: number, request: UpdateWarehouseRequest): Promise<WarehouseDetailDto> {
-  return apiClient.put<WarehouseDetailDto>(`/warehouses/${id}`, request).then((r) => r.data);
-}
-
-export function deactivateWarehouse(id: number): Promise<void> {
-  return apiClient.delete(`/warehouses/${id}`).then(() => undefined);
-}
+export const searchWarehouses = base.search;
+export const getWarehouseById = base.getById;
+export const createWarehouse = base.create;
+export const updateWarehouse = base.update;
+export const deactivateWarehouse = base.remove;
 
 export function reactivateWarehouse(id: number): Promise<WarehouseDetailDto> {
   return apiClient.post<WarehouseDetailDto>(`/warehouses/${id}/reactivate`, {}).then((r) => r.data);

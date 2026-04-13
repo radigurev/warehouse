@@ -1,4 +1,5 @@
 import apiClient from '@shared/api/client';
+import { createCrudApi } from '@shared/api/createCrudApi';
 import type { PaginatedResponse } from '@shared/types/api';
 import type {
   UnitOfMeasureDto,
@@ -6,10 +7,12 @@ import type {
   UpdateUnitOfMeasureRequest,
 } from '@features/inventory/types/inventory';
 
+const base = createCrudApi<UnitOfMeasureDto, UnitOfMeasureDto, CreateUnitOfMeasureRequest, UpdateUnitOfMeasureRequest, { page: number; pageSize: number }>(
+  '/units-of-measure',
+);
+
 export function searchUnits(page = 1, pageSize = 25): Promise<PaginatedResponse<UnitOfMeasureDto>> {
-  return apiClient
-    .get<PaginatedResponse<UnitOfMeasureDto>>('/units-of-measure', { params: { page, pageSize } })
-    .then((r) => r.data);
+  return base.search({ page, pageSize });
 }
 
 export function getAllUnits(): Promise<UnitOfMeasureDto[]> {
@@ -18,18 +21,7 @@ export function getAllUnits(): Promise<UnitOfMeasureDto[]> {
     .then((r) => r.data.items);
 }
 
-export function getUnitById(id: number): Promise<UnitOfMeasureDto> {
-  return apiClient.get<UnitOfMeasureDto>(`/units-of-measure/${id}`).then((r) => r.data);
-}
-
-export function createUnit(request: CreateUnitOfMeasureRequest): Promise<UnitOfMeasureDto> {
-  return apiClient.post<UnitOfMeasureDto>('/units-of-measure', request).then((r) => r.data);
-}
-
-export function updateUnit(id: number, request: UpdateUnitOfMeasureRequest): Promise<UnitOfMeasureDto> {
-  return apiClient.put<UnitOfMeasureDto>(`/units-of-measure/${id}`, request).then((r) => r.data);
-}
-
-export function deleteUnit(id: number): Promise<void> {
-  return apiClient.delete(`/units-of-measure/${id}`).then(() => undefined);
-}
+export const getUnitById = base.getById;
+export const createUnit = base.create;
+export const updateUnit = base.update;
+export const deleteUnit = base.remove;

@@ -1,4 +1,5 @@
 import apiClient from '@shared/api/client';
+import { createCrudApi } from '@shared/api/createCrudApi';
 import type {
   GoodsReceiptDto,
   GoodsReceiptDetailDto,
@@ -7,19 +8,14 @@ import type {
   InspectLineRequest,
   ResolveQuarantineRequest,
 } from '@features/purchasing/types/purchasing';
-import type { PaginatedResponse } from '@shared/types/api';
 
-export function searchGoodsReceipts(params: SearchGoodsReceiptsRequest): Promise<PaginatedResponse<GoodsReceiptDto>> {
-  return apiClient.get<PaginatedResponse<GoodsReceiptDto>>('/goods-receipts', { params }).then((r) => r.data);
-}
+const base = createCrudApi<GoodsReceiptDto, GoodsReceiptDetailDto, CreateGoodsReceiptRequest, never, SearchGoodsReceiptsRequest>(
+  '/goods-receipts',
+);
 
-export function getGoodsReceiptById(id: number): Promise<GoodsReceiptDetailDto> {
-  return apiClient.get<GoodsReceiptDetailDto>(`/goods-receipts/${id}`).then((r) => r.data);
-}
-
-export function createGoodsReceipt(request: CreateGoodsReceiptRequest): Promise<GoodsReceiptDetailDto> {
-  return apiClient.post<GoodsReceiptDetailDto>('/goods-receipts', request).then((r) => r.data);
-}
+export const searchGoodsReceipts = base.search;
+export const getGoodsReceiptById = base.getById;
+export const createGoodsReceipt = base.create;
 
 export function completeGoodsReceipt(id: number): Promise<void> {
   return apiClient.post(`/goods-receipts/${id}/complete`, {}).then(() => undefined);

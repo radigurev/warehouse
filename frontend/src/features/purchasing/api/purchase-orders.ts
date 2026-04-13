@@ -1,4 +1,5 @@
 import apiClient from '@shared/api/client';
+import { createCrudApi } from '@shared/api/createCrudApi';
 import type {
   PurchaseOrderDto,
   PurchaseOrderDetailDto,
@@ -9,23 +10,15 @@ import type {
   UpdatePurchaseOrderLineRequest,
   SearchPurchaseOrdersRequest,
 } from '@features/purchasing/types/purchasing';
-import type { PaginatedResponse } from '@shared/types/api';
 
-export function searchPurchaseOrders(params: SearchPurchaseOrdersRequest): Promise<PaginatedResponse<PurchaseOrderDto>> {
-  return apiClient.get<PaginatedResponse<PurchaseOrderDto>>('/purchase-orders', { params }).then((r) => r.data);
-}
+const base = createCrudApi<PurchaseOrderDto, PurchaseOrderDetailDto, CreatePurchaseOrderRequest, UpdatePurchaseOrderRequest, SearchPurchaseOrdersRequest>(
+  '/purchase-orders',
+);
 
-export function getPurchaseOrderById(id: number): Promise<PurchaseOrderDetailDto> {
-  return apiClient.get<PurchaseOrderDetailDto>(`/purchase-orders/${id}`).then((r) => r.data);
-}
-
-export function createPurchaseOrder(request: CreatePurchaseOrderRequest): Promise<PurchaseOrderDetailDto> {
-  return apiClient.post<PurchaseOrderDetailDto>('/purchase-orders', request).then((r) => r.data);
-}
-
-export function updatePurchaseOrder(id: number, request: UpdatePurchaseOrderRequest): Promise<PurchaseOrderDetailDto> {
-  return apiClient.put<PurchaseOrderDetailDto>(`/purchase-orders/${id}`, request).then((r) => r.data);
-}
+export const searchPurchaseOrders = base.search;
+export const getPurchaseOrderById = base.getById;
+export const createPurchaseOrder = base.create;
+export const updatePurchaseOrder = base.update;
 
 export function confirmPurchaseOrder(id: number): Promise<void> {
   return apiClient.post(`/purchase-orders/${id}/confirm`, {}).then(() => undefined);

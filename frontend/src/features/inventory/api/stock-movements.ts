@@ -1,15 +1,13 @@
-import apiClient from '@shared/api/client';
+import { createCrudApi } from '@shared/api/createCrudApi';
 import type {
   StockMovementDto,
   SearchStockMovementsRequest,
   RecordStockMovementRequest,
 } from '@features/inventory/types/inventory';
-import type { PaginatedResponse } from '@shared/types/api';
 
-export function searchMovements(params: SearchStockMovementsRequest): Promise<PaginatedResponse<StockMovementDto>> {
-  return apiClient.get<PaginatedResponse<StockMovementDto>>('/stock-movements', { params }).then((r) => r.data);
-}
+const base = createCrudApi<StockMovementDto, StockMovementDto, RecordStockMovementRequest, never, SearchStockMovementsRequest>(
+  '/stock-movements',
+);
 
-export function recordMovement(request: RecordStockMovementRequest): Promise<StockMovementDto> {
-  return apiClient.post<StockMovementDto>('/stock-movements', request).then((r) => r.data);
-}
+export const searchMovements = base.search;
+export const recordMovement = base.create;

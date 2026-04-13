@@ -1,4 +1,5 @@
 import apiClient from '@shared/api/client';
+import { createCrudApi } from '@shared/api/createCrudApi';
 import type {
   StocktakeSessionDto,
   StocktakeSessionDetailDto,
@@ -9,19 +10,14 @@ import type {
   RecordStocktakeCountRequest,
   UpdateStocktakeCountRequest,
 } from '@features/inventory/types/inventory';
-import type { PaginatedResponse } from '@shared/types/api';
 
-export function searchSessions(params: SearchStocktakeSessionsRequest): Promise<PaginatedResponse<StocktakeSessionDto>> {
-  return apiClient.get<PaginatedResponse<StocktakeSessionDto>>('/stocktake', { params }).then((r) => r.data);
-}
+const base = createCrudApi<StocktakeSessionDto, StocktakeSessionDetailDto, CreateStocktakeSessionRequest, never, SearchStocktakeSessionsRequest>(
+  '/stocktake',
+);
 
-export function getSessionById(id: number): Promise<StocktakeSessionDetailDto> {
-  return apiClient.get<StocktakeSessionDetailDto>(`/stocktake/${id}`).then((r) => r.data);
-}
-
-export function createSession(request: CreateStocktakeSessionRequest): Promise<StocktakeSessionDetailDto> {
-  return apiClient.post<StocktakeSessionDetailDto>('/stocktake', request).then((r) => r.data);
-}
+export const searchSessions = base.search;
+export const getSessionById = base.getById;
+export const createSession = base.create;
 
 export function startSession(id: number): Promise<StocktakeSessionDetailDto> {
   return apiClient.post<StocktakeSessionDetailDto>(`/stocktake/${id}/start`, {}).then((r) => r.data);

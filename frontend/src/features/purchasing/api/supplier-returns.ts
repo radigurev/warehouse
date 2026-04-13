@@ -1,23 +1,19 @@
 import apiClient from '@shared/api/client';
+import { createCrudApi } from '@shared/api/createCrudApi';
 import type {
   SupplierReturnDto,
   SupplierReturnDetailDto,
   CreateSupplierReturnRequest,
   SearchSupplierReturnsRequest,
 } from '@features/purchasing/types/purchasing';
-import type { PaginatedResponse } from '@shared/types/api';
 
-export function searchSupplierReturns(params: SearchSupplierReturnsRequest): Promise<PaginatedResponse<SupplierReturnDto>> {
-  return apiClient.get<PaginatedResponse<SupplierReturnDto>>('/supplier-returns', { params }).then((r) => r.data);
-}
+const base = createCrudApi<SupplierReturnDto, SupplierReturnDetailDto, CreateSupplierReturnRequest, never, SearchSupplierReturnsRequest>(
+  '/supplier-returns',
+);
 
-export function getSupplierReturnById(id: number): Promise<SupplierReturnDetailDto> {
-  return apiClient.get<SupplierReturnDetailDto>(`/supplier-returns/${id}`).then((r) => r.data);
-}
-
-export function createSupplierReturn(request: CreateSupplierReturnRequest): Promise<SupplierReturnDetailDto> {
-  return apiClient.post<SupplierReturnDetailDto>('/supplier-returns', request).then((r) => r.data);
-}
+export const searchSupplierReturns = base.search;
+export const getSupplierReturnById = base.getById;
+export const createSupplierReturn = base.create;
 
 export function confirmSupplierReturn(id: number): Promise<void> {
   return apiClient.post(`/supplier-returns/${id}/confirm`, {}).then(() => undefined);

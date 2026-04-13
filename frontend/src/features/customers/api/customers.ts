@@ -1,4 +1,5 @@
 import apiClient from '@shared/api/client';
+import { createCrudApi } from '@shared/api/createCrudApi';
 import type {
   CustomerDto,
   CustomerDetailDto,
@@ -6,27 +7,16 @@ import type {
   UpdateCustomerRequest,
   SearchCustomersRequest,
 } from '@features/customers/types/customer';
-import type { PaginatedResponse } from '@shared/types/api';
 
-export function searchCustomers(params: SearchCustomersRequest): Promise<PaginatedResponse<CustomerDto>> {
-  return apiClient.get<PaginatedResponse<CustomerDto>>('/customers', { params }).then((r) => r.data);
-}
+const base = createCrudApi<CustomerDto, CustomerDetailDto, CreateCustomerRequest, UpdateCustomerRequest, SearchCustomersRequest>(
+  '/customers',
+);
 
-export function getCustomerById(id: number): Promise<CustomerDetailDto> {
-  return apiClient.get<CustomerDetailDto>(`/customers/${id}`).then((r) => r.data);
-}
-
-export function createCustomer(request: CreateCustomerRequest): Promise<CustomerDetailDto> {
-  return apiClient.post<CustomerDetailDto>('/customers', request).then((r) => r.data);
-}
-
-export function updateCustomer(id: number, request: UpdateCustomerRequest): Promise<CustomerDetailDto> {
-  return apiClient.put<CustomerDetailDto>(`/customers/${id}`, request).then((r) => r.data);
-}
-
-export function deactivateCustomer(id: number): Promise<void> {
-  return apiClient.delete(`/customers/${id}`).then(() => undefined);
-}
+export const searchCustomers = base.search;
+export const getCustomerById = base.getById;
+export const createCustomer = base.create;
+export const updateCustomer = base.update;
+export const deactivateCustomer = base.remove;
 
 export function reactivateCustomer(id: number): Promise<CustomerDetailDto> {
   return apiClient.post<CustomerDetailDto>(`/customers/${id}/reactivate`, {}).then((r) => r.data);

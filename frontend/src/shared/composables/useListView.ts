@@ -46,7 +46,7 @@ export interface ListViewReturn<TDto, TSearch> {
   handleDetail: (item: TDto) => void;
   handlePageChange: (newPage: number) => void;
   handlePageSizeChange: (newSize: number) => void;
-  formatDate: (dateStr: string) => string;
+  formatDate: (dateStr: string | null) => string;
 }
 
 /**
@@ -55,7 +55,8 @@ export interface ListViewReturn<TDto, TSearch> {
  *
  * Subcomposables extend by adding entity-specific behavior (delete, reactivate, etc.).
  */
-export function useListView<TDto, TSearch extends Record<string, unknown>>(
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export function useListView<TDto, TSearch extends {}>(
   config: ListViewConfig<TDto, TSearch>,
 ): ListViewReturn<TDto, TSearch> {
   const { t, locale } = useI18n();
@@ -109,7 +110,8 @@ export function useListView<TDto, TSearch extends Record<string, unknown>>(
     }
   }
 
-  function formatDate(dateStr: string): string {
+  function formatDate(dateStr: string | null): string {
+    if (!dateStr) return '\u2014';
     return new Date(dateStr).toLocaleDateString(locale.value === 'bg' ? 'bg-BG' : 'en-US', {
       year: 'numeric',
       month: 'short',
