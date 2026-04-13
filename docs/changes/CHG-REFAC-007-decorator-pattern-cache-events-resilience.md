@@ -1,7 +1,7 @@
 # CHG-REFAC-007 — Decorator Pattern for Cache, Events & Resilience
 
-> Status: Draft
-> Last updated: 2026-04-09
+> Status: Implemented
+> Last updated: 2026-04-13
 > Owner: TBD
 > Priority: P2
 
