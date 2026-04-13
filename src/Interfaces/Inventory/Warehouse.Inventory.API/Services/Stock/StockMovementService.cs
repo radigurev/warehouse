@@ -2,6 +2,7 @@ using AutoMapper;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Warehouse.Common.Models;
+using Warehouse.Common.Validation;
 using Warehouse.GenericFiltering;
 using Warehouse.Inventory.API.Interfaces.Stock;
 using Warehouse.Inventory.API.Services.Base;
@@ -21,14 +22,20 @@ namespace Warehouse.Inventory.API.Services.Stock;
 public sealed class StockMovementService : BaseInventoryEntityService, IStockMovementService
 {
     private readonly IPublishEndpoint _publishEndpoint;
+    private readonly ValidationChain<RecordStockMovementRequest> _validationChain;
 
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
-    public StockMovementService(InventoryDbContext context, IMapper mapper, IPublishEndpoint publishEndpoint)
+    public StockMovementService(
+        InventoryDbContext context,
+        IMapper mapper,
+        IPublishEndpoint publishEndpoint,
+        ValidationChain<RecordStockMovementRequest> validationChain)
         : base(context, mapper)
     {
         _publishEndpoint = publishEndpoint;
+        _validationChain = validationChain;
     }
 
     /// <inheritdoc />
@@ -37,21 +44,9 @@ public sealed class StockMovementService : BaseInventoryEntityService, IStockMov
         int userId,
         CancellationToken cancellationToken)
     {
-        Result? productValidation = await ValidateProductExistsAsync(request.ProductId, cancellationToken).ConfigureAwait(false);
-        if (productValidation is not null)
-            return Result<StockMovementDto>.Failure(productValidation.ErrorCode!, productValidation.ErrorMessage!, productValidation.StatusCode!.Value);
-
-        Result? batchValidation = await ValidateBatchTrackingAsync(request.ProductId, request.BatchId, cancellationToken).ConfigureAwait(false);
-        if (batchValidation is not null)
-            return Result<StockMovementDto>.Failure(batchValidation.ErrorCode!, batchValidation.ErrorMessage!, batchValidation.StatusCode!.Value);
-
-        Result? warehouseValidation = await ValidateWarehouseExistsAsync(request.WarehouseId, cancellationToken).ConfigureAwait(false);
-        if (warehouseValidation is not null)
-            return Result<StockMovementDto>.Failure(warehouseValidation.ErrorCode!, warehouseValidation.ErrorMessage!, warehouseValidation.StatusCode!.Value);
-
-        Result? stockValidation = await ValidateSufficientStockAsync(request, cancellationToken).ConfigureAwait(false);
-        if (stockValidation is not null)
-            return Result<StockMovementDto>.Failure(stockValidation.ErrorCode!, stockValidation.ErrorMessage!, stockValidation.StatusCode!.Value);
+        Result? validation = await _validationChain.ExecuteAsync(request, cancellationToken).ConfigureAwait(false);
+        if (validation is not null)
+            return Result<StockMovementDto>.Failure(validation.ErrorCode!, validation.ErrorMessage!, validation.StatusCode!.Value);
 
         StockMovement movement = CreateMovementEntity(request, userId);
 
@@ -237,80 +232,4 @@ public sealed class StockMovementService : BaseInventoryEntityService, IStockMov
         };
     }
 
-    /// <summary>
-    /// Validates that sufficient stock exists for an outbound movement.
-    /// </summary>
-    private async Task<Result?> ValidateSufficientStockAsync(
-        RecordStockMovementRequest request,
-        CancellationToken cancellationToken)
-    {
-        if (request.Quantity >= 0)
-            return null;
-
-        StockLevel? stockLevel = await Context.StockLevels
-            .AsNoTracking()
-            .FirstOrDefaultAsync(s =>
-                s.ProductId == request.ProductId &&
-                s.WarehouseId == request.WarehouseId &&
-                s.LocationId == request.LocationId &&
-                s.BatchId == request.BatchId,
-                cancellationToken)
-            .ConfigureAwait(false);
-
-        decimal available = stockLevel?.QuantityOnHand ?? 0;
-
-        if (available < Math.Abs(request.Quantity))
-            return Result.Failure("INSUFFICIENT_STOCK", "Insufficient stock for this movement.", 409);
-
-        return null;
-    }
-
-    /// <summary>
-    /// Validates that a product requiring batch tracking has a BatchId provided.
-    /// </summary>
-    private async Task<Result?> ValidateBatchTrackingAsync(
-        int productId,
-        int? batchId,
-        CancellationToken cancellationToken)
-    {
-        bool requiresBatch = await Context.Products
-            .AsNoTracking()
-            .Where(p => p.Id == productId && !p.IsDeleted)
-            .Select(p => p.RequiresBatchTracking)
-            .FirstOrDefaultAsync(cancellationToken)
-            .ConfigureAwait(false);
-
-        if (requiresBatch && batchId is null)
-            return Result.Failure("BATCH_REQUIRED", "This product requires batch tracking. A BatchId must be provided.", 400);
-
-        return null;
-    }
-
-    /// <summary>
-    /// Validates that a product exists and is not deleted.
-    /// </summary>
-    private async Task<Result?> ValidateProductExistsAsync(int productId, CancellationToken cancellationToken)
-    {
-        bool exists = await Context.Products
-            .AnyAsync(p => p.Id == productId && !p.IsDeleted, cancellationToken)
-            .ConfigureAwait(false);
-
-        return exists
-            ? null
-            : Result.Failure("INVALID_PRODUCT", "The specified product does not exist.", 400);
-    }
-
-    /// <summary>
-    /// Validates that a warehouse exists and is not deleted.
-    /// </summary>
-    private async Task<Result?> ValidateWarehouseExistsAsync(int warehouseId, CancellationToken cancellationToken)
-    {
-        bool exists = await Context.Warehouses
-            .AnyAsync(w => w.Id == warehouseId && !w.IsDeleted, cancellationToken)
-            .ConfigureAwait(false);
-
-        return exists
-            ? null
-            : Result.Failure("INVALID_WAREHOUSE", "The specified warehouse does not exist.", 400);
-    }
 }

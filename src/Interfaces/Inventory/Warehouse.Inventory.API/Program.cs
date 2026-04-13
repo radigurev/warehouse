@@ -15,12 +15,15 @@ using Warehouse.Inventory.API.Services.Products;
 using Warehouse.Inventory.API.Services.Stock;
 using Warehouse.Inventory.API.Services.Stocktake;
 using Warehouse.Inventory.API.Services.Warehouse;
+using Warehouse.Common.Validation;
 using Warehouse.Common.Workflow;
+using Warehouse.Inventory.API.Validators.Chain;
 using Warehouse.Inventory.API.Workflow.Adjustment;
 using Warehouse.Inventory.API.Workflow.Stocktake;
 using Warehouse.Inventory.API.Workflow.Transfer;
 using Warehouse.Inventory.DBModel;
 using Warehouse.Inventory.DBModel.Models;
+using Warehouse.ServiceModel.Requests.Inventory;
 using Warehouse.Mapping.Profiles.Inventory;
 
 NLog.Logger logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
@@ -114,6 +117,11 @@ static void ConfigureApplicationServices(IServiceCollection services)
     services.AddScoped<IProductSubstituteService, ProductSubstituteService>();
     services.AddScoped<IStockLevelService, StockLevelService>();
     services.AddScoped<IStockMovementService, StockMovementService>();
+    services.AddScoped<IChainValidator<RecordStockMovementRequest>, ProductExistsValidator>();
+    services.AddScoped<IChainValidator<RecordStockMovementRequest>, BatchTrackingValidator>();
+    services.AddScoped<IChainValidator<RecordStockMovementRequest>, WarehouseExistsValidator>();
+    services.AddScoped<IChainValidator<RecordStockMovementRequest>, SufficientStockValidator>();
+    services.AddScoped<ValidationChain<RecordStockMovementRequest>>();
     services.AddScoped<IBatchService, BatchService>();
     services.AddScoped<IInventoryAdjustmentService, InventoryAdjustmentService>();
     services.AddScoped<IWarehouseTransferService, WarehouseTransferService>();

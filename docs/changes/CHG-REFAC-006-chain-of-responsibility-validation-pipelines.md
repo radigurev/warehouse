@@ -1,7 +1,7 @@
 # CHG-REFAC-006 — Chain of Responsibility for Validation Pipelines
 
-> Status: Draft
-> Last updated: 2026-04-09
+> Status: Implemented
+> Last updated: 2026-04-13
 > Owner: TBD
 > Priority: P2
 

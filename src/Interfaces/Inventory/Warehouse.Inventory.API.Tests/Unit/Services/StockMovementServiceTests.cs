@@ -4,8 +4,10 @@ using Microsoft.EntityFrameworkCore;
 using Moq;
 using Warehouse.Common.Enums;
 using Warehouse.Common.Models;
+using Warehouse.Common.Validation;
 using Warehouse.Inventory.API.Services.Stock;
 using Warehouse.Inventory.API.Tests.Fixtures;
+using Warehouse.Inventory.API.Validators.Chain;
 using Warehouse.Inventory.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Inventory;
 using Warehouse.ServiceModel.Requests.Inventory;
@@ -29,7 +31,14 @@ public sealed class StockMovementServiceTests : InventoryTestBase
     {
         base.SetUp();
         _mockPublishEndpoint = new Mock<IPublishEndpoint>();
-        _sut = new StockMovementService(Context, Mapper, _mockPublishEndpoint.Object);
+        ValidationChain<RecordStockMovementRequest> validationChain = new(new IChainValidator<RecordStockMovementRequest>[]
+        {
+            new ProductExistsValidator(Context),
+            new BatchTrackingValidator(Context),
+            new WarehouseExistsValidator(Context),
+            new SufficientStockValidator(Context)
+        });
+        _sut = new StockMovementService(Context, Mapper, _mockPublishEndpoint.Object, validationChain);
     }
 
     [Test]
