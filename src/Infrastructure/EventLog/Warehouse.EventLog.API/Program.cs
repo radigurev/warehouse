@@ -6,6 +6,7 @@ using NLog.Web;
 using Warehouse.EventLog.API.Consumers;
 using Warehouse.EventLog.API.Services;
 using Warehouse.EventLog.API.Services.Interfaces;
+using Warehouse.EventLog.API.Strategies;
 using Warehouse.EventLog.DBModel;
 using Warehouse.Infrastructure.Extensions;
 using Warehouse.Mapping.Profiles.EventLog;
@@ -92,4 +93,10 @@ static void ConfigureAutoMapper(IServiceCollection services)
 static void ConfigureApplicationServices(IServiceCollection services)
 {
     services.AddScoped<IEventQueryService, EventQueryService>();
+
+    services.AddSingleton<IEventMappingStrategy, AuthEventMappingStrategy>();
+    services.AddSingleton<IEventMappingStrategy, CustomerEventMappingStrategy>();
+    services.AddSingleton<IEventMappingStrategy, InventoryEventMappingStrategy>();
+    services.AddSingleton<IEventMappingStrategy, PurchaseEventMappingStrategy>();
+    services.AddSingleton<IEventMappingStrategy, FulfillmentEventMappingStrategy>();
 }

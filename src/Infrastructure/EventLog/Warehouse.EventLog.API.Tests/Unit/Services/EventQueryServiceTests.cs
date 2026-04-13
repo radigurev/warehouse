@@ -4,6 +4,7 @@ using NUnit.Framework;
 using Microsoft.EntityFrameworkCore;
 using Warehouse.Common.Models;
 using Warehouse.EventLog.API.Services;
+using Warehouse.EventLog.API.Strategies;
 using Warehouse.EventLog.DBModel;
 using Warehouse.EventLog.DBModel.Models;
 using Warehouse.Mapping.Profiles.EventLog;
@@ -29,7 +30,15 @@ public sealed class EventQueryServiceTests
 
         _context = new EventLogDbContext(options);
         _mapper = new MapperConfiguration(cfg => cfg.AddProfile<EventLogMappingProfile>()).CreateMapper();
-        _sut = new EventQueryService(_context, _mapper);
+        List<IEventMappingStrategy> strategies =
+        [
+            new AuthEventMappingStrategy(),
+            new CustomerEventMappingStrategy(),
+            new InventoryEventMappingStrategy(),
+            new PurchaseEventMappingStrategy(),
+            new FulfillmentEventMappingStrategy()
+        ];
+        _sut = new EventQueryService(_context, _mapper, strategies);
     }
 
     [TearDown]

@@ -2,6 +2,7 @@ using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Warehouse.Common.Models;
 using Warehouse.EventLog.API.Services.Interfaces;
+using Warehouse.EventLog.API.Strategies;
 using Warehouse.EventLog.DBModel;
 using Warehouse.EventLog.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.EventLog;
@@ -12,19 +13,25 @@ namespace Warehouse.EventLog.API.Services;
 
 /// <summary>
 /// Implements read-only query operations for centralized operations events.
+/// Uses event mapping strategies for domain-specific DTO resolution.
 /// </summary>
 public sealed class EventQueryService : IEventQueryService
 {
     private readonly EventLogDbContext _context;
     private readonly IMapper _mapper;
+    private readonly IReadOnlyList<IEventMappingStrategy> _mappingStrategies;
 
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
-    public EventQueryService(EventLogDbContext context, IMapper mapper)
+    public EventQueryService(
+        EventLogDbContext context,
+        IMapper mapper,
+        IEnumerable<IEventMappingStrategy> mappingStrategies)
     {
         _context = context;
         _mapper = mapper;
+        _mappingStrategies = mappingStrategies.ToList();
     }
 
     /// <inheritdoc />
@@ -228,19 +235,21 @@ public sealed class EventQueryService : IEventQueryService
     }
 
     /// <summary>
-    /// Maps a single entity to the appropriate domain-specific DTO.
+    /// Maps a single entity to the appropriate domain-specific DTO using registered strategies.
+    /// Falls back to base OperationsEventDto if no strategy matches.
     /// </summary>
     private OperationsEventDto MapSingleToDto(OperationsEvent entity, bool includePayload)
     {
-        OperationsEventDto dto = entity switch
+        OperationsEventDto dto = _mapper.Map<OperationsEventDto>(entity);
+
+        foreach (IEventMappingStrategy strategy in _mappingStrategies)
         {
-            AuthEvent auth => _mapper.Map<AuthEventDto>(auth),
-            PurchaseEvent purchase => _mapper.Map<PurchaseEventDto>(purchase),
-            FulfillmentEvent fulfillment => _mapper.Map<FulfillmentEventDto>(fulfillment),
-            InventoryEvent inventory => _mapper.Map<InventoryEventDto>(inventory),
-            CustomerEvent customer => _mapper.Map<CustomerEventDto>(customer),
-            _ => _mapper.Map<OperationsEventDto>(entity)
-        };
+            if (strategy.CanMap(entity))
+            {
+                dto = strategy.Map(entity, _mapper);
+                break;
+            }
+        }
 
         if (!includePayload)
         {
