@@ -1,6 +1,6 @@
 # SDD-INV-004 — Stocktaking
 
-> Status: Active
+> Status: Implemented
 > Last updated: 2026-04-09
 > Owner: TBD
 > Category: Core

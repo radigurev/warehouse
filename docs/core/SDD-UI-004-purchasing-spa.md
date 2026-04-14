@@ -1,6 +1,6 @@
 # SDD-UI-004 — Purchasing Operations SPA
 
-> Status: Draft
+> Status: Active
 > Last updated: 2026-04-09
 > Owner: TBD
 > Category: Core
