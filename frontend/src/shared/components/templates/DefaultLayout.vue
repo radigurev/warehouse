@@ -476,6 +476,90 @@
           </v-expand-transition>
         </template>
 
+        <!-- Fulfillment section -->
+        <v-list-group v-if="!layout.sidebarCollapsed" value="fulfillment">
+          <template #activator="{ props: groupProps }">
+            <v-list-item
+              v-bind="groupProps"
+              prepend-icon="mdi-package-variant-closed-check"
+              :title="t('nav.fulfillment')"
+              rounded="xl"
+            />
+          </template>
+
+          <v-list-item
+            to="/fulfillment/sales-orders"
+            prepend-icon="mdi-cart-outline"
+            :title="t('nav.salesOrders')"
+            :active="route.path === '/fulfillment/sales-orders'"
+            rounded="xl"
+          />
+          <v-list-item
+            to="/fulfillment/pick-lists"
+            prepend-icon="mdi-format-list-checks"
+            :title="t('nav.pickLists')"
+            :active="route.path === '/fulfillment/pick-lists'"
+            rounded="xl"
+          />
+          <v-list-item
+            to="/fulfillment/shipments"
+            prepend-icon="mdi-truck-delivery"
+            :title="t('nav.shipments')"
+            :active="route.path === '/fulfillment/shipments'"
+            rounded="xl"
+          />
+          <v-list-item
+            to="/fulfillment/carriers"
+            prepend-icon="mdi-truck-fast-outline"
+            :title="t('nav.carriers')"
+            :active="route.path === '/fulfillment/carriers'"
+            rounded="xl"
+          />
+          <v-list-item
+            to="/fulfillment/customer-returns"
+            prepend-icon="mdi-package-variant-closed-remove"
+            :title="t('nav.customerReturns')"
+            :active="route.path === '/fulfillment/customer-returns'"
+            rounded="xl"
+          />
+          <v-list-item
+            to="/fulfillment/fulfillment-events"
+            prepend-icon="mdi-history"
+            :title="t('nav.fulfillmentEvents')"
+            :active="route.path === '/fulfillment/fulfillment-events'"
+            rounded="xl"
+          />
+        </v-list-group>
+
+        <template v-else>
+          <v-list-item
+            prepend-icon="mdi-package-variant-closed-check"
+            density="compact"
+            rounded="xl"
+            :class="['mt-2', { 'rail-admin-parent': fulfillmentRailExpanded }]"
+            @click="fulfillmentRailExpanded = !fulfillmentRailExpanded"
+          >
+            <template #append>
+              <v-icon
+                icon="mdi-chevron-down"
+                size="x-small"
+                :class="['rail-arrow', { 'rail-arrow--open': fulfillmentRailExpanded }]"
+              />
+            </template>
+          </v-list-item>
+
+          <v-expand-transition>
+            <div v-show="fulfillmentRailExpanded" class="rail-admin-items">
+              <v-list-item to="/fulfillment/sales-orders" prepend-icon="mdi-cart-outline" :active="route.path === '/fulfillment/sales-orders'" rounded="xl" class="rail-admin-item" />
+              <v-list-item to="/fulfillment/pick-lists" prepend-icon="mdi-format-list-checks" :active="route.path === '/fulfillment/pick-lists'" rounded="xl" class="rail-admin-item" />
+              <v-list-item to="/fulfillment/shipments" prepend-icon="mdi-truck-delivery" :active="route.path === '/fulfillment/shipments'" rounded="xl" class="rail-admin-item" />
+              <v-list-item to="/fulfillment/carriers" prepend-icon="mdi-truck-fast-outline" :active="route.path === '/fulfillment/carriers'" rounded="xl" class="rail-admin-item" />
+              <v-list-item to="/fulfillment/customer-returns" prepend-icon="mdi-package-variant-closed-remove" :active="route.path === '/fulfillment/customer-returns'" rounded="xl" class="rail-admin-item" />
+              <v-list-item to="/fulfillment/fulfillment-events" prepend-icon="mdi-history" :active="route.path === '/fulfillment/fulfillment-events'" rounded="xl" class="rail-admin-item" />
+            </div>
+          </v-expand-transition>
+        </template>
+
         <!-- Inventory — Operations section -->
         <v-list-group v-if="!layout.sidebarCollapsed" value="inventory-operations">
           <template #activator="{ props: groupProps }">
@@ -685,11 +769,12 @@ const customerRailExpanded = ref(true);
 const productsRailExpanded = ref(true);
 const warehouseRailExpanded = ref(true);
 const purchasingRailExpanded = ref(true);
+const fulfillmentRailExpanded = ref(true);
 const operationsRailExpanded = ref(true);
 
 const currentLocale = computed(() => locale.value);
 
-const formPageRoutes = ['user-create', 'user-edit', 'user-password', 'user-roles', 'role-create', 'role-edit', 'role-permissions', 'permission-create', 'customer-create', 'customer-edit', 'category-create', 'category-edit', 'settings-edit-profile', 'settings-change-password', 'product-create', 'product-edit', 'product-category-create', 'product-category-edit', 'unit-create', 'unit-edit', 'warehouse-create', 'warehouse-edit', 'batch-create', 'batch-edit', 'adjustment-create', 'transfer-create', 'stocktake-create', 'purchase-order-create', 'purchase-order-edit', 'supplier-create', 'supplier-edit', 'supplier-category-create', 'supplier-category-edit', 'goods-receipt-create', 'supplier-return-create'];
+const formPageRoutes = ['user-create', 'user-edit', 'user-password', 'user-roles', 'role-create', 'role-edit', 'role-permissions', 'permission-create', 'customer-create', 'customer-edit', 'category-create', 'category-edit', 'settings-edit-profile', 'settings-change-password', 'product-create', 'product-edit', 'product-category-create', 'product-category-edit', 'unit-create', 'unit-edit', 'warehouse-create', 'warehouse-edit', 'batch-create', 'batch-edit', 'adjustment-create', 'transfer-create', 'stocktake-create', 'purchase-order-create', 'purchase-order-edit', 'supplier-create', 'supplier-edit', 'supplier-category-create', 'supplier-category-edit', 'goods-receipt-create', 'supplier-return-create', 'sales-order-create', 'sales-order-edit', 'carrier-create', 'carrier-edit', 'customer-return-create'];
 const isFormPage = computed(() => formPageRoutes.includes(route.name as string));
 
 const pageTitle = computed(() => {
