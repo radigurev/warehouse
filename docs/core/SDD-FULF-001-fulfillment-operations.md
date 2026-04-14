@@ -818,6 +818,7 @@ All error responses MUST use ProblemDetails (RFC 7807) format:
 | ProductId | INT | NOT NULL (cross-schema ref to inventory.Products) |
 | WarehouseId | INT | NOT NULL (cross-schema ref to inventory.Warehouses) |
 | LocationId | INT | NULL (cross-schema ref to inventory.StorageLocations) |
+| BatchId | INT | NULL (cross-schema ref to inventory.Batches) |
 | RequestedQuantity | DECIMAL(18,4) | NOT NULL |
 | ActualQuantity | DECIMAL(18,4) | NULL |
 | Status | NVARCHAR(20) | NOT NULL, DEFAULT 'Pending' |
@@ -849,6 +850,7 @@ All error responses MUST use ProblemDetails (RFC 7807) format:
 | ParcelId | INT | NOT NULL, FK -> fulfillment.Parcels(Id) |
 | PickListLineId | INT | NOT NULL, FK -> fulfillment.PickListLines(Id) |
 | ProductId | INT | NOT NULL (cross-schema ref to inventory.Products) |
+| BatchId | INT | NULL (cross-schema ref to inventory.Batches — inherited from PickListLine) |
 | Quantity | DECIMAL(18,4) | NOT NULL |
 
 **fulfillment.Shipments**
@@ -870,7 +872,7 @@ All error responses MUST use ProblemDetails (RFC 7807) format:
 | TrackingNumber | NVARCHAR(100) | NULL |
 | TrackingUrl | NVARCHAR(500) | NULL |
 | Notes | NVARCHAR(2000) | NULL |
-| DispatchedAtUtc | DATETIME2(7) | NOT NULL |
+| DispatchedAtUtc | DATETIME2(7) | NOT NULL, DEFAULT SYSUTCDATETIME() |
 | DispatchedByUserId | INT | NOT NULL (cross-schema ref to auth.Users) |
 
 **fulfillment.ShipmentLines**

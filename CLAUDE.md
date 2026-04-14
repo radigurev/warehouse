@@ -206,6 +206,8 @@ All entity naming and domain concepts follow the ISA-95 object model. This mappi
 | Area | `Zone` | `inventory.Zones` | Functional subdivision within a site |
 | Storage Zone | `Zone` | `inventory.Zones` | ISA-95 storage zone maps to WMS Zone |
 | Storage Unit | `StorageLocation` | `inventory.StorageLocations` | Addressable position (Row, Shelf, Bin, Bulk) |
+| Logistics Partner | `Carrier` | `fulfillment.Carriers` | External transport provider (ISA-95 Equipment Model extension) |
+| Transport Capability | `CarrierServiceLevel` | `fulfillment.CarrierServiceLevels` | Service tier offered by a carrier (speed, rate) |
 | Work Center | — | — | Not applicable — no production execution yet |
 | Work Unit | — | — | Not applicable — no production execution yet |
 
@@ -226,8 +228,20 @@ All entity naming and domain concepts follow the ISA-95 object model. This mappi
 | Stock Event | `StockMovement` | `inventory.StockMovements` | Immutable record of material quantity change |
 | Inventory Count | `StocktakeSession` | `inventory.StocktakeSessions` | Physical inventory count event |
 | Count Record | `StocktakeCount` | `inventory.StocktakeCounts` | Individual product count entry |
+| Fulfillment Request | `SalesOrder` | `fulfillment.SalesOrders` | Customer order requesting material shipment |
+| Fulfillment Request Detail | `SalesOrderLine` | `fulfillment.SalesOrderLines` | Line item within a fulfillment request |
+| Material Movement Request | `PickList` | `fulfillment.PickLists` | Outbound pick instruction for warehouse operators |
+| Material Movement Detail | `PickListLine` | `fulfillment.PickListLines` | Individual pick task (product/location/quantity) |
+| Handling Unit | `Parcel` | `fulfillment.Parcels` | Transport container for packed items |
+| Packing Detail | `ParcelItem` | `fulfillment.ParcelItems` | Product packed into a handling unit |
+| Material Shipment | `Shipment` | `fulfillment.Shipments` | Outbound dispatch record |
+| Shipment Detail | `ShipmentLine` | `fulfillment.ShipmentLines` | Product line within a shipment |
+| Shipment Tracking Record | `ShipmentTrackingEntry` | `fulfillment.ShipmentTrackingEntries` | Immutable status update for a shipment |
+| Material Receipt (Return) | `CustomerReturn` | `fulfillment.CustomerReturns` | Inbound return from customer |
+| Return Detail | `CustomerReturnLine` | `fulfillment.CustomerReturnLines` | Line item within a customer return |
+| Fulfillment Event | `FulfillmentEvent` | `fulfillment.FulfillmentEvents` | Immutable audit record of fulfillment operations |
 
-### 1.1.4 ISA-95 Inventory Operations Activity Model (Part 3)
+### 1.1.4 ISA-95 Operations Activity Model (Part 3)
 
 This maps ISA-95 activity model functions to WMS implementation.
 
@@ -239,8 +253,14 @@ This maps ISA-95 activity model functions to WMS implementation.
 | **Inventory Adjustment** | Approval workflow (Pending → Approved → Applied) | `InventoryAdjustmentsController` | Implemented |
 | **Material Movement** | Immutable StockMovement records with reason codes | `StockMovementsController` | Implemented |
 | **Material Transfer** | Inter-site transfer (Draft → Completed) | `WarehouseTransfersController` | Implemented |
-| **Material Receipt** | Inbound shipment processing | — | Planned |
-| **Material Shipment** | Outbound shipment processing | — | Planned |
+| **Material Receipt (Purchasing)** | Inbound goods receipt from supplier | `GoodsReceiptsController` | Implemented |
+| **Fulfillment Request Management** | Sales order lifecycle (Draft → Confirmed → Shipped → Completed) | `SalesOrdersController` | Implemented |
+| **Material Movement — Outbound (Pick)** | Pick list generation, line-by-line pick execution | `PickListsController` | Implemented |
+| **Material Packing** | Parcel creation, item packing into handling units | `SalesOrdersController` (parcels sub-resource) | Implemented |
+| **Material Shipment** | Dispatch from packed SO, shipment tracking with status history | `ShipmentsController` | Implemented |
+| **Carrier / Transport Management** | Carrier CRUD, service level management | `CarriersController` | Implemented |
+| **Material Receipt (Customer Return)** | Customer return lifecycle (Draft → Confirmed → Received → Closed) | `CustomerReturnsController` | Implemented |
+| **Fulfillment Event Recording** | Immutable event log for all fulfillment state changes | `FulfillmentEventsController` | Implemented |
 | **Material Storage** | Location assignment and management | `StorageLocationsController` | Implemented |
 | **Production Resource Management** | BOM/recipe definition | `BillOfMaterialsController` | Catalog only |
 
@@ -489,6 +509,27 @@ Warehouse.Gateway (standalone — no project references)
 | StocktakeCount | inventory | StocktakeCounts | Individual count entry per product/location |
 
 **Note:** `CreatedByUserId` and `ModifiedByUserId` columns reference `auth.Users` — plain FK, no EF navigation (cross-context boundary).
+
+### Fulfillment Domain (`Warehouse.Fulfillment.DBModel` — `FulfillmentDbContext`)
+
+| Entity | Schema | Table | Description |
+|---|---|---|---|
+| SalesOrder | fulfillment | SalesOrders | Customer order requesting material shipment |
+| SalesOrderLine | fulfillment | SalesOrderLines | Line item (product/quantity/price) within a sales order |
+| PickList | fulfillment | PickLists | Pick instruction generated from a confirmed SO |
+| PickListLine | fulfillment | PickListLines | Individual pick task (product/location/quantity) |
+| Parcel | fulfillment | Parcels | Transport container for packed items |
+| ParcelItem | fulfillment | ParcelItems | Product packed into a parcel |
+| Shipment | fulfillment | Shipments | Outbound dispatch record for a sales order |
+| ShipmentLine | fulfillment | ShipmentLines | Product line within a shipment |
+| ShipmentTrackingEntry | fulfillment | ShipmentTrackingEntries | Immutable shipment status update record |
+| Carrier | fulfillment | Carriers | External transport provider |
+| CarrierServiceLevel | fulfillment | CarrierServiceLevels | Service tier offered by a carrier |
+| CustomerReturn | fulfillment | CustomerReturns | Inbound return from customer |
+| CustomerReturnLine | fulfillment | CustomerReturnLines | Line item within a customer return |
+| FulfillmentEvent | fulfillment | FulfillmentEvents | Immutable audit trail for fulfillment operations |
+
+**Note:** `CreatedByUserId`, `ConfirmedByUserId`, `DispatchedByUserId`, and similar columns reference `auth.Users` — plain FK, no EF navigation (cross-context boundary). `ProductId` references `inventory.Products`, `WarehouseId` references `inventory.Warehouses`, `CustomerId` references `customers.Customers` — all cross-schema, no EF navigation.
 
 ---
 
