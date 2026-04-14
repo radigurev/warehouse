@@ -64,6 +64,7 @@ const visible = defineModel<boolean>({ required: true });
 
 const props = defineProps<{
   line: PickListLineDto | null;
+  pickListId: number | null;
 }>();
 
 const emit = defineEmits<{
@@ -94,12 +95,8 @@ async function handlePick(): Promise<void> {
 
   loading.value = true;
   try {
-    // The pick list ID is derived from the line's context (passed from the parent view)
-    // We need the pick list ID from the parent — the line belongs to one pick list
-    const pickListId = (props.line as PickListLineDto & { pickListId?: number }).pickListId;
-    if (pickListId) {
-      await pickLine(pickListId, props.line.id, { actualQuantity: form.actualQuantity });
-    }
+    if (!props.pickListId) return;
+    await pickLine(props.pickListId, props.line.id, { actualQuantity: form.actualQuantity });
     notification.success(t('pickLists.pick') + ' \u2713');
     visible.value = false;
     emit('picked');

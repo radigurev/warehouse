@@ -330,6 +330,7 @@
     <ParcelFormDialog
       v-model="showParcelFormDialog"
       :parcel="editingParcel"
+      :sales-order-id="vm.orderId"
       @saved="onParcelSaved"
     />
 
@@ -338,6 +339,8 @@
       v-model="showParcelItemDialog"
       :so-lines="vm.order?.lines ?? []"
       :pick-lines="vm.confirmedPickLines"
+      :sales-order-id="vm.orderId"
+      :parcel-id="activeParcelId ?? undefined"
       @saved="onParcelItemSaved"
     />
   </div>
@@ -354,6 +357,7 @@ import DispatchDialog from '@features/fulfillment/components/organisms/DispatchD
 import ParcelFormDialog from '@features/fulfillment/components/organisms/ParcelFormDialog.vue';
 import ParcelItemDialog from '@features/fulfillment/components/organisms/ParcelItemDialog.vue';
 import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
+import { addParcelItem } from '@features/fulfillment/api/parcels';
 import type { ParcelDto } from '@features/fulfillment/types/fulfillment';
 
 const router = useRouter();
@@ -485,9 +489,16 @@ async function onParcelSaved(): Promise<void> {
   await vm.loadSalesOrder();
 }
 
-async function onParcelItemSaved(): Promise<void> {
-  showParcelItemDialog.value = false;
-  activeParcelId.value = null;
-  await vm.loadSalesOrder();
+async function onParcelItemSaved(request: { productId: number; pickListLineId: number; quantity: number }): Promise<void> {
+  if (!activeParcelId.value) return;
+  try {
+    await addParcelItem(vm.orderId, activeParcelId.value, request);
+    notification.success(vm.t('salesOrders.parcelItemAdded') + ' \u2713');
+    showParcelItemDialog.value = false;
+    activeParcelId.value = null;
+    await vm.loadSalesOrder();
+  } catch (err) {
+    notification.error(getApiErrorMessage(err, vm.t));
+  }
 }
 </script>

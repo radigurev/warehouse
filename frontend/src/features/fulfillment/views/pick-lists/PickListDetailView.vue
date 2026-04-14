@@ -118,6 +118,7 @@
     <PickDialog
       v-model="showPickDialog"
       :line="pickingLine"
+      :pick-list-id="vm.pickList?.id ?? null"
       @picked="onPicked"
     />
   </div>

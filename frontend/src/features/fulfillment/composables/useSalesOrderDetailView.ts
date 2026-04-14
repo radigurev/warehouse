@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useNotificationStore } from '@shared/stores/notification';
 import { useLayoutStore } from '@shared/stores/layout';
 import { getSalesOrderById, confirmSalesOrder, cancelSalesOrder, completeSalesOrder } from '@features/fulfillment/api/sales-orders';
-import { generatePickList } from '@features/fulfillment/api/pick-lists';
+import { generatePickList, getPickListById } from '@features/fulfillment/api/pick-lists';
 import { createShipment } from '@features/fulfillment/api/shipments';
 import { deleteParcel, removeParcelItem } from '@features/fulfillment/api/parcels';
 import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
@@ -39,6 +39,7 @@ export function useSalesOrderDetailView() {
     loading.value = true;
     try {
       so.value = await getSalesOrderById(soId);
+      await loadConfirmedPickLines();
     } catch {
       notFound.value = true;
     } finally {
@@ -155,12 +156,25 @@ export function useSalesOrderDetailView() {
     }
   }
 
-  const confirmedPickLines = computed<PickListLineDto[]>(() => {
-    if (!so.value) return [];
-    return so.value.pickLists
-      .filter((pl) => pl.status === 'Completed')
-      .flatMap((pl) => 'lines' in pl ? (pl as unknown as { lines: PickListLineDto[] }).lines : []);
-  });
+  const confirmedPickLines = ref<PickListLineDto[]>([]);
+
+  async function loadConfirmedPickLines(): Promise<void> {
+    if (!so.value) {
+      confirmedPickLines.value = [];
+      return;
+    }
+    const completedSummaries = so.value.pickLists.filter((pl) => pl.status === 'Completed');
+    if (completedSummaries.length === 0) {
+      confirmedPickLines.value = [];
+      return;
+    }
+    try {
+      const details = await Promise.all(completedSummaries.map((pl) => getPickListById(pl.id)));
+      confirmedPickLines.value = details.flatMap((d) => d.lines.filter((l) => l.status === 'Picked'));
+    } catch {
+      confirmedPickLines.value = [];
+    }
+  }
 
   return {
     t,
