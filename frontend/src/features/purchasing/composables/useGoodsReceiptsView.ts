@@ -20,6 +20,8 @@ export function useGoodsReceiptsView() {
   const totalCount = ref(0);
   const totalPages = computed(() => Math.ceil(totalCount.value / (searchParams.value.pageSize || 25)));
   const showFormDialog = ref(false);
+  const showDetailDialog = ref(false);
+  const selectedReceipt = ref<GoodsReceiptDto | null>(null);
 
   const searchParams = ref<SearchGoodsReceiptsRequest>({
     sortDescending: true,
@@ -84,6 +86,9 @@ export function useGoodsReceiptsView() {
   function handleDetail(receipt: GoodsReceiptDto): void {
     if (layout.isPageMode) {
       router.push({ name: 'goods-receipt-detail', params: { id: receipt.id } });
+    } else {
+      selectedReceipt.value = receipt;
+      showDetailDialog.value = true;
     }
   }
 
@@ -104,6 +109,8 @@ export function useGoodsReceiptsView() {
     totalCount,
     totalPages,
     showFormDialog,
+    showDetailDialog,
+    selectedReceipt,
     searchParams,
     columnFilters,
     filteredItems,

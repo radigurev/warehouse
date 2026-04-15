@@ -3,6 +3,7 @@ using MassTransit;
 using Moq;
 using Warehouse.Common.Enums;
 using Warehouse.Common.Models;
+using Warehouse.Infrastructure.Sequences;
 using Warehouse.Purchasing.API.Interfaces;
 using Warehouse.Purchasing.API.Services;
 using Warehouse.Purchasing.API.Tests.Fixtures;
@@ -24,6 +25,7 @@ public sealed class GoodsReceiptServiceTests : PurchasingTestBase
 {
     private Mock<IPublishEndpoint> _mockPublishEndpoint = null!;
     private Mock<IPurchaseEventService> _mockEventService = null!;
+    private Mock<ISequenceGenerator> _mockSequenceGenerator = null!;
     private GoodsReceiptService _sut = null!;
 
     [SetUp]
@@ -32,7 +34,8 @@ public sealed class GoodsReceiptServiceTests : PurchasingTestBase
         base.SetUp();
         _mockPublishEndpoint = new Mock<IPublishEndpoint>();
         _mockEventService = new Mock<IPurchaseEventService>();
-        _sut = new GoodsReceiptService(Context, Mapper, _mockPublishEndpoint.Object, _mockEventService.Object);
+        _mockSequenceGenerator = new Mock<ISequenceGenerator>();
+        _sut = new GoodsReceiptService(Context, Mapper, _mockPublishEndpoint.Object, _mockEventService.Object, _mockSequenceGenerator.Object);
     }
 
     [Test]

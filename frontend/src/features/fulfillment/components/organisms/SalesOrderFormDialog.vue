@@ -39,14 +39,26 @@
           </v-col>
 
           <v-col v-bind="grid.fieldCols">
-            <v-text-field
-              v-model="form.requestedShipDate"
-              :label="t('salesOrders.form.requestedShipDate')"
-              prepend-inner-icon="mdi-calendar"
-              :density="layout.vuetifyDensity"
-              type="date"
-              clearable
-            />
+            <v-menu v-model="shipDateMenu" :close-on-content-click="false">
+              <template #activator="{ props: menuProps }">
+                <v-text-field
+                  v-bind="menuProps"
+                  :model-value="form.requestedShipDate"
+                  :label="t('salesOrders.form.requestedShipDate')"
+                  prepend-inner-icon="mdi-calendar"
+                  :density="layout.vuetifyDensity"
+                  readonly
+                  clearable
+                  @click:clear="form.requestedShipDate = ''"
+                />
+              </template>
+              <v-date-picker
+                :model-value="form.requestedShipDate ? new Date(form.requestedShipDate + 'T00:00:00') : undefined"
+                color="primary"
+                show-adjacent-months
+                @update:model-value="onShipDatePicked"
+              />
+            </v-menu>
           </v-col>
 
           <v-col v-bind="grid.fieldCols">
@@ -302,6 +314,8 @@ const carriers = ref<CarrierDto[]>([]);
 const carriersLoading = ref(false);
 const allServiceLevels = ref<CarrierServiceLevelDto[]>([]);
 
+const shipDateMenu = ref(false);
+
 const fieldErrors = reactive<Record<string, string[]>>({
   customerId: [],
 });
@@ -428,6 +442,15 @@ function addLine(): void {
 
 function removeLine(index: number): void {
   form.lines.splice(index, 1);
+}
+
+function onShipDatePicked(value: unknown): void {
+  if (value instanceof Date) {
+    form.requestedShipDate = value.toISOString().split('T')[0];
+  } else {
+    form.requestedShipDate = '';
+  }
+  shipDateMenu.value = false;
 }
 
 const rules = {

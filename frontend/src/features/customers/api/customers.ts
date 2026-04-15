@@ -21,3 +21,7 @@ export const deactivateCustomer = base.remove;
 export function reactivateCustomer(id: number): Promise<CustomerDetailDto> {
   return apiClient.post<CustomerDetailDto>(`/customers/${id}/reactivate`, {}).then((r) => r.data);
 }
+
+export function getNextCustomerCode(): Promise<string> {
+  return apiClient.get<string>('/customers/next-code').then((r) => r.data);
+}

@@ -72,7 +72,7 @@
               </thead>
               <tbody>
                 <tr v-for="line in po.lines" :key="line.id">
-                  <td>{{ line.productId }}</td>
+                  <td>{{ line.productName }}</td>
                   <td class="text-end">{{ line.orderedQuantity }}</td>
                   <td class="text-end">{{ line.unitPrice.toFixed(2) }}</td>
                   <td class="text-end">{{ line.lineTotal.toFixed(2) }}</td>

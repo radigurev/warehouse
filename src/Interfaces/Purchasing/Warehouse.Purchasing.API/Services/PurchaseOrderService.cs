@@ -64,7 +64,7 @@ public sealed class PurchaseOrderService : BasePurchasingEntityService, IPurchas
     {
         PurchaseOrder? po = await GetPOWithDetailsAsync(id, cancellationToken).ConfigureAwait(false);
         if (po is null) return Result<PurchaseOrderDetailDto>.Failure("PO_NOT_FOUND", "Purchase order not found.", 404);
-        PurchaseOrderDetailDto dto = Mapper.Map<PurchaseOrderDetailDto>(po);
+        PurchaseOrderDetailDto dto = await MapToDetailDtoAsync(po, cancellationToken).ConfigureAwait(false);
         return Result<PurchaseOrderDetailDto>.Success(dto);
     }
 
@@ -91,7 +91,7 @@ public sealed class PurchaseOrderService : BasePurchasingEntityService, IPurchas
         po.ModifiedAtUtc = DateTime.UtcNow; po.ModifiedByUserId = userId;
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        PurchaseOrderDetailDto dto = Mapper.Map<PurchaseOrderDetailDto>(po);
+        PurchaseOrderDetailDto dto = await MapToDetailDtoAsync(po, cancellationToken).ConfigureAwait(false);
         return Result<PurchaseOrderDetailDto>.Success(dto);
     }
 
@@ -159,7 +159,7 @@ public sealed class PurchaseOrderService : BasePurchasingEntityService, IPurchas
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         await _eventService.RecordEventAsync("PurchaseOrderConfirmed", "PurchaseOrder", id, userId, null, cancellationToken).ConfigureAwait(false);
 
-        PurchaseOrderDetailDto dto = Mapper.Map<PurchaseOrderDetailDto>(po);
+        PurchaseOrderDetailDto dto = await MapToDetailDtoAsync(po, cancellationToken).ConfigureAwait(false);
         return Result<PurchaseOrderDetailDto>.Success(dto);
     }
 
@@ -179,7 +179,7 @@ public sealed class PurchaseOrderService : BasePurchasingEntityService, IPurchas
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         await _eventService.RecordEventAsync("PurchaseOrderCancelled", "PurchaseOrder", id, userId, null, cancellationToken).ConfigureAwait(false);
 
-        PurchaseOrderDetailDto dto = Mapper.Map<PurchaseOrderDetailDto>(po);
+        PurchaseOrderDetailDto dto = await MapToDetailDtoAsync(po, cancellationToken).ConfigureAwait(false);
         return Result<PurchaseOrderDetailDto>.Success(dto);
     }
 
@@ -197,13 +197,44 @@ public sealed class PurchaseOrderService : BasePurchasingEntityService, IPurchas
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         await _eventService.RecordEventAsync("PurchaseOrderClosed", "PurchaseOrder", id, userId, null, cancellationToken).ConfigureAwait(false);
 
-        PurchaseOrderDetailDto dto = Mapper.Map<PurchaseOrderDetailDto>(po);
+        PurchaseOrderDetailDto dto = await MapToDetailDtoAsync(po, cancellationToken).ConfigureAwait(false);
         return Result<PurchaseOrderDetailDto>.Success(dto);
     }
 
     private async Task<PurchaseOrder?> GetPOWithDetailsAsync(int id, CancellationToken cancellationToken)
     {
         return await Context.PurchaseOrders.Include(po => po.Supplier).Include(po => po.Lines).FirstOrDefaultAsync(po => po.Id == id, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<PurchaseOrderDetailDto> MapToDetailDtoAsync(PurchaseOrder po, CancellationToken cancellationToken)
+    {
+        PurchaseOrderDetailDto dto = Mapper.Map<PurchaseOrderDetailDto>(po);
+        await ResolveProductDataAsync(dto.Lines, cancellationToken).ConfigureAwait(false);
+        return dto;
+    }
+
+    private async Task ResolveProductDataAsync(IReadOnlyList<PurchaseOrderLineDto> lines, CancellationToken cancellationToken)
+    {
+        List<int> productIds = lines.Select(l => l.ProductId).Distinct().ToList();
+        if (productIds.Count == 0) return;
+
+        Dictionary<int, ProductLookup> lookupMap = await Context.ProductLookups
+            .Where(p => productIds.Contains(p.Id))
+            .ToDictionaryAsync(p => p.Id, cancellationToken)
+            .ConfigureAwait(false);
+
+        foreach (PurchaseOrderLineDto line in lines)
+        {
+            if (lookupMap.TryGetValue(line.ProductId, out ProductLookup? lookup))
+            {
+                line.ProductName = lookup.Name;
+                line.ProductCode = lookup.Code;
+            }
+            else
+            {
+                line.ProductName = $"Product #{line.ProductId}";
+            }
+        }
     }
 
     private async Task<Result?> ValidateSupplierForPOAsync(int supplierId, CancellationToken cancellationToken)

@@ -31,6 +31,18 @@ public sealed class CustomersController : BaseApiController
     }
 
     /// <summary>
+    /// Returns the next auto-generated customer code without reserving it.
+    /// </summary>
+    [HttpGet("next-code")]
+    [RequirePermission("customers:read")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetNextCodeAsync(CancellationToken cancellationToken)
+    {
+        Result<string> result = await _customerService.GetNextCodeAsync(cancellationToken);
+        return ToActionResult(result);
+    }
+
+    /// <summary>
     /// Creates a new customer. Auto-generates code if not provided.
     /// </summary>
     [HttpPost]

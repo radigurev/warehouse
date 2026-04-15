@@ -19,17 +19,14 @@
             />
           </v-col>
 
-          <v-col v-if="!isEdit" v-bind="grid.fieldCols">
+          <v-col v-bind="grid.fieldCols">
             <v-text-field
               v-model="form.code"
               :label="t('customers.form.code')"
               prepend-inner-icon="mdi-identifier"
               :density="layout.vuetifyDensity"
-              :hint="t('customers.form.codeHint')"
-              persistent-hint
-              :rules="[rules.codeFormat, rules.codeLength]"
-              :error-messages="fieldErrors.code"
-              @update:model-value="fieldErrors.code = []"
+              readonly
+              :loading="codeLoading"
             />
           </v-col>
 
@@ -98,7 +95,7 @@
 import { ref, reactive, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useNotificationStore } from '@shared/stores/notification';
-import { createCustomer, updateCustomer, getCustomerById } from '@features/customers/api/customers';
+import { createCustomer, updateCustomer, getCustomerById, getNextCustomerCode } from '@features/customers/api/customers';
 import { getAllCategories } from '@features/customers/api/categories';
 import type { CustomerDto, CustomerCategoryDto } from '@features/customers/types/customer';
 import type { AxiosError } from 'axios';
@@ -130,6 +127,7 @@ const formRef = ref();
 const loading = ref(false);
 const categories = ref<CustomerCategoryDto[]>([]);
 const categoriesLoading = ref(false);
+const codeLoading = ref(false);
 const fieldErrors = reactive<Record<string, string[]>>({
   name: [],
   code: [],
@@ -180,6 +178,14 @@ async function populateForm(): Promise<void> {
     form.taxId = '';
     form.categoryId = null;
     form.notes = '';
+    codeLoading.value = true;
+    try {
+      form.code = await getNextCustomerCode();
+    } catch {
+      form.code = '';
+    } finally {
+      codeLoading.value = false;
+    }
   }
   fieldErrors.name = [];
   fieldErrors.code = [];

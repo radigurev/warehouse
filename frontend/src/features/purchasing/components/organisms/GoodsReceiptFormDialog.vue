@@ -1,5 +1,5 @@
 <template>
-  <FormWrapper v-model="visible" :mode="mode" max-width="900" :title="t('goodsReceipts.create')" icon="mdi-package-down" @back="cancel">
+  <FormWrapper v-model="visible" :mode="mode" max-width="1100" :title="t('goodsReceipts.create')" icon="mdi-package-down" @back="cancel">
     <v-card-title class="text-h6">
       {{ t('goodsReceipts.create') }}
     </v-card-title>
@@ -92,17 +92,20 @@
                   :density="layout.vuetifyDensity"
                   hide-details
                   variant="underlined"
-                  :min="0.01"
+                  :min="0"
                   :max="line.remainingQuantity"
                   step="any"
                 />
               </td>
-              <td style="min-width: 120px">
+              <td style="min-width: 160px">
                 <v-text-field
-                  v-model="line.batchNumber"
+                  :model-value="line.batchNumberPreview"
                   :density="layout.vuetifyDensity"
                   hide-details
                   variant="underlined"
+                  readonly
+                  disabled
+                  prepend-inner-icon="mdi-barcode"
                 />
               </td>
               <td style="min-width: 160px">
@@ -121,8 +124,9 @@
                     />
                   </template>
                   <v-date-picker
-                    :model-value="line.manufacturingDate ? new Date(line.manufacturingDate) : undefined"
+                    :model-value="line.manufacturingDate ? new Date(line.manufacturingDate + 'T00:00:00') : undefined"
                     color="primary"
+                    show-adjacent-months
                     @update:model-value="(v: unknown) => { line.manufacturingDate = formatDateValue(v); line.mfgDateMenu = false; }"
                   />
                 </v-menu>
@@ -143,8 +147,9 @@
                     />
                   </template>
                   <v-date-picker
-                    :model-value="line.expiryDate ? new Date(line.expiryDate) : undefined"
+                    :model-value="line.expiryDate ? new Date(line.expiryDate + 'T00:00:00') : undefined"
                     color="primary"
+                    show-adjacent-months
                     @update:model-value="(v: unknown) => { line.expiryDate = formatDateValue(v); line.expDateMenu = false; }"
                   />
                 </v-menu>
@@ -187,15 +192,14 @@ import type {
   PurchaseOrderLineDto,
 } from '@features/purchasing/types/purchasing';
 import type { WarehouseDto, StorageLocationDto } from '@features/inventory/types/inventory';
-import type { AxiosError } from 'axios';
-import type { ProblemDetails } from '@shared/types/api';
 
 interface ReceiptLineForm {
   purchaseOrderLineId: number;
   productName: string;
+  productCode: string;
   remainingQuantity: number;
   receivedQuantity: number;
-  batchNumber: string;
+  batchNumberPreview: string;
   manufacturingDate: string;
   expiryDate: string;
   mfgDateMenu: boolean;
@@ -301,26 +305,24 @@ async function onPurchaseOrderSelected(): Promise<void> {
     form.warehouseId = detail.destinationWarehouseId;
     await onWarehouseChanged();
 
-    form.lines = detail.lines
-      .filter((l: PurchaseOrderLineDto) => l.remainingQuantity > 0)
-      .map((l: PurchaseOrderLineDto) => ({
-        purchaseOrderLineId: l.id,
-        productName: getProductNameById(l.productId),
-        remainingQuantity: l.remainingQuantity,
-        receivedQuantity: l.remainingQuantity,
-        batchNumber: '',
-        manufacturingDate: '',
-        expiryDate: '',
-        mfgDateMenu: false,
-        expDateMenu: false,
-      }));
+    const receivableLines = detail.lines.filter((l: PurchaseOrderLineDto) => l.remainingQuantity > 0);
+    const dateSegment = new Date().toISOString().slice(0, 7).replace('-', '');
+
+    form.lines = receivableLines.map((l: PurchaseOrderLineDto) => ({
+      purchaseOrderLineId: l.id,
+      productName: l.productName,
+      productCode: l.productCode,
+      remainingQuantity: l.remainingQuantity,
+      receivedQuantity: 0,
+      batchNumberPreview: `${l.productCode}-${dateSegment}-###`,
+      manufacturingDate: '',
+      expiryDate: '',
+      mfgDateMenu: false,
+      expDateMenu: false,
+    }));
   } catch (err) {
     notification.error(getApiErrorMessage(err, t));
   }
-}
-
-function getProductNameById(productId: number): string {
-  return `Product #${productId}`;
 }
 
 async function onWarehouseChanged(): Promise<void> {
@@ -348,13 +350,15 @@ async function handleSubmit(): Promise<void> {
   const { valid } = await formRef.value.validate();
   if (!valid) return;
 
-  if (form.lines.length === 0) {
+  const activeLines = form.lines.filter((l) => l.receivedQuantity > 0);
+
+  if (activeLines.length === 0) {
     notification.error(t('goodsReceipts.detail.noLines'));
     return;
   }
 
-  const invalidLines = form.lines.some(
-    (l) => !l.receivedQuantity || l.receivedQuantity <= 0 || l.receivedQuantity > l.remainingQuantity
+  const invalidLines = activeLines.some(
+    (l) => l.receivedQuantity > l.remainingQuantity
   );
   if (invalidLines) {
     notification.error(t('errors.VALIDATION_ERROR'));
@@ -368,10 +372,9 @@ async function handleSubmit(): Promise<void> {
       warehouseId: form.warehouseId!,
       locationId: form.locationId ?? undefined,
       notes: form.notes || null,
-      lines: form.lines.map((l) => ({
+      lines: activeLines.map((l) => ({
         purchaseOrderLineId: l.purchaseOrderLineId,
         receivedQuantity: l.receivedQuantity,
-        batchNumber: l.batchNumber || null,
         manufacturingDate: l.manufacturingDate || null,
         expiryDate: l.expiryDate || null,
       })),

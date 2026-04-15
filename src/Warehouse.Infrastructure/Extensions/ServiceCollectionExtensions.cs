@@ -13,8 +13,10 @@ using Microsoft.FeatureManagement;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Warehouse.Infrastructure.Authorization;
+using Warehouse.Infrastructure.Caching;
 using Warehouse.Infrastructure.Configuration;
 using Warehouse.Infrastructure.Http;
+using Warehouse.Infrastructure.Messaging;
 using Warehouse.Infrastructure.Sequences;
 
 namespace Warehouse.Infrastructure.Extensions;
@@ -219,6 +221,29 @@ public static class ServiceCollectionExtensions
 
         services.AddHealthChecks()
             .AddRedis(redisConnection, name: "redis", tags: ["ready"]);
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers the open-generic <see cref="ICacheService{T}"/> backed by
+    /// <see cref="DistributedCacheService{T}"/> as a singleton.
+    /// Must be called after <see cref="AddWarehouseRedisCache"/>.
+    /// </summary>
+    public static IServiceCollection AddWarehouseCacheService(this IServiceCollection services)
+    {
+        services.AddSingleton(typeof(ICacheService<>), typeof(DistributedCacheService<>));
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers <see cref="IResilientPublisher"/> backed by <see cref="ResilientPublisher"/>
+    /// as a scoped service. Must be called after <see cref="AddWarehouseMessageBus"/>.
+    /// </summary>
+    public static IServiceCollection AddWarehouseResilientPublisher(this IServiceCollection services)
+    {
+        services.AddScoped<IResilientPublisher, ResilientPublisher>();
 
         return services;
     }

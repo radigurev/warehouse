@@ -76,6 +76,11 @@ public sealed class PurchasingDbContext : DbContext
     public DbSet<PurchaseEvent> PurchaseEvents { get; set; } = null!;
 
     /// <summary>
+    /// Gets or sets the read-only product lookup set (mapped to inventory.Products via ToView).
+    /// </summary>
+    public DbSet<ProductLookup> ProductLookups { get; set; } = null!;
+
+    /// <summary>
     /// Configures entity defaults, indexes, and relationships via Fluent API.
     /// </summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -94,6 +99,7 @@ public sealed class PurchasingDbContext : DbContext
         ConfigureSupplierReturn(modelBuilder);
         ConfigureSupplierReturnLine(modelBuilder);
         ConfigurePurchaseEvent(modelBuilder);
+        ConfigureProductLookup(modelBuilder);
     }
 
     /// <summary>
@@ -517,6 +523,20 @@ public sealed class PurchasingDbContext : DbContext
 
             e.HasIndex(p => p.OccurredAtUtc)
                 .HasDatabaseName("IX_PurchaseEvents_OccurredAtUtc");
+        });
+    }
+
+    /// <summary>
+    /// Configures the read-only ProductLookup entity mapped to inventory.Products (no migrations).
+    /// </summary>
+    private static void ConfigureProductLookup(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<ProductLookup>(e =>
+        {
+            e.ToView("Products", "inventory");
+            e.HasKey(p => p.Id);
+            e.Property(p => p.Name).HasMaxLength(200).HasColumnType("nvarchar(200)");
+            e.Property(p => p.Code).HasMaxLength(50).HasColumnType("nvarchar(50)");
         });
     }
 }

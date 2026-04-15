@@ -29,6 +29,7 @@ export function useBatchesView() {
   const headers = computed(() => [
     { title: t('batches.columns.batchNumber'), key: 'batchNumber', sortable: true },
     { title: t('batches.columns.product'), key: 'productName', sortable: true },
+    { title: t('batches.columns.quantityOnHand'), key: 'quantityOnHand', sortable: true },
     { title: t('batches.columns.expiryDate'), key: 'expiryDate', sortable: true },
     { title: t('batches.columns.isActive'), key: 'isActive', sortable: true },
     { title: t('batches.columns.createdAt'), key: 'createdAtUtc', sortable: true },

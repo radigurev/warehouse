@@ -39,6 +39,7 @@ public sealed class BatchService : BaseInventoryEntityService, IBatchService
             return Result<BatchDto>.Failure("BATCH_NOT_FOUND", "Batch not found.", 404);
 
         BatchDto dto = Mapper.Map<BatchDto>(batch);
+        await ResolveQuantitiesAsync([dto], cancellationToken).ConfigureAwait(false);
         return Result<BatchDto>.Success(dto);
     }
 
@@ -59,6 +60,7 @@ public sealed class BatchService : BaseInventoryEntityService, IBatchService
             .ConfigureAwait(false);
 
         IReadOnlyList<BatchDto> dtos = Mapper.Map<IReadOnlyList<BatchDto>>(items);
+        await ResolveQuantitiesAsync(dtos, cancellationToken).ConfigureAwait(false);
 
         PaginatedResponse<BatchDto> response = new()
         {
@@ -147,6 +149,27 @@ public sealed class BatchService : BaseInventoryEntityService, IBatchService
         batch.IsActive = false;
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return Result.Success();
+    }
+
+    /// <summary>
+    /// Resolves total quantity on hand for each batch from stock levels.
+    /// </summary>
+    private async Task ResolveQuantitiesAsync(IReadOnlyList<BatchDto> dtos, CancellationToken cancellationToken)
+    {
+        List<int> batchIds = dtos.Select(d => d.Id).ToList();
+        if (batchIds.Count == 0) return;
+
+        Dictionary<int, decimal> quantityMap = await Context.StockLevels
+            .Where(sl => sl.BatchId.HasValue && batchIds.Contains(sl.BatchId.Value))
+            .GroupBy(sl => sl.BatchId!.Value)
+            .Select(g => new { BatchId = g.Key, Total = g.Sum(sl => sl.QuantityOnHand) })
+            .ToDictionaryAsync(x => x.BatchId, x => x.Total, cancellationToken)
+            .ConfigureAwait(false);
+
+        foreach (BatchDto dto in dtos)
+        {
+            dto.QuantityOnHand = quantityMap.GetValueOrDefault(dto.Id, 0m);
+        }
     }
 
     /// <summary>

@@ -135,6 +135,8 @@ export interface PurchaseOrderDetailDto {
 export interface PurchaseOrderLineDto {
   id: number;
   productId: number;
+  productName: string;
+  productCode: string;
   orderedQuantity: number;
   unitPrice: number;
   lineTotal: number;

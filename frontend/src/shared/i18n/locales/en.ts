@@ -475,6 +475,7 @@ export default {
     columns: {
       batchNumber: 'Batch Number',
       product: 'Product',
+      quantityOnHand: 'Qty On Hand',
       expiryDate: 'Expiry Date',
       isActive: 'Active',
       createdAt: 'Created',

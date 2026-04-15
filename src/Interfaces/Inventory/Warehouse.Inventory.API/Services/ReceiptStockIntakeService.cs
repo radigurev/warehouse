@@ -134,7 +134,8 @@ public sealed class ReceiptStockIntakeService : IReceiptStockIntakeService
 
     /// <summary>
     /// Resolves or creates a batch according to SDD-INV-005 Section 2.2.
-    /// Returns null when no batch is needed (product does not require tracking and no number provided).
+    /// Every receipt MUST produce a Material Lot per ISA-95 Part 2 Section 7 (compliance rule 5).
+    /// When no batch number is provided, one is auto-generated regardless of the product tracking flag.
     /// </summary>
     private async Task<int?> ResolveBatchAsync(
         ReceiptLineContext context,
@@ -146,13 +147,8 @@ public sealed class ReceiptStockIntakeService : IReceiptStockIntakeService
         if (hasBatchNumber)
             return await FindOrCreateBatchAsync(context, context.BatchNumber!, cancellationToken).ConfigureAwait(false);
 
-        if (product.RequiresBatchTracking)
-        {
-            string generatedNumber = await GenerateBatchNumberAsync(product.Code, context.GoodsReceiptLineId, cancellationToken).ConfigureAwait(false);
-            return await FindOrCreateBatchAsync(context, generatedNumber, cancellationToken).ConfigureAwait(false);
-        }
-
-        return null;
+        string generatedNumber = await GenerateBatchNumberAsync(product.Code, context.GoodsReceiptLineId, cancellationToken).ConfigureAwait(false);
+        return await FindOrCreateBatchAsync(context, generatedNumber, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

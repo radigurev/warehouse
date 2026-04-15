@@ -16,6 +16,16 @@ public sealed record PurchaseOrderLineDto
     public required int ProductId { get; init; }
 
     /// <summary>
+    /// Gets or sets the product name (resolved from inventory lookup).
+    /// </summary>
+    public string ProductName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the product code (resolved from inventory lookup, used for batch number generation).
+    /// </summary>
+    public string ProductCode { get; set; } = string.Empty;
+
+    /// <summary>
     /// Gets the ordered quantity.
     /// </summary>
     public required decimal OrderedQuantity { get; init; }

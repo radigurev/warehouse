@@ -31,6 +31,13 @@ public sealed class CustomerService : BaseCustomerEntityService, ICustomerServic
     }
 
     /// <inheritdoc />
+    public async Task<Result<string>> GetNextCodeAsync(CancellationToken cancellationToken)
+    {
+        string code = await GenerateCustomerCodeAsync(cancellationToken).ConfigureAwait(false);
+        return Result<string>.Success(code);
+    }
+
+    /// <inheritdoc />
     public async Task<Result<CustomerDetailDto>> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         Customer? customer = await GetCustomerWithDetailsAsync(id, cancellationToken).ConfigureAwait(false);

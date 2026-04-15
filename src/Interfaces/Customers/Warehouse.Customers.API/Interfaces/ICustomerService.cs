@@ -12,6 +12,11 @@ namespace Warehouse.Customers.API.Interfaces;
 public interface ICustomerService
 {
     /// <summary>
+    /// Returns the next auto-generated customer code without reserving it.
+    /// </summary>
+    Task<Result<string>> GetNextCodeAsync(CancellationToken cancellationToken);
+
+    /// <summary>
     /// Gets a customer by ID with all nested data, excluding soft-deleted records.
     /// </summary>
     Task<Result<CustomerDetailDto>> GetByIdAsync(int id, CancellationToken cancellationToken);

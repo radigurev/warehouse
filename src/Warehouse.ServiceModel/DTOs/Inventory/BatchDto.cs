@@ -36,6 +36,11 @@ public sealed record BatchDto
     public string? Notes { get; init; }
 
     /// <summary>
+    /// Gets the total quantity on hand across all stock levels for this batch.
+    /// </summary>
+    public decimal QuantityOnHand { get; set; }
+
+    /// <summary>
     /// Gets whether the batch is active.
     /// </summary>
     public required bool IsActive { get; init; }

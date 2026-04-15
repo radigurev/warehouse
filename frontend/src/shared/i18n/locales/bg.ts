@@ -475,6 +475,7 @@ export default {
     columns: {
       batchNumber: 'Номер на партида',
       product: 'Продукт',
+      quantityOnHand: 'Налично кол.',
       expiryDate: 'Дата на годност',
       isActive: 'Активна',
       createdAt: 'Създадена',

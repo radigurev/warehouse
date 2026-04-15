@@ -236,6 +236,7 @@ export interface BatchDto {
   productId: number;
   productName: string;
   batchNumber: string;
+  quantityOnHand: number;
   expiryDate: string | null;
   notes: string | null;
   isActive: boolean;

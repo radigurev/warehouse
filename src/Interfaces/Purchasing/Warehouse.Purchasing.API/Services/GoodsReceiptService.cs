@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using NLog;
 using Warehouse.Common.Enums;
 using Warehouse.Common.Models;
+using Warehouse.Infrastructure.Sequences;
 using Warehouse.Purchasing.API.Interfaces;
 using Warehouse.Purchasing.API.Services.Base;
 using Warehouse.Purchasing.DBModel;
@@ -24,15 +25,22 @@ public sealed class GoodsReceiptService : BasePurchasingEntityService, IGoodsRec
     private static readonly NLog.Logger Logger = LogManager.GetCurrentClassLogger();
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly IPurchaseEventService _eventService;
+    private readonly ISequenceGenerator _sequenceGenerator;
 
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
-    public GoodsReceiptService(PurchasingDbContext context, IMapper mapper, IPublishEndpoint publishEndpoint, IPurchaseEventService eventService)
+    public GoodsReceiptService(
+        PurchasingDbContext context,
+        IMapper mapper,
+        IPublishEndpoint publishEndpoint,
+        IPurchaseEventService eventService,
+        ISequenceGenerator sequenceGenerator)
         : base(context, mapper)
     {
         _publishEndpoint = publishEndpoint;
         _eventService = eventService;
+        _sequenceGenerator = sequenceGenerator;
     }
 
     /// <inheritdoc />
@@ -49,9 +57,14 @@ public sealed class GoodsReceiptService : BasePurchasingEntityService, IGoodsRec
         GoodsReceipt receipt = new()
         {
             ReceiptNumber = receiptNumber, PurchaseOrderId = request.PurchaseOrderId, WarehouseId = request.WarehouseId,
-            LocationId = request.LocationId, Status = nameof(GoodsReceiptStatus.Open), Notes = request.Notes,
-            ReceivedAtUtc = DateTime.UtcNow, CreatedAtUtc = DateTime.UtcNow, CreatedByUserId = userId
+            LocationId = request.LocationId, Status = nameof(GoodsReceiptStatus.Completed), Notes = request.Notes,
+            ReceivedAtUtc = DateTime.UtcNow, CompletedAtUtc = DateTime.UtcNow, CreatedAtUtc = DateTime.UtcNow, CreatedByUserId = userId
         };
+
+        Dictionary<int, string> productCodeMap = await ResolveProductCodesAsync(
+            request.Lines.Select(l => l.PurchaseOrderLineId).ToList(),
+            po.Lines,
+            cancellationToken).ConfigureAwait(false);
 
         foreach (CreateGoodsReceiptLineRequest lineReq in request.Lines)
         {
@@ -62,11 +75,14 @@ public sealed class GoodsReceiptService : BasePurchasingEntityService, IGoodsRec
             if (remaining <= 0) return Result<GoodsReceiptDetailDto>.Failure("LINE_FULLY_RECEIVED", "This PO line has already been fully received.", 409);
             if (lineReq.ReceivedQuantity > remaining) return Result<GoodsReceiptDetailDto>.Failure("OVER_RECEIPT", "Received quantity exceeds remaining quantity on the PO line.", 409);
 
+            string batchNumber = await GenerateBatchNumberForLineAsync(
+                poLine.ProductId, productCodeMap, cancellationToken).ConfigureAwait(false);
+
             GoodsReceiptLine line = new()
             {
                 PurchaseOrderLineId = lineReq.PurchaseOrderLineId, ReceivedQuantity = lineReq.ReceivedQuantity,
-                BatchNumber = lineReq.BatchNumber, ManufacturingDate = lineReq.ManufacturingDate, ExpiryDate = lineReq.ExpiryDate,
-                InspectionStatus = nameof(InspectionStatus.Pending)
+                BatchNumber = batchNumber, ManufacturingDate = lineReq.ManufacturingDate, ExpiryDate = lineReq.ExpiryDate,
+                InspectionStatus = nameof(InspectionStatus.Accepted)
             };
             receipt.Lines.Add(line);
         }
@@ -86,7 +102,8 @@ public sealed class GoodsReceiptService : BasePurchasingEntityService, IGoodsRec
         Context.GoodsReceipts.Add(receipt);
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        await _eventService.RecordEventAsync("GoodsReceiptCreated", "GoodsReceipt", receipt.Id, userId, null, cancellationToken).ConfigureAwait(false);
+        await _eventService.RecordEventAsync("GoodsReceiptCompleted", "GoodsReceipt", receipt.Id, userId, null, cancellationToken).ConfigureAwait(false);
+        await PublishGoodsReceiptCompletedEventAsync(receipt, userId, cancellationToken, po).ConfigureAwait(false);
 
         return await GetByIdAsync(receipt.Id, cancellationToken).ConfigureAwait(false);
     }
@@ -155,20 +172,26 @@ public sealed class GoodsReceiptService : BasePurchasingEntityService, IGoodsRec
         else if (anyReceived) po.Status = nameof(PurchaseOrderStatus.PartiallyReceived);
     }
 
-    private async Task PublishGoodsReceiptCompletedEventAsync(GoodsReceipt receipt, int userId, CancellationToken cancellationToken)
+    private async Task PublishGoodsReceiptCompletedEventAsync(
+        GoodsReceipt receipt, int userId, CancellationToken cancellationToken, PurchaseOrder? po = null)
     {
+        if (po is null)
+            po = await Context.PurchaseOrders.Include(p => p.Lines)
+                .FirstOrDefaultAsync(p => p.Id == receipt.PurchaseOrderId, cancellationToken).ConfigureAwait(false);
+
+        Dictionary<int, int> poLineProductMap = po?.Lines.ToDictionary(l => l.Id, l => l.ProductId) ?? [];
+
         List<GoodsReceiptCompletedLine> acceptedLines = receipt.Lines
             .Where(l => l.InspectionStatus == nameof(InspectionStatus.Accepted))
             .Select(l => new GoodsReceiptCompletedLine
             {
-                GoodsReceiptLineId = l.Id, ProductId = l.PurchaseOrderLine?.ProductId ?? 0,
+                GoodsReceiptLineId = l.Id,
+                ProductId = l.PurchaseOrderLine?.ProductId ?? poLineProductMap.GetValueOrDefault(l.PurchaseOrderLineId),
                 Quantity = l.ReceivedQuantity, BatchNumber = l.BatchNumber,
                 ManufacturingDate = l.ManufacturingDate, ExpiryDate = l.ExpiryDate
             }).ToList();
 
         if (acceptedLines.Count == 0) return;
-
-        PurchaseOrder? po = await Context.PurchaseOrders.FirstOrDefaultAsync(p => p.Id == receipt.PurchaseOrderId, cancellationToken).ConfigureAwait(false);
 
         try
         {
@@ -193,6 +216,42 @@ public sealed class GoodsReceiptService : BasePurchasingEntityService, IGoodsRec
         string datePrefix = $"GR-{DateTime.UtcNow:yyyyMMdd}-";
         int count = await Context.GoodsReceipts.CountAsync(gr => gr.ReceiptNumber.StartsWith(datePrefix), cancellationToken).ConfigureAwait(false);
         return $"{datePrefix}{(count + 1):D4}";
+    }
+
+    /// <summary>
+    /// Resolves product codes for PO lines via the ProductLookup view.
+    /// </summary>
+    private async Task<Dictionary<int, string>> ResolveProductCodesAsync(
+        List<int> poLineIds,
+        ICollection<PurchaseOrderLine> poLines,
+        CancellationToken cancellationToken)
+    {
+        List<int> productIds = poLines
+            .Where(l => poLineIds.Contains(l.Id))
+            .Select(l => l.ProductId)
+            .Distinct()
+            .ToList();
+
+        if (productIds.Count == 0) return [];
+
+        return await Context.ProductLookups
+            .Where(p => productIds.Contains(p.Id))
+            .ToDictionaryAsync(p => p.Id, p => p.Code, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Generates a batch number for a receipt line using the sequence generator.
+    /// </summary>
+    private async Task<string> GenerateBatchNumberForLineAsync(
+        int productId,
+        Dictionary<int, string> productCodeMap,
+        CancellationToken cancellationToken)
+    {
+        string productCode = productCodeMap.GetValueOrDefault(productId, $"PROD-{productId}");
+        return await _sequenceGenerator
+            .NextBatchNumberAsync(productCode, cancellationToken)
+            .ConfigureAwait(false);
     }
 
     private IQueryable<GoodsReceipt> BuildSearchQuery(SearchGoodsReceiptsRequest request)

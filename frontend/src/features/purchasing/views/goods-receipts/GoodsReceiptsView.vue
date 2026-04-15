@@ -55,6 +55,7 @@
     </v-card>
 
     <GoodsReceiptFormDialog v-model="vm.showFormDialog" @saved="vm.loadReceipts" />
+    <GoodsReceiptDetailDialog v-model="vm.showDetailDialog" :receipt-id="vm.selectedReceipt?.id ?? null" />
   </div>
 </template>
 
@@ -64,6 +65,7 @@ import { useGoodsReceiptsView } from '@features/purchasing/composables/useGoodsR
 import ActionChip from '@shared/components/atoms/ActionChip.vue';
 import ColumnFilter from '@shared/components/molecules/ColumnFilter.vue';
 import GoodsReceiptFormDialog from '@features/purchasing/components/organisms/GoodsReceiptFormDialog.vue';
+import GoodsReceiptDetailDialog from '@features/purchasing/components/organisms/GoodsReceiptDetailDialog.vue';
 
 const vm = reactive(useGoodsReceiptsView());
 </script>

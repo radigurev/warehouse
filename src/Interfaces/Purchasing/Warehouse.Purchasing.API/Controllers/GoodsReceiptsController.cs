@@ -76,4 +76,5 @@ public sealed class GoodsReceiptsController : BaseApiController
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> ResolveQuarantineAsync(int receiptId, int lineId, [FromBody] ResolveQuarantineRequest request, CancellationToken cancellationToken)
     { int userId = GetCurrentUserId(); Result<GoodsReceiptLineDto> result = await _inspectionService.ResolveQuarantineAsync(receiptId, lineId, request, userId, cancellationToken); return ToActionResult(result); }
+
 }

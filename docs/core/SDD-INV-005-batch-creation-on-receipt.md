@@ -1,7 +1,7 @@
 # SDD-INV-005 --- Batch Creation on Goods Receipt
 
 > Status: Implemented
-> Last updated: 2026-04-10
+> Last updated: 2026-04-14
 > Owner: TBD
 > Category: Core
 
@@ -18,7 +18,7 @@ This spec defines the automated batch creation and stock intake flow triggered w
 - MassTransit consumer for `GoodsReceiptCompletedEvent` in the Inventory service
 - MassTransit consumer for `GoodsReceiptLineAcceptedEvent` in the Inventory service
 - Batch creation or lookup per receipt line (ProductId + BatchNumber uniqueness)
-- Automatic batch number generation when the product requires batch tracking but no number is provided
+- Automatic batch number generation when no batch number is provided (ISA-95 Material Lot requirement)
 - Immutable `StockMovement` creation with reason `Receipt` and reference type `PurchaseOrder`
 - `StockLevel` upsert (create or increment) for the product/warehouse/location/batch combination
 - Idempotency on event redelivery (no duplicate movements for the same goods receipt line)
@@ -85,19 +85,15 @@ This spec defines the automated batch creation and stock intake flow triggered w
     - `CreatedAtUtc = DateTime.UtcNow`
     - `CreatedByUserId` from the event's `ReceivedByUserId` (or `AcceptedByUserId` for accepted line events)
 
-#### 2.2.2 Batch Number Not Provided --- Product Requires Batch Tracking
+#### 2.2.2 Batch Number Not Provided
 
-- When a receipt line has a null or empty `BatchNumber` AND the product's `RequiresBatchTracking` is `true`:
+- **ISA-95 Rule:** Every receipt of material MUST produce a Material Lot (ISA-95 Part 2, Section 7, compliance rule 5). The `RequiresBatchTracking` flag on the product controls whether the UI requires the operator to *manually* provide a batch number; it does NOT control whether a lot record is created.
+- When a receipt line has a null or empty `BatchNumber`:
   - The consumer MUST auto-generate a batch number using `ISequenceGenerator.NextBatchNumberAsync(productCode)`.
   - The generated batch number format MUST be `{ProductCode}-{YYYYMMDD}-{SequentialNumber padded to 4 digits}` (e.g., `PROD-001-20260409-0001`).
   - If `ISequenceGenerator` is not yet available (planned `SDD-INFRA-003`), the consumer MUST use a fallback format: `{ProductCode}-{YYYYMMDD}-{GoodsReceiptLineId}`.
   - The consumer MUST create a new `Batch` record with the generated batch number.
-
-#### 2.2.3 Batch Number Not Provided --- Product Does Not Require Batch Tracking
-
-- When a receipt line has a null or empty `BatchNumber` AND the product's `RequiresBatchTracking` is `false`:
-  - The consumer MUST NOT create a batch.
-  - The `BatchId` on the resulting `StockMovement` and `StockLevel` MUST be `null`.
+- **Rationale:** The ISA-95 material traceability chain (Material Definition → Material Lot → Material Sublot) requires that every inbound material receipt is identifiable as a distinct lot. Omitting batch creation for non-tracked products breaks this chain and prevents traceability of received goods back to their source receipt.
 
 ### 2.3 Stock Movement Creation
 
@@ -105,7 +101,7 @@ This spec defines the automated batch creation and stock intake flow triggered w
   - `ProductId` from the receipt line
   - `WarehouseId` from the event header
   - `LocationId` from the event header (may be null)
-  - `BatchId` from the resolved batch (may be null per Section 2.2.3)
+  - `BatchId` from the resolved batch (always non-null per ISA-95 compliance rule 5)
   - `Quantity` from the receipt line (MUST be positive; receipt lines represent inbound stock)
   - `ReasonCode = Receipt` (ISA-95 base type: Receipt)
   - `ReferenceType = PurchaseOrder`
@@ -191,9 +187,9 @@ This spec defines the automated batch creation and stock intake flow triggered w
 
 | # | Rule | Error Handling |
 |---|---|---|
-| V11 | When `Product.RequiresBatchTracking = true` and `BatchNumber` is null/empty, batch MUST be auto-generated. | Auto-generate batch number (not an error). |
-| V12 | When `Product.RequiresBatchTracking = false` and `BatchNumber` is null/empty, no batch is created. | Skip batch creation (not an error). |
-| V13 | When `Product.RequiresBatchTracking = false` and `BatchNumber` is provided, a batch SHOULD still be created. The explicit batch number takes precedence over the tracking flag. | Create batch normally. |
+| V11 | When `BatchNumber` is null/empty, batch MUST be auto-generated regardless of `RequiresBatchTracking` flag (ISA-95 compliance rule 5). | Auto-generate batch number (not an error). |
+| V12 | `RequiresBatchTracking` controls UI-level mandatory input only. It MUST NOT gate server-side batch creation. | N/A (UI enforcement). |
+| V13 | When `BatchNumber` is provided, a batch MUST be found or created using the provided number regardless of `RequiresBatchTracking` flag. | Create batch normally. |
 
 ### 3.4 State-Based Validation
 
@@ -231,6 +227,7 @@ Since the consumer operates as an asynchronous event handler (no HTTP boundary),
 |---|---|---|---|
 | v1 | 2026-04-09 | Initial | Initial specification for batch creation on goods receipt flow. Covers `GoodsReceiptCompletedEvent` and `GoodsReceiptLineAcceptedEvent` consumers, batch resolution, stock movement creation, stock level upsert, idempotency, and partial failure handling. |
 | v2 | 2026-04-10 | Implemented | Implemented consumers, ReceiptStockIntakeService, and ReceiptLineContext. Added `PurchaseOrderNumber` and `GoodsReceiptNumber` to `GoodsReceiptLineAcceptedEvent` for movement traceability. Updated ReceivingInspectionService publisher. |
+| v3 | 2026-04-14 | Breaking | ISA-95 compliance fix: every receipt now creates a Material Lot regardless of `RequiresBatchTracking` flag. Removed Section 2.2.3 (null batch path). `RequiresBatchTracking` now controls UI-mandatory input only, not server-side batch creation. |
 
 ---
 
@@ -241,7 +238,7 @@ Since the consumer operates as an asynchronous event handler (no HTTP boundary),
 - `Consume_ValidEventWithBatchNumber_CreatesBatchAndMovementAndStockLevel` [Unit]
 - `Consume_ValidEventWithExistingBatch_ReusesBatchDoesNotCreateDuplicate` [Unit]
 - `Consume_ProductRequiresBatchTracking_NoBatchNumber_AutoGeneratesBatchNumber` [Unit]
-- `Consume_ProductDoesNotRequireBatchTracking_NoBatchNumber_SkipsBatchCreation` [Unit]
+- `Consume_ProductDoesNotRequireBatchTracking_NoBatchNumber_AutoGeneratesBatch` [Unit]
 - `Consume_ProductDoesNotRequireBatchTracking_BatchNumberProvided_CreatesBatch` [Unit]
 - `Consume_DuplicateEventDelivery_SkipsAlreadyProcessedLines` [Unit]
 - `Consume_MultipleLines_ProcessesEachLineIndependently` [Unit]

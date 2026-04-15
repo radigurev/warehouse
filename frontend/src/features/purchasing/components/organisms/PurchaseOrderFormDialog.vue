@@ -39,14 +39,26 @@
           </v-col>
 
           <v-col v-bind="grid.fieldCols">
-            <v-text-field
-              v-model="form.expectedDeliveryDate"
-              :label="t('purchaseOrders.form.expectedDeliveryDate')"
-              prepend-inner-icon="mdi-calendar"
-              :density="layout.vuetifyDensity"
-              type="date"
-              clearable
-            />
+            <v-menu v-model="deliveryDateMenu" :close-on-content-click="false">
+              <template #activator="{ props: menuProps }">
+                <v-text-field
+                  v-bind="menuProps"
+                  :model-value="form.expectedDeliveryDate"
+                  :label="t('purchaseOrders.form.expectedDeliveryDate')"
+                  prepend-inner-icon="mdi-calendar"
+                  :density="layout.vuetifyDensity"
+                  readonly
+                  clearable
+                  @click:clear="form.expectedDeliveryDate = ''"
+                />
+              </template>
+              <v-date-picker
+                :model-value="form.expectedDeliveryDate ? new Date(form.expectedDeliveryDate + 'T00:00:00') : undefined"
+                color="primary"
+                show-adjacent-months
+                @update:model-value="onDeliveryDatePicked"
+              />
+            </v-menu>
           </v-col>
 
           <v-col v-bind="grid.fullCols">
@@ -221,6 +233,8 @@ const products = ref<ProductDto[]>([]);
 const productsLoading = ref(false);
 const originalLines = ref<PurchaseOrderLineDto[]>([]);
 
+const deliveryDateMenu = ref(false);
+
 const fieldErrors = reactive<Record<string, string[]>>({
   supplierId: [],
 });
@@ -302,6 +316,15 @@ function addLine(): void {
 
 function removeLine(index: number): void {
   form.lines.splice(index, 1);
+}
+
+function onDeliveryDatePicked(value: unknown): void {
+  if (value instanceof Date) {
+    form.expectedDeliveryDate = value.toISOString().split('T')[0];
+  } else {
+    form.expectedDeliveryDate = '';
+  }
+  deliveryDateMenu.value = false;
 }
 
 const rules = {
