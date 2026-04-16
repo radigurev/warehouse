@@ -1,8 +1,8 @@
 # Cross-Reference Map
 
-> Last updated: 2026-04-09
+> Last updated: 2026-04-16
 >
-> Note: Added SDD-INFRA-003 cross-references for centralized sequence generation
+> Note: Added SDD-NOM-001 placeholder for Nomenclature Reference Data microservice
 
 This document provides a bidirectional mapping between SDD specifications and source files.
 
@@ -550,3 +550,25 @@ This document provides a bidirectional mapping between SDD specifications and so
 | `src/Interfaces/Auth/Warehouse.Auth.API/Services/AuditService.cs` | SDD-AUTH-001, SDD-EVTLOG-001 |
 | `src/Interfaces/Purchasing/Warehouse.Purchasing.API/Services/PurchaseEventService.cs` | SDD-PURCH-001, SDD-EVTLOG-001 |
 | `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Services/FulfillmentEventService.cs` | SDD-FULF-001, SDD-EVTLOG-001 |
+
+### SDD-NOM-001 — Nomenclature Reference Data (Draft — No Implementation Yet)
+
+| File | Type | Role |
+|---|---|---|
+| `src/Databases/Warehouse.Nomenclature.DBModel/NomenclatureDbContext.cs` | DbContext | Nomenclature EF Core context (planned) |
+| `src/Databases/Warehouse.Nomenclature.DBModel/Models/Country.cs` | Entity | Country entity (planned) |
+| `src/Databases/Warehouse.Nomenclature.DBModel/Models/StateProvince.cs` | Entity | State/province entity (planned) |
+| `src/Databases/Warehouse.Nomenclature.DBModel/Models/City.cs` | Entity | City entity (planned) |
+| `src/Databases/Warehouse.Nomenclature.DBModel/Models/Currency.cs` | Entity | Currency entity (planned) |
+| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Controllers/CountriesController.cs` | Controller | Country CRUD endpoints (planned) |
+| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Controllers/StateProvincesController.cs` | Controller | State/province endpoints (planned) |
+| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Controllers/CitiesController.cs` | Controller | City endpoints (planned) |
+| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Controllers/CurrenciesController.cs` | Controller | Currency CRUD endpoints (planned) |
+| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Services/CountryService.cs` | Service | Country business logic (planned) |
+| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Services/StateProvinceService.cs` | Service | State/province business logic (planned) |
+| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Services/CityService.cs` | Service | City business logic (planned) |
+| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Services/CurrencyService.cs` | Service | Currency business logic (planned) |
+| `src/Warehouse.ServiceModel/DTOs/Nomenclature/` | DTOs | Nomenclature domain DTOs (planned) |
+| `src/Warehouse.ServiceModel/Requests/Nomenclature/` | Requests | Nomenclature request models (planned) |
+| `src/Warehouse.Mapping/Profiles/Nomenclature/NomenclatureMappingProfile.cs` | Mapping | AutoMapper profile (planned) |
+| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API.Tests/` | Tests | Unit and integration tests (planned) |
