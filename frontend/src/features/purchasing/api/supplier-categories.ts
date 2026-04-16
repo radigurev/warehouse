@@ -6,7 +6,7 @@ import type {
 } from '@features/purchasing/types/purchasing';
 
 export function getAllSupplierCategories(): Promise<SupplierCategoryDto[]> {
-  return apiClient.get<SupplierCategoryDto[]>('/supplier-categories').then((r) => r.data);
+  return apiClient.get('/supplier-categories').then((r) => r.data.items ?? r.data);
 }
 
 export function createSupplierCategory(request: CreateSupplierCategoryRequest): Promise<SupplierCategoryDto> {

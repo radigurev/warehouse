@@ -68,7 +68,7 @@
       </v-data-table-server>
     </v-card>
 
-    <SupplierFormDialog v-model="vm.showFormDialog" :supplier="vm.selectedSupplier" @saved="vm.loadSuppliers" />
+    <SupplierFormDialog v-model="vm.showFormDialog" :supplier-id="vm.selectedSupplier?.id ?? null" @saved="vm.loadSuppliers" />
 
     <ConfirmDialog
       v-model="vm.showDeactivateDialog"

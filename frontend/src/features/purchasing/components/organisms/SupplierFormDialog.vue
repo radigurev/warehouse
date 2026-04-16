@@ -25,12 +25,8 @@
               :label="t('suppliers.form.code')"
               prepend-inner-icon="mdi-identifier"
               :density="layout.vuetifyDensity"
-              :readonly="isEdit"
-              :rules="[rules.codeFormat, rules.codeLength]"
-              :hint="isEdit ? '' : t('suppliers.form.codeHint')"
-              :persistent-hint="!isEdit"
-              :error-messages="fieldErrors.code"
-              @update:model-value="fieldErrors.code = []"
+              readonly
+              :loading="codeLoading"
             />
           </v-col>
 
@@ -107,7 +103,7 @@ import { useLayoutStore } from '@shared/stores/layout';
 import { useFormGrid } from '@shared/composables/useFormGrid';
 import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
-import { createSupplier, updateSupplier, getSupplierById } from '@features/purchasing/api/suppliers';
+import { createSupplier, updateSupplier, getSupplierById, getNextSupplierCode } from '@features/purchasing/api/suppliers';
 import { getAllSupplierCategories } from '@features/purchasing/api/supplier-categories';
 import type { SupplierDto, SupplierCategoryDto } from '@features/purchasing/types/purchasing';
 import type { AxiosError } from 'axios';
@@ -135,6 +131,7 @@ const formRef = ref();
 const loading = ref(false);
 const categories = ref<SupplierCategoryDto[]>([]);
 const categoriesLoading = ref(false);
+const codeLoading = ref(false);
 
 const fieldErrors = reactive<Record<string, string[]>>({
   name: [],
@@ -186,6 +183,14 @@ async function populateForm(): Promise<void> {
     form.categoryId = null;
     form.paymentTermDays = null;
     form.notes = '';
+    codeLoading.value = true;
+    try {
+      form.code = await getNextSupplierCode();
+    } catch {
+      form.code = '';
+    } finally {
+      codeLoading.value = false;
+    }
   }
   fieldErrors.name = [];
   fieldErrors.code = [];
