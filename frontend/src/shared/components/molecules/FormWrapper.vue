@@ -7,7 +7,7 @@
         <v-spacer />
         <v-btn icon="mdi-close" variant="text" size="small" @click="model = false" />
       </div>
-      <div class="flex-grow-1 d-flex flex-column overflow-hidden modal-body hide-card-title">
+      <div class="flex-grow-1 d-flex flex-column overflow-y-auto modal-body hide-card-title">
         <slot />
       </div>
     </v-card>
