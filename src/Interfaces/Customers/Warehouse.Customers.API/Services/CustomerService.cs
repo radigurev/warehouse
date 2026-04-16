@@ -304,13 +304,16 @@ public sealed class CustomerService : BaseCustomerEntityService, ICustomerServic
     /// </summary>
     private async Task<string> GenerateCustomerCodeAsync(CancellationToken cancellationToken)
     {
-        int maxNumber = await Context.Customers
+        List<string> codes = await Context.Customers
             .Where(c => c.Code.StartsWith("CUST-"))
             .Select(c => c.Code.Substring(5))
-            .Select(c => Convert.ToInt32(c))
-            .DefaultIfEmpty(0)
-            .MaxAsync(cancellationToken)
+            .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
+
+        int maxNumber = codes
+            .Select(c => int.TryParse(c, out int n) ? n : 0)
+            .DefaultIfEmpty(0)
+            .Max();
 
         return $"CUST-{(maxNumber + 1):D6}";
     }

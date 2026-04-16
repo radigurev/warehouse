@@ -31,6 +31,13 @@ public sealed class SupplierService : BasePurchasingEntityService, ISupplierServ
     }
 
     /// <inheritdoc />
+    public async Task<Result<string>> GetNextCodeAsync(CancellationToken cancellationToken)
+    {
+        string code = await GenerateSupplierCodeAsync(cancellationToken).ConfigureAwait(false);
+        return Result<string>.Success(code);
+    }
+
+    /// <inheritdoc />
     public async Task<Result<SupplierDetailDto>> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         Supplier? supplier = await GetSupplierWithDetailsAsync(id, cancellationToken).ConfigureAwait(false);
@@ -268,13 +275,16 @@ public sealed class SupplierService : BasePurchasingEntityService, ISupplierServ
 
     private async Task<string> GenerateSupplierCodeAsync(CancellationToken cancellationToken)
     {
-        int maxNumber = await Context.Suppliers
+        List<string> codes = await Context.Suppliers
             .Where(s => s.Code.StartsWith("SUPP-"))
             .Select(s => s.Code.Substring(5))
-            .Select(s => Convert.ToInt32(s))
-            .DefaultIfEmpty(0)
-            .MaxAsync(cancellationToken)
+            .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
+
+        int maxNumber = codes
+            .Select(c => int.TryParse(c, out int n) ? n : 0)
+            .DefaultIfEmpty(0)
+            .Max();
 
         return $"SUPP-{(maxNumber + 1):D6}";
     }
