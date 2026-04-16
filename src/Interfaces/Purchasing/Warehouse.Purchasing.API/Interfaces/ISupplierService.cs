@@ -12,6 +12,11 @@ namespace Warehouse.Purchasing.API.Interfaces;
 public interface ISupplierService
 {
     /// <summary>
+    /// Returns the next auto-generated supplier code without reserving it.
+    /// </summary>
+    Task<Result<string>> GetNextCodeAsync(CancellationToken cancellationToken);
+
+    /// <summary>
     /// Gets a supplier by ID with all nested data, excluding soft-deleted records.
     /// </summary>
     Task<Result<SupplierDetailDto>> GetByIdAsync(int id, CancellationToken cancellationToken);

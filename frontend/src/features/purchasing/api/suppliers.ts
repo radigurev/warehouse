@@ -21,3 +21,7 @@ export const deactivateSupplier = base.remove;
 export function reactivateSupplier(id: number): Promise<SupplierDetailDto> {
   return apiClient.post<SupplierDetailDto>(`/suppliers/${id}/reactivate`, {}).then((r) => r.data);
 }
+
+export function getNextSupplierCode(): Promise<string> {
+  return apiClient.get<string>('/suppliers/next-code').then((r) => r.data);
+}

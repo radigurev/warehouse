@@ -31,6 +31,18 @@ public sealed class SuppliersController : BaseApiController
     }
 
     /// <summary>
+    /// Returns the next auto-generated supplier code without reserving it.
+    /// </summary>
+    [HttpGet("next-code")]
+    [RequirePermission("suppliers:read")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetNextCodeAsync(CancellationToken cancellationToken)
+    {
+        Result<string> result = await _supplierService.GetNextCodeAsync(cancellationToken);
+        return ToActionResult(result);
+    }
+
+    /// <summary>
     /// Creates a new supplier. Auto-generates code if not provided.
     /// </summary>
     [HttpPost]
