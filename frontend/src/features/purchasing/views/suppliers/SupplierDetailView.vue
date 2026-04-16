@@ -62,115 +62,116 @@
         </v-card-text>
       </v-card>
 
-      <!-- Tabs: Addresses, Phones, Emails, Purchase Orders -->
+      <!-- Addresses -->
       <v-card :class="vm.layout.isCompact ? 'mb-2' : 'mb-4'">
-        <v-tabs v-model="activeTab" color="primary">
-          <v-tab value="addresses">{{ vm.t('suppliers.detail.addresses') }}</v-tab>
-          <v-tab value="phones">{{ vm.t('suppliers.detail.phones') }}</v-tab>
-          <v-tab value="emails">{{ vm.t('suppliers.detail.emails') }}</v-tab>
-          <v-tab value="purchaseOrders">{{ vm.t('suppliers.detail.purchaseOrders') }}</v-tab>
-        </v-tabs>
+        <v-card-title class="d-flex align-center text-subtitle-1 font-weight-medium">
+          <v-icon icon="mdi-map-marker" class="mr-2" />
+          {{ vm.t('suppliers.detail.addresses') }}
+          <v-spacer />
+          <v-btn size="small" color="primary" variant="tonal" prepend-icon="mdi-plus" @click="showAddressForm = true">
+            {{ vm.t('common.create') }}
+          </v-btn>
+        </v-card-title>
+        <v-card-text v-if="vm.supplier.addresses.length === 0" class="text-medium-emphasis">
+          {{ vm.t('suppliers.detail.noAddresses') }}
+        </v-card-text>
+        <v-list v-else :density="vm.layout.vuetifyDensity">
+          <v-list-item v-for="addr in vm.supplier.addresses" :key="addr.id">
+            <template #prepend>
+              <v-chip size="small" :color="addr.isDefault ? 'primary' : 'default'" variant="tonal" class="mr-2">{{ addr.addressType }}</v-chip>
+            </template>
+            <v-list-item-title>{{ addr.streetLine1 }}{{ addr.streetLine2 ? ', ' + addr.streetLine2 : '' }}</v-list-item-title>
+            <v-list-item-subtitle>{{ addr.city }}{{ addr.stateProvince ? ', ' + addr.stateProvince : '' }} {{ addr.postalCode }} — {{ addr.countryCode }}</v-list-item-subtitle>
+            <template #append>
+              <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click="handleDeleteAddress(addr.id)" />
+            </template>
+          </v-list-item>
+        </v-list>
+      </v-card>
 
-        <v-tabs-window v-model="activeTab">
-          <!-- Addresses Tab -->
-          <v-tabs-window-item value="addresses">
-            <div class="d-flex justify-end pa-2">
-              <v-btn size="small" color="primary" variant="tonal" prepend-icon="mdi-plus" @click="showAddressForm = true">
-                {{ vm.t('common.create') }}
-              </v-btn>
-            </div>
-            <v-card-text v-if="vm.supplier.addresses.length === 0" class="text-medium-emphasis">
-              {{ vm.t('suppliers.detail.noAddresses') }}
-            </v-card-text>
-            <v-list v-else :density="vm.layout.vuetifyDensity">
-              <v-list-item v-for="addr in vm.supplier.addresses" :key="addr.id">
-                <template #prepend>
-                  <v-chip size="small" :color="addr.isDefault ? 'primary' : 'default'" variant="tonal" class="mr-2">{{ addr.addressType }}</v-chip>
-                </template>
-                <v-list-item-title>{{ addr.streetLine1 }}{{ addr.streetLine2 ? ', ' + addr.streetLine2 : '' }}</v-list-item-title>
-                <v-list-item-subtitle>{{ addr.city }}{{ addr.stateProvince ? ', ' + addr.stateProvince : '' }} {{ addr.postalCode }} — {{ addr.countryCode }}</v-list-item-subtitle>
-                <template #append>
-                  <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click="handleDeleteAddress(addr.id)" />
-                </template>
-              </v-list-item>
-            </v-list>
-          </v-tabs-window-item>
+      <!-- Phones -->
+      <v-card :class="vm.layout.isCompact ? 'mb-2' : 'mb-4'">
+        <v-card-title class="d-flex align-center text-subtitle-1 font-weight-medium">
+          <v-icon icon="mdi-phone" class="mr-2" />
+          {{ vm.t('suppliers.detail.phones') }}
+          <v-spacer />
+          <v-btn size="small" color="primary" variant="tonal" prepend-icon="mdi-plus" @click="showPhoneForm = true">
+            {{ vm.t('common.create') }}
+          </v-btn>
+        </v-card-title>
+        <v-card-text v-if="vm.supplier.phones.length === 0" class="text-medium-emphasis">
+          {{ vm.t('suppliers.detail.noPhones') }}
+        </v-card-text>
+        <v-list v-else :density="vm.layout.vuetifyDensity">
+          <v-list-item v-for="phone in vm.supplier.phones" :key="phone.id">
+            <template #prepend>
+              <v-chip size="small" :color="phone.isPrimary ? 'primary' : 'default'" variant="tonal" class="mr-2">{{ phone.phoneType }}</v-chip>
+            </template>
+            <v-list-item-title>{{ phone.phoneNumber }}{{ phone.extension ? ' ext. ' + phone.extension : '' }}</v-list-item-title>
+            <template #append>
+              <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click="handleDeletePhone(phone.id)" />
+            </template>
+          </v-list-item>
+        </v-list>
+      </v-card>
 
-          <!-- Phones Tab -->
-          <v-tabs-window-item value="phones">
-            <div class="d-flex justify-end pa-2">
-              <v-btn size="small" color="primary" variant="tonal" prepend-icon="mdi-plus" @click="showPhoneForm = true">
-                {{ vm.t('common.create') }}
-              </v-btn>
-            </div>
-            <v-card-text v-if="vm.supplier.phones.length === 0" class="text-medium-emphasis">
-              {{ vm.t('suppliers.detail.noPhones') }}
-            </v-card-text>
-            <v-list v-else :density="vm.layout.vuetifyDensity">
-              <v-list-item v-for="phone in vm.supplier.phones" :key="phone.id">
-                <template #prepend>
-                  <v-chip size="small" :color="phone.isPrimary ? 'primary' : 'default'" variant="tonal" class="mr-2">{{ phone.phoneType }}</v-chip>
-                </template>
-                <v-list-item-title>{{ phone.phoneNumber }}{{ phone.extension ? ' ext. ' + phone.extension : '' }}</v-list-item-title>
-                <template #append>
-                  <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click="handleDeletePhone(phone.id)" />
-                </template>
-              </v-list-item>
-            </v-list>
-          </v-tabs-window-item>
+      <!-- Emails -->
+      <v-card :class="vm.layout.isCompact ? 'mb-2' : 'mb-4'">
+        <v-card-title class="d-flex align-center text-subtitle-1 font-weight-medium">
+          <v-icon icon="mdi-email" class="mr-2" />
+          {{ vm.t('suppliers.detail.emails') }}
+          <v-spacer />
+          <v-btn size="small" color="primary" variant="tonal" prepend-icon="mdi-plus" @click="showEmailForm = true">
+            {{ vm.t('common.create') }}
+          </v-btn>
+        </v-card-title>
+        <v-card-text v-if="vm.supplier.emails.length === 0" class="text-medium-emphasis">
+          {{ vm.t('suppliers.detail.noEmails') }}
+        </v-card-text>
+        <v-list v-else :density="vm.layout.vuetifyDensity">
+          <v-list-item v-for="email in vm.supplier.emails" :key="email.id">
+            <template #prepend>
+              <v-chip size="small" :color="email.isPrimary ? 'primary' : 'default'" variant="tonal" class="mr-2">{{ email.emailType }}</v-chip>
+            </template>
+            <v-list-item-title>{{ email.emailAddress }}</v-list-item-title>
+            <template #append>
+              <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click="handleDeleteEmail(email.id)" />
+            </template>
+          </v-list-item>
+        </v-list>
+      </v-card>
 
-          <!-- Emails Tab -->
-          <v-tabs-window-item value="emails">
-            <div class="d-flex justify-end pa-2">
-              <v-btn size="small" color="primary" variant="tonal" prepend-icon="mdi-plus" @click="showEmailForm = true">
-                {{ vm.t('common.create') }}
-              </v-btn>
-            </div>
-            <v-card-text v-if="vm.supplier.emails.length === 0" class="text-medium-emphasis">
-              {{ vm.t('suppliers.detail.noEmails') }}
-            </v-card-text>
-            <v-list v-else :density="vm.layout.vuetifyDensity">
-              <v-list-item v-for="email in vm.supplier.emails" :key="email.id">
-                <template #prepend>
-                  <v-chip size="small" :color="email.isPrimary ? 'primary' : 'default'" variant="tonal" class="mr-2">{{ email.emailType }}</v-chip>
-                </template>
-                <v-list-item-title>{{ email.emailAddress }}</v-list-item-title>
-                <template #append>
-                  <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click="handleDeleteEmail(email.id)" />
-                </template>
-              </v-list-item>
-            </v-list>
-          </v-tabs-window-item>
-
-          <!-- Purchase Orders Tab -->
-          <v-tabs-window-item value="purchaseOrders">
-            <v-card-text v-if="supplierOrders.length === 0" class="text-medium-emphasis">
-              {{ vm.t('suppliers.detail.noPurchaseOrders') }}
-            </v-card-text>
-            <v-table v-else :density="vm.layout.vuetifyDensity">
-              <thead>
-                <tr>
-                  <th>{{ vm.t('purchaseOrders.columns.orderNumber') }}</th>
-                  <th>{{ vm.t('purchaseOrders.columns.status') }}</th>
-                  <th class="text-end">{{ vm.t('purchaseOrders.columns.totalAmount') }}</th>
-                  <th>{{ vm.t('purchaseOrders.columns.createdAt') }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="order in supplierOrders" :key="order.id" class="cursor-pointer" @click="goToOrder(order.id)">
-                  <td>{{ order.orderNumber }}</td>
-                  <td>
-                    <v-chip :color="poStatusColor(order.status)" size="small" label>
-                      {{ vm.t(`purchaseOrders.status.${order.status}`) }}
-                    </v-chip>
-                  </td>
-                  <td class="text-end">{{ order.totalAmount.toFixed(2) }}</td>
-                  <td>{{ vm.formatDate(order.createdAtUtc) }}</td>
-                </tr>
-              </tbody>
-            </v-table>
-          </v-tabs-window-item>
-        </v-tabs-window>
+      <!-- Purchase Orders -->
+      <v-card :class="vm.layout.isCompact ? 'mb-2' : 'mb-4'">
+        <v-card-title class="text-subtitle-1 font-weight-medium">
+          <v-icon icon="mdi-clipboard-list" class="mr-2" />
+          {{ vm.t('suppliers.detail.purchaseOrders') }}
+        </v-card-title>
+        <v-card-text v-if="supplierOrders.length === 0" class="text-medium-emphasis">
+          {{ vm.t('suppliers.detail.noPurchaseOrders') }}
+        </v-card-text>
+        <v-table v-else :density="vm.layout.vuetifyDensity">
+          <thead>
+            <tr>
+              <th>{{ vm.t('purchaseOrders.columns.orderNumber') }}</th>
+              <th>{{ vm.t('purchaseOrders.columns.status') }}</th>
+              <th class="text-end">{{ vm.t('purchaseOrders.columns.totalAmount') }}</th>
+              <th>{{ vm.t('purchaseOrders.columns.createdAt') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="order in supplierOrders" :key="order.id" class="cursor-pointer" @click="goToOrder(order.id)">
+              <td>{{ order.orderNumber }}</td>
+              <td>
+                <v-chip :color="poStatusColor(order.status)" size="small" label>
+                  {{ vm.t(`purchaseOrders.status.${order.status}`) }}
+                </v-chip>
+              </td>
+              <td class="text-end">{{ order.totalAmount.toFixed(2) }}</td>
+              <td>{{ vm.formatDate(order.createdAtUtc) }}</td>
+            </tr>
+          </tbody>
+        </v-table>
       </v-card>
     </template>
 
@@ -266,8 +267,6 @@ import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 const router = useRouter();
 const notification = useNotificationStore();
 const vm = reactive(useSupplierDetailView());
-
-const activeTab = ref('addresses');
 
 const showDeactivateDialog = ref(false);
 const showReactivateDialog = ref(false);
