@@ -1,12 +1,12 @@
 # Warehouse Microservices Plan — ISA-95 Aligned
 
 > Created: 2026-04-02
-> Updated: 2026-04-06
+> Updated: 2026-04-17
 > Type: Greenfield — .NET 8 Microservices + Vue.js Frontend (Monorepo)
 > Database: Single source of truth (SQL Server)
 > Standard: ISA-95 / IEC 62264
 > External integrations: ERP (planned, ISA-95 Part 4)
-> Status: Phase 1 Complete, Phase 2 Planning
+> Status: Phase 1 Complete, Phase 1.5 Complete, Phase 2 Complete, Phase 2.5 Complete
 
 ---
 
@@ -121,192 +121,186 @@ The original 9-service plan (2026-04-02) was restructured to comply with ISA-95 
 
 ---
 
-### Phase 1.5 — Infrastructure Prerequisites (NEXT — before Phase 2)
+### Phase 1.5 — Infrastructure Prerequisites (COMPLETE)
 
-These cross-cutting infrastructure capabilities MUST be in place before adding inter-service communication in Phase 2. Without them, debugging and operating 5+ services becomes unmanageable.
+All cross-cutting infrastructure capabilities are in place. These were required before Phase 2 inter-service communication.
 
 #### API Gateway — `Warehouse.Gateway`
-**Technology:** YARP (Yet Another Reverse Proxy)
+**Technology:** YARP (Yet Another Reverse Proxy) 2.3.0
 **Port:** 5000
 **Priority:** P1
+**Status:** Done
 
-| Feature | Description |
-|---|---|
-| **Reverse proxy** | Route `/api/v1/auth/*` → Auth:5001, `/api/v1/customers/*` → Customers:5002, etc. |
-| **Rate limiting** | ASP.NET Core RateLimiting middleware — fixed/sliding window per client/IP |
-| **Response aggregation** | Optional — combine calls to multiple services into single response |
-| **Authentication passthrough** | Forward JWT tokens to downstream services |
-| **Health aggregation** | Aggregate health status from all downstream services |
-
-**Rationale:** The Vue SPA currently hits 3 different ports via Vite proxy. With 5+ services this is unsustainable. The gateway provides a single URL, centralizes rate limiting, and enables response aggregation.
+| Feature | Description | Status |
+|---|---|---|
+| **Reverse proxy** | 47 routes across 7 backend clusters (Auth, Customers, Inventory, Purchasing, Fulfillment, EventLog, Nomenclature) | Done |
+| **Rate limiting** | Global per-IP (200 req/min) + named "fixed" policy (100 req/min) | Done |
+| **Authentication passthrough** | Forward JWT tokens and X-Correlation-ID to downstream services | Done |
+| **Health aggregation** | Aggregate `/health/ready` from all downstream services | Done |
+| **Correlation ID forwarding** | Propagate X-Correlation-ID via YARP transform | Done |
 
 ---
 
 #### Correlation ID Middleware
 **Location:** `Warehouse.Infrastructure`
 **Priority:** P1
+**Status:** Done
 
-| Feature | Description |
-|---|---|
-| **Generate** | Create `X-Correlation-ID` (GUID) if not present on incoming request |
-| **Propagate** | Inject correlation ID into all outbound `HttpClient` requests |
-| **Log enrichment** | Add `CorrelationId` to NLog structured log context |
-| **Response header** | Return `X-Correlation-ID` in response for frontend debugging |
+| Feature | Description | Status |
+|---|---|---|
+| **Generate** | Create `X-Correlation-ID` (GUID) if not present on incoming request | Done |
+| **Propagate** | Inject correlation ID into all outbound `HttpClient` requests + YARP transforms | Done |
+| **Log enrichment** | Add `CorrelationId` to NLog structured log context | Done |
+| **Response header** | Return `X-Correlation-ID` in response for frontend debugging | Done |
 
 ---
 
 #### Centralized Logging
-**Technology:** Seq (development) or ELK stack (production)
+**Technology:** NLog → Loki 3.4.2 + Grafana 11.5.2
 **Priority:** P1
+**Status:** Done
 
-| Feature | Description |
-|---|---|
-| **NLog sink** | Add Seq/Elasticsearch NLog target alongside existing file target |
-| **Structured fields** | All log entries include `CorrelationId`, `ServiceName`, `UserId`, `RequestPath` |
-| **Dashboard** | Seq UI or Kibana for log search, filtering, and alerting |
-| **Retention** | Configure log retention policies per environment |
-
-**Rationale:** Current NLog writes per-process log files. With multiple service instances, cross-service request debugging requires a centralized sink with correlation ID filtering.
+| Feature | Description | Status |
+|---|---|---|
+| **NLog sink** | NLog.Targets.Loki pushes structured logs to Loki | Done |
+| **Structured fields** | All log entries include `CorrelationId`, `ServiceName`, `UserId`, `RequestPath` | Done |
+| **Dashboard** | Grafana at `localhost:3001` with pre-configured service monitoring dashboards | Done |
+| **ASP.NET Core request logging** | Hosting.Diagnostics request logs for Loki tracing | Done |
 
 ---
 
 #### Distributed Tracing
-**Technology:** OpenTelemetry SDK → Jaeger or Zipkin
+**Technology:** OpenTelemetry → Jaeger
 **Priority:** P1
+**Status:** Done
 
-| Feature | Description |
-|---|---|
-| **Auto-instrumentation** | ASP.NET Core, HttpClient, EF Core, SQL Client |
-| **Custom spans** | Business-critical operations (adjustment apply, transfer complete, goods receiving) |
-| **Trace propagation** | W3C TraceContext headers across inter-service HTTP calls |
-| **Export** | OTLP exporter → Jaeger (dev) or cloud-hosted collector (prod) |
-
-**Rationale:** Without distributed tracing, debugging a request that spans Auth → Purchasing → Inventory (e.g., goods receiving) requires manually correlating logs across 3 services. OpenTelemetry provides end-to-end request visibility.
+| Feature | Description | Status |
+|---|---|---|
+| **Auto-instrumentation** | ASP.NET Core, HttpClient, SQL Client | Done |
+| **Trace propagation** | W3C TraceContext headers across inter-service HTTP calls | Done |
+| **Export** | OTLP exporter → Jaeger at `localhost:16686` (ports 4317, 4318) | Done |
 
 ---
 
 #### Polly Resilience Policies
-**Technology:** Polly 8.x / Microsoft.Extensions.Http.Resilience
+**Technology:** Microsoft.Extensions.Http.Resilience 9.x
 **Location:** `Warehouse.Infrastructure`
 **Priority:** P1
+**Status:** Ready (extension method available; no inter-service HttpClients yet)
 
 | Policy | Configuration |
 |---|---|
-| **Retry** | Exponential backoff, 3 attempts, jitter |
-| **Circuit breaker** | Break after 5 consecutive failures, 30s recovery |
-| **Timeout** | 10s per-request timeout |
-| **Bulkhead** | Max concurrent calls per downstream service |
+| **Retry** | 3 attempts, exponential backoff + jitter |
+| **Circuit breaker** | 5-min throughput sampling, 15s break duration |
+| **Timeout** | 10s per-attempt, 30s total |
+| **Correlation ID propagation** | Auto-forward X-Correlation-ID on outbound calls |
 
-All inter-service `HttpClient` registrations MUST include the standard Polly policy pipeline. Shared via `Warehouse.Infrastructure` extension methods.
+Extension method: `AddWarehouseHttpClient<TClient, TImpl>(baseAddress)` in `Warehouse.Infrastructure`. First real use case will be cross-service validation (Fulfillment → Inventory, Fulfillment → Customers).
 
 ---
 
 #### Distributed Cache — Redis
-**Technology:** Redis (StackExchange.Redis / Microsoft.Extensions.Caching.StackExchangeRedis)
+**Technology:** Redis 7.4 (StackExchange.Redis / Microsoft.Extensions.Caching.StackExchangeRedis)
 **Priority:** P1
+**Status:** Done
 
-| Feature | Description |
-|---|---|
-| **Response caching** | Cache frequently-read, rarely-changed data: product catalog, permission lookups, UoM lists, customer categories |
-| **Rate limiting backend** | Redis-backed sliding window counters for gateway rate limiting (shared state across gateway instances) |
-| **Session / token store** | Optional: faster refresh token validation than SQL round-trips |
-| **Pub/sub** | Real-time cache invalidation across service instances (e.g., permission change broadcasts) |
-| **Distributed locks** | Prevent concurrent operations on the same resource (e.g., two concurrent adjustment applies on the same stock level) |
+| Feature | Description | Status |
+|---|---|---|
+| **Lookup data caching** | Permissions, product categories, UoM, customer categories, supplier categories cached via `IDistributedCache` | Done |
+| **Cache invalidation** | Write operations invalidate cache; paginated lists served from cached data | Done |
 
-**Rationale:** Without a distributed cache, every permission check and product lookup hits SQL Server. As service count and traffic grow, this becomes a bottleneck. Redis provides sub-millisecond reads, shared state for rate limiting, and pub/sub for cache invalidation.
-
-**Integration pattern:**
-- Add `IDistributedCache` registration via `Warehouse.Infrastructure` shared extension methods
-- Services use `IDistributedCache` (not `IConnectionMultiplexer` directly) for standard caching
-- Use `IConnectionMultiplexer` only for pub/sub and distributed locks
-- Cache keys follow convention: `{service}:{entity}:{id}` (e.g., `auth:permissions:user:42`)
-- TTL defaults: permission lookups 5 min, product catalog 15 min, UoM/categories 30 min
+**Cache key convention:** `{service}:{entity}:all` (e.g., `auth:permissions:all`, `inventory:product-categories:all`)
+**TTL:** Permissions 5 min, categories/UoM 30 min. Transactional data MUST NOT be cached.
+**Extension method:** `services.AddWarehouseRedisCache(configuration)` — registered in Auth, Customers, Inventory, Purchasing, Fulfillment.
 
 ---
 
 #### Message Broker — RabbitMQ
-**Technology:** RabbitMQ (MassTransit as the abstraction layer)
-**Priority:** P1 (Phase 2 — before first inter-service workflow)
+**Technology:** RabbitMQ 4.1 (MassTransit 8.x)
+**Priority:** P1
+**Status:** Done
 
-| Feature | Description |
-|---|---|
-| **Domain events** | Publish events when operations complete: `GoodsReceived`, `OrderDispatched`, `StockAdjusted`, `TransferCompleted` |
-| **Event consumers** | Services subscribe to events they care about (e.g., Inventory consumes `GoodsReceived` from Purchasing to create stock movements) |
-| **Saga / state machine** | MassTransit sagas for multi-step workflows (e.g., goods receiving: validate PO → create batch → record stock movement → update PO status) |
-| **Retry / dead letter** | Automatic retry with exponential backoff; dead-letter queue for poison messages |
-| **Outbox pattern** | Transactional outbox to guarantee event publication alongside database writes (no dual-write problem) |
+| Feature | Description | Status |
+|---|---|---|
+| **Domain events** | Fire-and-forget publish via `IPublishEndpoint` (try/catch — RabbitMQ unavailability does not break main operations) | Done |
+| **Event consumers** | EventLog.API consumes events from all domains via MassTransit consumers | Done |
+| **Centralized event log** | All domain events flow to `Warehouse.EventLog.API` for immutable storage in `eventlog.OperationsEvents` | Done |
+| **Management UI** | RabbitMQ management at `localhost:15672` (warehouse/warehouse) | Done |
 
-**Rationale:** Phase 2 introduces the first inter-service workflows. Goods receiving in Purchasing needs to create stock movements in Inventory. Fulfillment dispatching needs to deduct stock. Doing all of this synchronously with HTTP creates tight coupling, cascading failures, and long request chains. RabbitMQ decouples producers from consumers, enables retry/dead-letter handling, and allows services to evolve independently.
+**Published domain events (10):**
 
-**Event naming convention:** `{Domain}.{Entity}.{PastTenseVerb}` (e.g., `Purchasing.GoodsReceipt.Completed`, `Fulfillment.Shipment.Dispatched`, `Inventory.Stock.Adjusted`)
+| Event | Published From | After |
+|---|---|---|
+| `StockMovementRecordedEvent` | Inventory — `StockMovementService` | SaveChangesAsync |
+| `InventoryAdjustmentAppliedEvent` | Inventory — `InventoryAdjustmentService` | CommitAsync |
+| `WarehouseTransferCompletedEvent` | Inventory — `WarehouseTransferService` | CommitAsync |
+| `CustomerCreatedEvent` | Customers — `CustomerService` | SaveChangesAsync |
+| `CustomerEventOccurredEvent` | Customers — various services | State changes |
+| `InventoryEventOccurredEvent` | Inventory — various services | State changes |
+| `PurchaseEventOccurredEvent` | Purchasing — various services | State changes |
+| `FulfillmentEventOccurredEvent` | Fulfillment — various services | State changes |
+| `AuthAuditLoggedEvent` | Auth — `UserActionLogService` | Audit actions |
+| `GoodsReceiptLineAcceptedEvent` | Purchasing — `GoodsReceiptService` | Goods receipt acceptance |
 
-**Integration pattern:**
-- MassTransit as the abstraction layer (supports RabbitMQ, Azure Service Bus, Amazon SQS — swap without code changes)
-- Each service has its own exchange and queue (auto-configured by MassTransit)
-- Event contracts defined in `Warehouse.ServiceModel/Events/` (shared across services)
-- Transactional outbox via MassTransit + EF Core (`AddEntityFrameworkOutbox`)
-- Consumers registered in each service's `Program.cs` via MassTransit DI
-
-**Key Phase 2 event flows:**
-```
-Purchasing: GoodsReceipt.Completed
-  → Inventory: Create StockMovement (Receipt) + Create/Update Batch
-  → Quality: Create Inspection Order (if inspection required)
-
-Fulfillment: Shipment.Dispatched
-  → Inventory: Create StockMovement (Shipment) + Release reservation
-
-Inventory: Stock.BelowReorderPoint
-  → Planning: Suggest Purchase Order (if auto-reorder enabled)
-```
+**Event contracts:** Defined as `sealed record` in `src/Warehouse.ServiceModel/Events/`.
+**Extension method:** `services.AddWarehouseMessageBus(configuration)` — registered in all publishing services.
+**Testing:** `services.AddMassTransitTestHarness()` in test projects to avoid real RabbitMQ connections.
 
 ---
 
 #### Feature Flags
-**Technology:** Microsoft.FeatureManagement
+**Technology:** Microsoft.FeatureManagement 4.x
 **Priority:** P2
+**Status:** Done
 
-| Feature | Description |
-|---|---|
-| **Flag definition** | `appsettings.json` feature flag section per service |
-| **Percentage rollout** | Gradual feature enablement by percentage |
-| **User targeting** | Enable features for specific users/roles |
-| **Kill switch** | Disable features instantly without redeployment |
+| Flag | Service | Purpose | Default |
+|---|---|---|---|
+| `EnableDatabaseSeeding` | Auth.API | Gates entire `DatabaseSeeder.SeedAsync()` | `true` |
+| `EnableSeedDefaultAdmin` | Auth.API | Gates default admin user creation | `true` |
+| `EnableNomenclatureSeeding` | Nomenclature.API | Gates `NomenclatureSeeder.SeedAsync()` | `true` |
+| `EnableSeedCountries` | Nomenclature.API | Gates country seed data | `true` |
+| `EnableSeedCurrencies` | Nomenclature.API | Gates currency seed data | `true` |
+| `EnableSeedStateProvinces` | Nomenclature.API | Gates state/province seed data | `true` |
+| `EnableSeedCities` | Nomenclature.API | Gates city seed data | `true` |
 
-**Rationale:** Useful for gradual rollout of Phase 2 features (e.g., enable goods receiving for one warehouse before all).
+**Extension method:** `services.AddWarehouseFeatureFlags()` — registered in Auth, Nomenclature.
+**Flag constants:** `src/Warehouse.Infrastructure/Configuration/FeatureFlags.cs`.
 
 ---
 
-### Phase 2 — Procurement & Fulfillment Operations
+### Phase 2 — Procurement & Fulfillment Operations (COMPLETE)
 
 #### 4. Warehouse.Purchasing.API — Procurement Operations
 **ISA-95 Domain:** Procurement Operations (Part 3 — Material Receipt)
 **Schema:** `purchasing`
 **Port:** 5004
-**Depends on:** Auth, Inventory, Customers
+**Depends on:** Auth, Inventory, Customers, Nomenclature
 **Priority:** P1
+**Status:** Implemented
+**Spec:** SDD-PURCH-001
 
-| Feature | ISA-95 Activity | Description |
+| Feature | ISA-95 Activity | Status |
 |---|---|---|
-| **Supplier management** | Business Partner (supplier) | Supplier CRUD, categories, contacts, terms |
-| **Purchase orders** | Procurement Request | PO CRUD with status machine (Draft → Confirmed → Partially Received → Received → Closed) |
-| **PO lines** | Procurement Request detail | Line items referencing products, quantities, pricing |
-| **Goods receiving** | Material Receipt | Receive items against PO lines; auto-create Batch + StockMovement (reason: `Receipt`) |
-| **Receiving inspection** | Quality Test (basic) | Accept/reject/quarantine received goods; flag for Quality service when available |
-| **Supplier returns** | Material Shipment (return) | Return defective goods; create StockMovement (reason: `SupplierReturn`) |
-| **Purchase history** | Operations Event log | Immutable record of all procurement events |
+| **Supplier management** (CRUD, categories, contacts) | Business Partner (supplier) | Done |
+| **Purchase orders** (Draft → Confirmed → PartiallyReceived → Received → Closed → Cancelled) | Procurement Request | Done |
+| **PO lines** (product/quantity/price per PO) | Procurement Request detail | Done |
+| **Goods receiving** (receive against PO lines, auto-create Batch + StockMovement) | Material Receipt | Done |
+| **Receiving inspection** (accept/reject/quarantine per GR line) | Quality Test (basic) | Done |
+| **Supplier returns** (Draft → Confirmed → Shipped → Completed → Cancelled) | Material Shipment (return) | Done |
+| **Purchase events** (immutable audit log) | Operations Event log | Done |
+| **Sequence generation** (auto-code for PO, GR, SR, SUPP) | — | Done |
+| **Nomenclature integration** (cascading address dropdowns) | — | Done |
 
-**Key ISA-95 integration points:**
-- Goods receiving MUST create immutable `StockMovement` records with reason code `Receipt`
-- Goods receiving MUST auto-create `Batch` records, connecting Material Lot to the receipt event
-- This resolves the current gap where batches are disconnected from arrivals
-- Supplier returns MUST create `StockMovement` records with reason code `SupplierReturn`
+**Controllers:** SuppliersController, SupplierCategoriesController, SupplierContactsController, PurchaseOrdersController, GoodsReceiptsController, SupplierReturnsController, PurchaseEventsController
+**Services:** 10 service classes + BasePurchasingEntityService base class
+**Tests:** 80 unit tests (Warehouse.Purchasing.API.Tests)
 
-**Frontend scope:**
-- Supplier list/detail/form views
+**Frontend (SDD-UI-004 — Implemented):**
+- Supplier list/detail/form with auto-code preview and category management
 - Purchase order list/detail/form with line items
-- Goods receiving workflow (scan/enter received quantities per PO line)
-- Receiving inspection checklist
+- Goods receiving workflow with per-line acceptance and batch auto-creation
+- Supplier return list/detail/form
+- Nomenclature cascading dropdowns for supplier addresses
 
 ---
 
@@ -314,44 +308,93 @@ Inventory: Stock.BelowReorderPoint
 **ISA-95 Domain:** Fulfillment Operations (Part 3 — Material Shipment)
 **Schema:** `fulfillment`
 **Port:** 5005
-**Depends on:** Auth, Inventory, Customers
+**Depends on:** Auth, Inventory, Customers, Nomenclature
 **Priority:** P1
+**Status:** Implemented
+**Spec:** SDD-FULF-001
 
-| Feature | ISA-95 Activity | Description |
+| Feature | ISA-95 Activity | Status |
 |---|---|---|
-| **Sales orders** | Fulfillment Request | SO CRUD with status machine (Draft → Confirmed → Picking → Packed → Shipped → Completed) |
-| **SO lines** | Fulfillment Request detail | Line items referencing products, quantities, pricing |
-| **Pick lists** | Material Movement (outbound) | Generate pick instructions from confirmed orders |
-| **Packing** | Material Movement (staging) | Pack picked items into parcels; record parcel weight |
-| **Dispatch** | Material Shipment | Create shipment from packed order; create StockMovement (reason: `Shipment`) |
-| **Shipment tracking** | Operations Event | Track shipment status and carrier updates |
-| **Carrier management** | Equipment definition (logistics) | Carrier definitions, service levels, rate tables |
-| **Customer returns** | Material Receipt (return) | RMA intake; create StockMovement (reason: `CustomerReturn`) |
-| **Labels & printing** | Operations documentation | Label templates, ZPL/Zebra printing, QR codes, barcodes |
-| **Dispatch documents** | Operations documentation | Generate packing slips, delivery notes |
+| **Sales orders** (Draft → Confirmed → Picking → Packed → Shipped → Completed → Cancelled) | Fulfillment Request | Done |
+| **SO lines** (product/quantity/price per SO) | Fulfillment Request detail | Done |
+| **Pick lists** (auto-generate from confirmed SO; line-by-line pick execution) | Material Movement (outbound) | Done |
+| **Packing** (create parcels, assign items, record weights) | Material Movement (staging) | Done |
+| **Dispatch / Shipments** (create shipment from packed SO) | Material Shipment | Done |
+| **Shipment tracking** (immutable status history entries) | Operations Event | Done |
+| **Carrier management** (carriers + service levels) | Equipment definition (logistics) | Done |
+| **Customer returns** (Draft → Confirmed → Received → Closed → Cancelled) | Material Receipt (return) | Done |
+| **Fulfillment events** (immutable audit log) | Operations Event log | Done |
+| **Sequence generation** (auto-code for SO, PL, PKG, SHP, CR) | — | Done |
 
-**Key ISA-95 integration points:**
-- Dispatch MUST create immutable `StockMovement` records with reason code `Shipment`
-- Pick lists MUST reserve stock (update `QuantityReserved` on `StockLevel`)
-- Customer returns MUST create `StockMovement` records with reason code `CustomerReturn`
-- All state transitions MUST produce immutable operations events
+**Controllers:** SalesOrdersController, PickListsController, PackingController, ShipmentsController, CarriersController, CustomerReturnsController, FulfillmentEventsController
+**Services:** 7 service classes + BaseFulfillmentEntityService base class
+**Tests:** 128 unit tests (Warehouse.Fulfillment.API.Tests)
 
-**Frontend scope:**
-- Sales order list/detail/form with line items
-- Pick list generation and execution UI
-- Packing workflow (assign items to parcels)
-- Shipment tracking dashboard
-- Carrier management
-- Label template designer and print preview
+**Deferred features (Phase 3+):**
+- Labels & printing (ZPL/Zebra, QR codes, barcodes)
+- Dispatch documents (packing slips, delivery notes)
+
+**Frontend (SDD-UI-005 — Implemented):**
+- Sales order list/detail/form with line items, packing, and dispatch actions
+- Pick list generation and line-by-line execution UI
+- Shipment list with tracking history
+- Carrier management with service levels
+- Customer return list/detail/form
+- Nomenclature cascading dropdowns for customer addresses
+
+---
+
+### Phase 2.5 — Supporting Services (COMPLETE)
+
+#### 6. Warehouse.EventLog.API — Centralized Event Logging
+**ISA-95 Domain:** Cross-cutting (Operations Event aggregation)
+**Schema:** `eventlog`
+**Port:** 5006
+**Depends on:** Auth (JWT), all domain services (consumes events)
+**Status:** Implemented
+**Spec:** SDD-EVTLOG-001
+
+| Feature | Description | Status |
+|---|---|---|
+| **MassTransit consumers** | 5 consumers: AuthAuditLogged, CustomerEventOccurred, InventoryEventOccurred, PurchaseEventOccurred, FulfillmentEventOccurred | Done |
+| **Event mapping strategies** | Strategy pattern per domain for mapping domain events → OperationsEvent records | Done |
+| **OperationsEvent factory** | Factory pattern for consistent event record creation | Done |
+| **Query endpoint** | `GET /api/v1/events` with filtering, pagination, and search | Done |
+| **Immutable storage** | All events stored as immutable records in `eventlog.OperationsEvents` | Done |
+
+**Key design patterns:** Factory (OperationsEventFactory), Strategy (per-domain event mapping), Consumer pattern (MassTransit)
+
+---
+
+#### 7. Warehouse.Nomenclature.API — Reference Data
+**ISA-95 Domain:** Cross-cutting (shared reference data)
+**Schema:** `nomenclature`
+**Port:** 5007
+**Depends on:** Auth (JWT)
+**Status:** Implemented
+**Spec:** SDD-NOM-001
+
+| Feature | Description | Status |
+|---|---|---|
+| **Countries** | Country CRUD with ISO codes | Done |
+| **State/Provinces** | State/Province CRUD (hierarchical under Country) | Done |
+| **Cities** | City CRUD (hierarchical under State/Province) | Done |
+| **Currencies** | Currency CRUD with ISO 4217 codes | Done |
+| **Database seeding** | Feature-flagged seeder for countries, currencies, state/provinces, cities | Done |
+| **Cascading dropdowns** | Frontend integration with Country → State → City cascading selection | Done |
+
+**Integrated with:** Customers.API (customer addresses), Purchasing.API (supplier addresses), Fulfillment.API (customer return/shipping addresses)
+**Controllers:** CountriesController, StateProvincesController, CitiesController, CurrenciesController
+**Tests:** Warehouse.Nomenclature.API.Tests
 
 ---
 
 ### Phase 3 — Production & Quality Operations
 
-#### 6. Warehouse.Production.API — Production Operations
+#### 8. Warehouse.Production.API — Production Operations
 **ISA-95 Domain:** Production Operations (Part 3 — Production Execution)
 **Schema:** `production`
-**Port:** 5006
+**Port:** 5008
 **Depends on:** Auth, Inventory
 **Priority:** P2
 
@@ -383,10 +426,10 @@ Inventory: Stock.BelowReorderPoint
 
 ---
 
-#### 7. Warehouse.Quality.API — Quality Operations
+#### 9. Warehouse.Quality.API — Quality Operations
 **ISA-95 Domain:** Quality Operations (Part 3 — Quality Test Execution)
 **Schema:** `quality`
-**Port:** 5007
+**Port:** 5009
 **Depends on:** Auth, Inventory, Purchasing (optional), Production (optional)
 **Priority:** P2
 
@@ -421,10 +464,10 @@ Inventory: Stock.BelowReorderPoint
 
 ### Phase 4 — Business Planning (Level 4)
 
-#### 8. Warehouse.Finance.API — Financial Management
+#### 10. Warehouse.Finance.API — Financial Management
 **ISA-95 Level:** Level 4 — Business Planning & Logistics
 **Schema:** `finance`
-**Port:** 5008
+**Port:** 5010
 **Depends on:** Auth, Customers, Purchasing, Fulfillment
 **Priority:** P2
 
@@ -445,10 +488,10 @@ Inventory: Stock.BelowReorderPoint
 
 ---
 
-#### 9. Warehouse.Planning.API — Business Planning
+#### 11. Warehouse.Planning.API — Business Planning
 **ISA-95 Level:** Level 4 — Business Planning & Logistics
 **Schema:** `planning`
-**Port:** 5009
+**Port:** 5011
 **Depends on:** Auth, Inventory, Purchasing, Fulfillment, Production
 **Priority:** P3
 
@@ -466,10 +509,10 @@ Inventory: Stock.BelowReorderPoint
 
 ### Phase 5 — Cross-Cutting Services
 
-#### 10. Warehouse.Reporting.API — Reports & Dashboards
+#### 12. Warehouse.Reporting.API — Reports & Dashboards
 **ISA-95 Level:** Cross-cutting (reads from all levels)
 **Schema:** Read-only access to all schemas
-**Port:** 5010
+**Port:** 5012
 **Depends on:** Auth, read access to all service databases
 **Priority:** P3
 
@@ -485,10 +528,10 @@ Inventory: Stock.BelowReorderPoint
 
 ---
 
-#### 11. Warehouse.Admin.API — System Administration
+#### 13. Warehouse.Admin.API — System Administration
 **ISA-95 Level:** Cross-cutting
 **Schema:** `admin`
-**Port:** 5011
+**Port:** 5013
 **Depends on:** Auth
 **Priority:** P3 (built incrementally)
 
@@ -511,96 +554,89 @@ Inventory: Stock.BelowReorderPoint
 | 2 | **Customers** | Business Partner Management | L3 | 5002 | P0 | Auth | **Done** |
 | 3 | **Inventory** | Inventory Operations | L3 | 5003 | P1 | Auth, Customers | **Done** |
 | — | **Gateway** | Cross-cutting | — | 5000 | P1 | All services | **Done** |
-| — | **Infrastructure** | Cross-cutting | — | — | P1 | — | Partial (I1, I2 done; I3–I5 blocked) |
-| 4 | **Purchasing** | Procurement Operations | L3 | 5004 | P1 | Auth, Inventory, Customers | Not started |
-| 5 | **Fulfillment** | Fulfillment Operations | L3 | 5005 | P1 | Auth, Inventory, Customers | Not started |
-| 6 | **Production** | Production Operations | L3 | 5006 | P2 | Auth, Inventory | Not started |
-| 7 | **Quality** | Quality Operations | L3 | 5007 | P2 | Auth, Inventory | Not started |
-| 8 | **Finance** | Financial Management | L4 | 5008 | P2 | Auth, Customers, Purchasing, Fulfillment | Not started |
-| 9 | **Planning** | Business Planning | L4 | 5009 | P3 | Auth, Inventory, Purchasing, Fulfillment, Production | Not started |
-| 10 | **Reporting** | Cross-cutting | — | 5010 | P3 | Auth, all (read) | Not started |
-| 11 | **Admin** | Cross-cutting | — | 5011 | P3 | Auth | Not started |
+| — | **Infrastructure** | Cross-cutting | — | — | P1 | — | **Done** (all 9 components) |
+| 4 | **Purchasing** | Procurement Operations | L3 | 5004 | P1 | Auth, Inventory, Customers, Nomenclature | **Done** |
+| 5 | **Fulfillment** | Fulfillment Operations | L3 | 5005 | P1 | Auth, Inventory, Customers, Nomenclature | **Done** |
+| 6 | **EventLog** | Cross-cutting (event aggregation) | — | 5006 | P1 | Auth, all (consumes events) | **Done** |
+| 7 | **Nomenclature** | Cross-cutting (reference data) | — | 5007 | P1 | Auth | **Done** |
+| 8 | **Production** | Production Operations | L3 | 5008 | P2 | Auth, Inventory | Not started |
+| 9 | **Quality** | Quality Operations | L3 | 5009 | P2 | Auth, Inventory | Not started |
+| 10 | **Finance** | Financial Management | L4 | 5010 | P2 | Auth, Customers, Purchasing, Fulfillment | Not started |
+| 11 | **Planning** | Business Planning | L4 | 5011 | P3 | Auth, Inventory, Purchasing, Fulfillment, Production | Not started |
+| 12 | **Reporting** | Cross-cutting | — | 5012 | P3 | Auth, all (read) | Not started |
+| 13 | **Admin** | Cross-cutting | — | 5013 | P3 | Auth | Not started |
 
-### Infrastructure Components (Phase 1.5)
+### Infrastructure Components (Phase 1.5 — ALL COMPLETE)
 
 | # | Component | Technology | Priority | Status |
 |---|---|---|---|---|
-| I1 | **API Gateway** | YARP 2.3.0 | P1 | **Done** — port 5000, 22 routes, health aggregation, rate limiting (200 req/min per IP) |
-| I2 | **Correlation IDs** | Custom middleware (Warehouse.Infrastructure) | P1 | **Done** — generate/propagate X-Correlation-ID, NLog enrichment |
-| I3 | **Centralized Logging** | NLog → Loki 3.4.2 + Grafana 11.5.2 | P1 | **Done** — all services push to Loki; Grafana at localhost:3001 |
+| I1 | **API Gateway** | YARP 2.3.0 | P1 | **Done** — port 5000, 47 routes across 7 clusters, health aggregation, rate limiting (200 req/min per IP), correlation ID forwarding |
+| I2 | **Correlation IDs** | Custom middleware (Warehouse.Infrastructure) | P1 | **Done** — generate/propagate X-Correlation-ID, NLog enrichment, YARP transform forwarding |
+| I3 | **Centralized Logging** | NLog → Loki 3.4.2 + Grafana 11.5.2 | P1 | **Done** — all 7 services push to Loki; Grafana dashboards at localhost:3001 |
 | I4 | **Distributed Tracing** | OpenTelemetry → Jaeger | P1 | **Done** — auto-instrumentation (ASP.NET Core, HttpClient, SQL); Jaeger at localhost:16686 |
-| I5 | **Polly Resilience** | Microsoft.Extensions.Http.Resilience 9.x | P1 | **Ready** — `AddWarehouseHttpClient<T,TImpl>()` available; no inter-service HttpClients yet (Phase 2) |
-| I6 | **Distributed Cache** | Redis 7.4 (StackExchange.Redis) | P1 | **Done** — caching permissions, categories, UoM in Auth/Customers/Inventory |
-| I7 | **Message Broker** | RabbitMQ 4.1 (MassTransit 8.x) | P1 | **Done** — 4 domain events published (StockMovement, Adjustment, Transfer, Customer); management UI at localhost:15672 |
+| I5 | **Polly Resilience** | Microsoft.Extensions.Http.Resilience 9.x | P1 | **Ready** — `AddWarehouseHttpClient<T,TImpl>()` available; first use case: cross-service validations |
+| I6 | **Distributed Cache** | Redis 7.4 (StackExchange.Redis) | P1 | **Done** — caching in Auth, Customers, Inventory, Purchasing, Fulfillment (permissions, categories, UoM) |
+| I7 | **Message Broker** | RabbitMQ 4.1 (MassTransit 8.x) | P1 | **Done** — 10 domain events published; EventLog.API consumes all; management UI at localhost:15672 |
 | I8 | **Rate Limiting** | ASP.NET Core RateLimiting (at gateway) | P2 | **Done** — global per-IP (200/min) + named "fixed" policy (100/min) |
-| I9 | **Feature Flags** | Microsoft.FeatureManagement 4.x | P2 | **Done** — gates database seeding in Auth.API; `FeatureFlags.cs` constants in Infrastructure |
+| I9 | **Feature Flags** | Microsoft.FeatureManagement 4.x | P2 | **Done** — gates database seeding in Auth.API + Nomenclature.API (7 flags total) |
+| I10 | **Sequence Generation** | Custom (Warehouse.Infrastructure) | P1 | **Done** — centralized number generation (12 sequence definitions); SDD-INFRA-003 |
+| I11 | **Centralized Event Log** | MassTransit consumers + EventLogDbContext | P1 | **Done** — `Warehouse.EventLog.API` (port 5006); SDD-EVTLOG-001 |
 
 ---
 
-## Monorepo Structure (target)
+## Monorepo Structure (current)
 
 ```
 Warehouse/
 ├── CLAUDE.md
 ├── README.md
+├── docker-compose.infrastructure.yml    ← Docker Compose for all services + infrastructure
+├── docker/                              ← Docker configs (loki, grafana, nginx)
 ├── docs/
-│   ├── core/               ← Inventory, Purchasing, Fulfillment, Production specs
-│   ├── domain/             ← Customers, Quality specs
-│   ├── infrastructure/     ← Auth, Finance, Planning, Reporting, Admin specs
-│   └── changes/
-├── frontend/               ← Vue.js 3 SPA
+│   ├── core/               ← Inventory, Purchasing, Fulfillment specs + UI specs
+│   ├── domain/             ← Customers, Nomenclature specs + UI feature specs
+│   ├── infrastructure/     ← Auth, EventLog, Infra, Observability specs
+│   └── changes/            ← 20 change specs (CHG-ENH-*, CHG-REFAC-*)
+├── frontend/               ← Vue.js 3 SPA (port 3000)
 │   └── src/
-│       ├── app/            ← Shell, router
-│       ├── features/       ← auth, customers, inventory, purchasing, fulfillment, production, quality, finance, planning, admin
-│       └── shared/         ← Components, stores, i18n
+│       ├── app/            ← Shell, router (6 route files)
+│       ├── features/       ← auth, customers, inventory, purchasing, fulfillment
+│       └── shared/         ← Components, stores, i18n (EN/BG)
 └── src/
     ├── Warehouse.slnx
-    ├── Gateway/
-    │   └── Warehouse.Gateway/             ← YARP reverse proxy (port 5000)
     ├── Databases/
-    │   ├── Warehouse.Auth.DBModel/
-    │   ├── Warehouse.Customers.DBModel/
-    │   ├── Warehouse.Inventory.DBModel/
-    │   ├── Warehouse.Purchasing.DBModel/
-    │   ├── Warehouse.Fulfillment.DBModel/
-    │   ├── Warehouse.Production.DBModel/
-    │   ├── Warehouse.Quality.DBModel/
-    │   ├── Warehouse.Finance.DBModel/
-    │   └── Warehouse.Planning.DBModel/
+    │   ├── Warehouse.Auth.DBModel/          ← auth schema
+    │   ├── Warehouse.Customers.DBModel/     ← customers schema
+    │   ├── Warehouse.Inventory.DBModel/     ← inventory schema
+    │   ├── Warehouse.Purchasing.DBModel/    ← purchasing schema
+    │   ├── Warehouse.Fulfillment.DBModel/   ← fulfillment schema
+    │   ├── Warehouse.EventLog.DBModel/      ← eventlog schema
+    │   └── Warehouse.Nomenclature.DBModel/  ← nomenclature schema
+    ├── Infrastructure/
+    │   ├── Gateway/
+    │   │   └── Warehouse.Gateway/           ← YARP reverse proxy (port 5000, 47 routes)
+    │   └── EventLog/
+    │       ├── Warehouse.EventLog.API/      ← MassTransit consumers, query endpoint (port 5006)
+    │       └── Warehouse.EventLog.API.Tests/
     ├── Interfaces/
     │   ├── Auth/
-    │   │   ├── Warehouse.Auth.API/
+    │   │   ├── Warehouse.Auth.API/          ← port 5001
     │   │   └── Warehouse.Auth.API.Tests/
     │   ├── Customers/
-    │   │   ├── Warehouse.Customers.API/
+    │   │   ├── Warehouse.Customers.API/     ← port 5002
     │   │   └── Warehouse.Customers.API.Tests/
     │   ├── Inventory/
-    │   │   ├── Warehouse.Inventory.API/
+    │   │   ├── Warehouse.Inventory.API/     ← port 5003
     │   │   └── Warehouse.Inventory.API.Tests/
     │   ├── Purchasing/
-    │   │   ├── Warehouse.Purchasing.API/
+    │   │   ├── Warehouse.Purchasing.API/    ← port 5004
     │   │   └── Warehouse.Purchasing.API.Tests/
     │   ├── Fulfillment/
-    │   │   ├── Warehouse.Fulfillment.API/
+    │   │   ├── Warehouse.Fulfillment.API/   ← port 5005
     │   │   └── Warehouse.Fulfillment.API.Tests/
-    │   ├── Production/
-    │   │   ├── Warehouse.Production.API/
-    │   │   └── Warehouse.Production.API.Tests/
-    │   ├── Quality/
-    │   │   ├── Warehouse.Quality.API/
-    │   │   └── Warehouse.Quality.API.Tests/
-    │   ├── Finance/
-    │   │   ├── Warehouse.Finance.API/
-    │   │   └── Warehouse.Finance.API.Tests/
-    │   ├── Planning/
-    │   │   ├── Warehouse.Planning.API/
-    │   │   └── Warehouse.Planning.API.Tests/
-    │   ├── Reporting/
-    │   │   ├── Warehouse.Reporting.API/
-    │   │   └── Warehouse.Reporting.API.Tests/
-    │   └── Admin/
-    │       ├── Warehouse.Admin.API/
-    │       └── Warehouse.Admin.API.Tests/
+    │   └── Nomenclature/
+    │       ├── Warehouse.Nomenclature.API/  ← port 5007
+    │       └── Warehouse.Nomenclature.API.Tests/
     ├── Warehouse.Common/
     ├── Warehouse.Infrastructure/
     ├── Warehouse.GenericFiltering/
@@ -608,9 +644,56 @@ Warehouse/
     └── Warehouse.ServiceModel/
 ```
 
+### Future additions (Phase 3+)
+
+```
+    ├── Databases/
+    │   ├── Warehouse.Production.DBModel/    ← production schema (planned)
+    │   ├── Warehouse.Quality.DBModel/       ← quality schema (planned)
+    │   ├── Warehouse.Finance.DBModel/       ← finance schema (planned)
+    │   └── Warehouse.Planning.DBModel/      ← planning schema (planned)
+    ├── Interfaces/
+    │   ├── Production/                      ← port 5008 (planned)
+    │   ├── Quality/                         ← port 5009 (planned)
+    │   ├── Finance/                         ← port 5010 (planned)
+    │   ├── Planning/                        ← port 5011 (planned)
+    │   ├── Reporting/                       ← port 5012 (planned)
+    │   └── Admin/                           ← port 5013 (planned)
+```
+
 ---
 
-## Phase 2 Deferred Items
+## Docker Compose (`docker-compose.infrastructure.yml`)
+
+All services and infrastructure run via Docker Compose:
+
+```bash
+docker compose -f docker-compose.infrastructure.yml up -d
+```
+
+| Container | Port | Purpose |
+|---|---|---|
+| `warehouse-sqlserver` | 1433 | SQL Server 2022 (sa / Warehouse@Dev123) |
+| `warehouse-redis` | 6379 | Distributed cache |
+| `warehouse-rabbitmq` | 5672, 15672 | Message broker + management UI |
+| `warehouse-loki` | 3100 | Log aggregation |
+| `warehouse-grafana` | 3001 | Monitoring dashboards (admin/admin) |
+| `warehouse-jaeger` | 4317, 4318, 16686 | Distributed tracing |
+| `warehouse-auth-api` | 5001 | Auth API |
+| `warehouse-customers-api` | 5002 | Customers API |
+| `warehouse-inventory-api` | 5003 | Inventory API |
+| `warehouse-purchasing-api` | 5004 | Purchasing API |
+| `warehouse-fulfillment-api` | 5005 | Fulfillment API |
+| `warehouse-eventlog-api` | 5006 | EventLog API |
+| `warehouse-nomenclature-api` | 5007 | Nomenclature API |
+| `warehouse-gateway` | 5000 | YARP API Gateway |
+| `warehouse-frontend` | 3000 | Vue.js SPA (Nginx) |
+
+**Total: 15 containers** (7 backend APIs + 1 gateway + 1 frontend + 6 infrastructure)
+
+---
+
+## Deferred Items
 
 Items identified during validation that are intentionally deferred. These do NOT block the services from running — all business logic works. They are about completeness and hardening.
 
@@ -644,8 +727,6 @@ Both Purchasing and Fulfillment have MUST rules that require calling other micro
 |---|---|---|
 | Add update validators (UpdateSupplierRequest, etc.) | Purchasing | P2 |
 | Add contact validators (address, phone, email) | Purchasing | P2 |
-| Document Redis caching behavior in specs | Both | P3 |
-| Update spec status from Draft to Active | Both | P3 |
 
 ---
 
@@ -668,21 +749,27 @@ These items should be addressed before or during Phase 2 to ensure the foundatio
 |---|---|---|---|---|---|---|---|
 | 1 | Auth | Personnel & Authorization | SDD-AUTH-001 | Done | Partial | Missing | **Implemented** |
 | 2 | Customers | Business Partner Management | SDD-CUST-001 | Done | Partial | Missing | **Implemented** |
-| 3 | Inventory | Inventory Operations | SDD-INV-001..004 | Done | Partial | Missing | **Implemented** |
-| I1 | Gateway (YARP) | Cross-cutting | SDD-INFRA-002 | Done | 20 planned | Validated | **Implemented** |
-| I2 | Correlation IDs | Cross-cutting | SDD-INFRA-001 | Done | 31 unit | Validated | **Implemented** |
-| I3 | Centralized Logging | Cross-cutting | SDD-OBS-001 | Done | 16 planned | Validated | **Implemented** (Loki + Grafana) |
-| I4 | Distributed Tracing | Cross-cutting | SDD-OBS-001 | Done | (incl. above) | Validated | **Implemented** (OpenTelemetry → Jaeger) |
-| I5 | Polly Resilience | Cross-cutting | SDD-INFRA-001 | Done | (incl. I2) | Validated | **Ready** (extension method; no consumers until Phase 2) |
-| I6 | Redis (Distributed Cache) | Cross-cutting | SDD-INFRA-001 | Done | (incl. I2) | Validated | **Implemented** (caching in Auth, Customers, Inventory) |
-| I7 | RabbitMQ (Message Broker) | Cross-cutting | SDD-INFRA-001 | Done | (incl. I2) | Validated | **Implemented** (4 events published from Customers, Inventory) |
-| I8 | Rate Limiting | Cross-cutting | SDD-INFRA-002 | Done | (incl. I1) | Validated | **Implemented** (per-IP on Gateway) |
-| I9 | Feature Flags | Cross-cutting | SDD-INFRA-001 | Done | (incl. I2) | Validated | **Implemented** (gates Auth seeder) |
+| 3 | Inventory | Inventory Operations | SDD-INV-001..005 | Done | Partial | Missing | **Implemented** |
+| — | Gateway (YARP) | Cross-cutting | SDD-INFRA-002 | Done | 20 planned | Validated | **Implemented** |
+| — | Correlation IDs | Cross-cutting | SDD-INFRA-001 | Done | 31 unit | Validated | **Implemented** |
+| — | Centralized Logging | Cross-cutting | SDD-OBS-001 | Done | 16 planned | Validated | **Implemented** (Loki + Grafana) |
+| — | Distributed Tracing | Cross-cutting | SDD-OBS-001 | Done | (incl. above) | Validated | **Implemented** (OpenTelemetry → Jaeger) |
+| — | Polly Resilience | Cross-cutting | SDD-INFRA-001 | Done | (incl. above) | Validated | **Ready** (extension method; awaiting cross-service calls) |
+| — | Redis Cache | Cross-cutting | SDD-INFRA-001 | Done | (incl. above) | Validated | **Implemented** (Auth, Customers, Inventory, Purchasing, Fulfillment) |
+| — | RabbitMQ | Cross-cutting | SDD-INFRA-001 | Done | (incl. above) | Validated | **Implemented** (10 events, 5 consumers) |
+| — | Rate Limiting | Cross-cutting | SDD-INFRA-002 | Done | (incl. above) | Validated | **Implemented** (per-IP on Gateway) |
+| — | Feature Flags | Cross-cutting | SDD-INFRA-001 | Done | (incl. above) | Validated | **Implemented** (Auth + Nomenclature seeders) |
+| — | Sequence Generation | Cross-cutting | SDD-INFRA-003 | Done | Done | Validated | **Implemented** (12 sequence definitions) |
 | 4 | Purchasing | Procurement Operations | SDD-PURCH-001 | Done | 80 unit | Validated | **Implemented** |
 | 5 | Fulfillment | Fulfillment Operations | SDD-FULF-001 | Done | 128 unit | Validated | **Implemented** |
-| 6 | Production | Production Operations | — | — | — | — | Not started |
-| 7 | Quality | Quality Operations | — | — | — | — | Not started |
-| 8 | Finance | Financial Management | — | — | — | — | Not started |
-| 9 | Planning | Business Planning | — | — | — | — | Not started |
-| 10 | Reporting | Cross-cutting | — | — | — | — | Not started |
-| 11 | Admin | Cross-cutting | — | — | — | — | Not started |
+| 6 | EventLog | Cross-cutting | SDD-EVTLOG-001 | Done | Done | Validated | **Implemented** |
+| 7 | Nomenclature | Cross-cutting | SDD-NOM-001 | Done | Done | Validated | **Implemented** |
+| — | Purchasing SPA | — | SDD-UI-004 | Done | — | — | **Implemented** |
+| — | Fulfillment SPA | — | SDD-UI-005 | Done | — | — | **Implemented** |
+| — | Batch on Receipt | — | SDD-INV-005 | Done | Done | Validated | **Implemented** |
+| 8 | Production | Production Operations | — | — | — | — | Not started |
+| 9 | Quality | Quality Operations | — | — | — | — | Not started |
+| 10 | Finance | Financial Management | — | — | — | — | Not started |
+| 11 | Planning | Business Planning | — | — | — | — | Not started |
+| 12 | Reporting | Cross-cutting | — | — | — | — | Not started |
+| 13 | Admin | Cross-cutting | — | — | — | — | Not started |

@@ -1,8 +1,8 @@
 # Cross-Reference Map
 
-> Last updated: 2026-04-16
+> Last updated: 2026-04-17
 >
-> Note: Added CHG-ENH-001 for Nomenclature integration across consumer domains
+> Note: Updated NOM-001 and CHG-ENH-001 to Implemented status; updated all spec statuses
 
 This document provides a bidirectional mapping between SDD specifications and source files.
 
@@ -551,39 +551,88 @@ This document provides a bidirectional mapping between SDD specifications and so
 | `src/Interfaces/Purchasing/Warehouse.Purchasing.API/Services/PurchaseEventService.cs` | SDD-PURCH-001, SDD-EVTLOG-001 |
 | `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Services/FulfillmentEventService.cs` | SDD-FULF-001, SDD-EVTLOG-001 |
 
-### SDD-NOM-001 — Nomenclature Reference Data (Draft — No Implementation Yet)
+### SDD-COMP-001 — Multi-Company Support (Planned — cross-domain impact)
+
+| Source File | Spec ID(s) |
+|---|---|
+| `src/Databases/Warehouse.Auth.DBModel/Models/Company.cs` | SDD-COMP-001 |
+| `src/Databases/Warehouse.Auth.DBModel/Models/UserCompany.cs` | SDD-COMP-001 |
+| `src/Databases/Warehouse.Auth.DBModel/Models/Role.cs` | SDD-AUTH-001, SDD-COMP-001 |
+| `src/Databases/Warehouse.Auth.DBModel/AuthDbContext.cs` | SDD-AUTH-001, SDD-COMP-001 |
+| `src/Interfaces/Auth/Warehouse.Auth.API/Controllers/CompaniesController.cs` | SDD-COMP-001 |
+| `src/Interfaces/Auth/Warehouse.Auth.API/Services/CompanyService.cs` | SDD-COMP-001 |
+| `src/Interfaces/Auth/Warehouse.Auth.API/Services/UserCompanyService.cs` | SDD-COMP-001 |
+| `src/Interfaces/Auth/Warehouse.Auth.API/Services/CompanySwitchService.cs` | SDD-COMP-001 |
+| `src/Interfaces/Auth/Warehouse.Auth.API/Services/ICurrentCompanyProvider.cs` | SDD-COMP-001 |
+| `src/Databases/Warehouse.Customers.DBModel/Models/Customer.cs` | SDD-CUST-001, SDD-COMP-001 |
+| `src/Databases/Warehouse.Customers.DBModel/CustomersDbContext.cs` | SDD-CUST-001, SDD-COMP-001 |
+| `src/Databases/Warehouse.Inventory.DBModel/Models/WarehouseEntity.cs` | SDD-INV-003, SDD-COMP-001 |
+| `src/Databases/Warehouse.Inventory.DBModel/Models/Product.cs` | SDD-INV-001, SDD-COMP-001 |
+| `src/Databases/Warehouse.Inventory.DBModel/InventoryDbContext.cs` | SDD-INV-001, SDD-COMP-001 |
+| `src/Databases/Warehouse.Purchasing.DBModel/Models/Supplier.cs` | SDD-PURCH-001, SDD-COMP-001 |
+| `src/Databases/Warehouse.Purchasing.DBModel/PurchasingDbContext.cs` | SDD-PURCH-001, SDD-COMP-001 |
+| `src/Databases/Warehouse.Fulfillment.DBModel/FulfillmentDbContext.cs` | SDD-FULF-001, SDD-COMP-001 |
+| `src/Warehouse.Infrastructure/Authorization/PermissionAuthorizationHandler.cs` | SDD-AUTH-001, SDD-INFRA-001, SDD-COMP-001 |
+
+### SDD-NOM-001 — Nomenclature Reference Data
 
 | File | Type | Role |
 |---|---|---|
-| `src/Databases/Warehouse.Nomenclature.DBModel/NomenclatureDbContext.cs` | DbContext | Nomenclature EF Core context (planned) |
-| `src/Databases/Warehouse.Nomenclature.DBModel/Models/Country.cs` | Entity | Country entity (planned) |
-| `src/Databases/Warehouse.Nomenclature.DBModel/Models/StateProvince.cs` | Entity | State/province entity (planned) |
-| `src/Databases/Warehouse.Nomenclature.DBModel/Models/City.cs` | Entity | City entity (planned) |
-| `src/Databases/Warehouse.Nomenclature.DBModel/Models/Currency.cs` | Entity | Currency entity (planned) |
-| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Controllers/CountriesController.cs` | Controller | Country CRUD endpoints (planned) |
-| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Controllers/StateProvincesController.cs` | Controller | State/province endpoints (planned) |
-| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Controllers/CitiesController.cs` | Controller | City endpoints (planned) |
-| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Controllers/CurrenciesController.cs` | Controller | Currency CRUD endpoints (planned) |
-| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Services/CountryService.cs` | Service | Country business logic (planned) |
-| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Services/StateProvinceService.cs` | Service | State/province business logic (planned) |
-| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Services/CityService.cs` | Service | City business logic (planned) |
-| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Services/CurrencyService.cs` | Service | Currency business logic (planned) |
-| `src/Warehouse.ServiceModel/DTOs/Nomenclature/` | DTOs | Nomenclature domain DTOs (planned) |
-| `src/Warehouse.ServiceModel/Requests/Nomenclature/` | Requests | Nomenclature request models (planned) |
-| `src/Warehouse.Mapping/Profiles/Nomenclature/NomenclatureMappingProfile.cs` | Mapping | AutoMapper profile (planned) |
-| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API.Tests/` | Tests | Unit and integration tests (planned) |
+| `src/Databases/Warehouse.Nomenclature.DBModel/NomenclatureDbContext.cs` | DbContext | Nomenclature EF Core context |
+| `src/Databases/Warehouse.Nomenclature.DBModel/Models/Country.cs` | Entity | Country entity |
+| `src/Databases/Warehouse.Nomenclature.DBModel/Models/StateProvince.cs` | Entity | State/province entity |
+| `src/Databases/Warehouse.Nomenclature.DBModel/Models/City.cs` | Entity | City entity |
+| `src/Databases/Warehouse.Nomenclature.DBModel/Models/Currency.cs` | Entity | Currency entity |
+| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Controllers/CountriesController.cs` | Controller | Country CRUD endpoints |
+| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Controllers/StateProvincesController.cs` | Controller | State/province endpoints |
+| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Controllers/CitiesController.cs` | Controller | City endpoints |
+| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Controllers/CurrenciesController.cs` | Controller | Currency CRUD endpoints |
+| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Services/CountryService.cs` | Service | Country business logic |
+| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Services/StateProvinceService.cs` | Service | State/province business logic |
+| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Services/CityService.cs` | Service | City business logic |
+| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Services/CurrencyService.cs` | Service | Currency business logic |
+| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Services/BaseNomenclatureEntityService.cs` | Service | Shared base for CRUD + caching |
+| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Seeding/NomenclatureSeeder.cs` | Seeder | Feature-flagged reference data seeding |
+| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Seeding/SeedEntries.cs` | Seeder | Seed data definitions |
+| `src/Warehouse.ServiceModel/DTOs/Nomenclature/` | DTOs | Nomenclature domain DTOs |
+| `src/Warehouse.ServiceModel/Requests/Nomenclature/` | Requests | Nomenclature request models |
+| `src/Warehouse.Mapping/Profiles/Nomenclature/NomenclatureMappingProfile.cs` | Mapping | AutoMapper profile |
+| `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API.Tests/` | Tests | Unit tests |
 
-### CHG-ENH-001 — Nomenclature Integration Across Consumer Domains (Draft)
+### SDD-COMP-001 — Multi-Company Support (Draft — No Implementation Yet)
 
 | File | Type | Role |
 |---|---|---|
-| `src/Warehouse.Infrastructure/Services/NomenclatureResolver.cs` | Service | Read-only resolver for cached Nomenclature data (planned) |
-| `src/Warehouse.Infrastructure/Interfaces/INomenclatureResolver.cs` | Interface | Nomenclature resolver contract (planned) |
-| `frontend/src/shared/api/nomenclature.ts` | API | Shared Nomenclature API calls (planned) |
-| `frontend/src/shared/composables/useNomenclature.ts` | Composable | Nomenclature data loading and caching (planned) |
-| `frontend/src/shared/components/molecules/NomenclatureAddressFields.vue` | Component | Cascading Country > State > City dropdowns (planned) |
-| `src/Warehouse.ServiceModel/DTOs/Customers/CustomerAddressDto.cs` | DTO | Add `CountryName` field (planned) |
-| `src/Warehouse.ServiceModel/DTOs/Customers/CustomerAccountDto.cs` | DTO | Add `CurrencyName` field (planned) |
-| `src/Warehouse.ServiceModel/DTOs/Purchasing/SupplierAddressDto.cs` | DTO | Add `CountryName` field (planned) |
-| `src/Warehouse.ServiceModel/DTOs/Fulfillment/SalesOrderDetailDto.cs` | DTO | Add `ShippingCountryName` field (planned) |
-| `src/Warehouse.ServiceModel/DTOs/Fulfillment/ShipmentDetailDto.cs` | DTO | Add `ShippingCountryName` field (planned) |
+| `src/Databases/Warehouse.Auth.DBModel/Models/Company.cs` | Entity | Company entity (ISA-95 Enterprise) (planned) |
+| `src/Databases/Warehouse.Auth.DBModel/Models/UserCompany.cs` | Entity | User-to-company assignment join table (planned) |
+| `src/Databases/Warehouse.Auth.DBModel/AuthDbContext.cs` | DbContext | Add Company, UserCompany DbSets + global query filters (modified) |
+| `src/Interfaces/Auth/Warehouse.Auth.API/Controllers/CompaniesController.cs` | Controller | Company CRUD endpoints (planned) |
+| `src/Interfaces/Auth/Warehouse.Auth.API/Services/CompanyService.cs` | Service | Company business logic (planned) |
+| `src/Interfaces/Auth/Warehouse.Auth.API/Services/UserCompanyService.cs` | Service | User-company assignment logic (planned) |
+| `src/Interfaces/Auth/Warehouse.Auth.API/Services/CompanySwitchService.cs` | Service | Company switching + token reissue (planned) |
+| `src/Interfaces/Auth/Warehouse.Auth.API/Services/ICurrentCompanyProvider.cs` | Interface | Resolves active CompanyId from JWT (planned) |
+| `src/Interfaces/Auth/Warehouse.Auth.API/Validators/Companies/CreateCompanyRequestValidator.cs` | Validator | Company creation validation (planned) |
+| `src/Interfaces/Auth/Warehouse.Auth.API/Validators/Companies/UpdateCompanyRequestValidator.cs` | Validator | Company update validation (planned) |
+| `src/Warehouse.ServiceModel/DTOs/CompanyDto.cs` | DTO | Company domain DTO (planned) |
+| `src/Warehouse.ServiceModel/Requests/CreateCompanyRequest.cs` | Request | Company creation request (planned) |
+| `src/Warehouse.ServiceModel/Requests/UpdateCompanyRequest.cs` | Request | Company update request (planned) |
+| `src/Warehouse.ServiceModel/Requests/SwitchCompanyRequest.cs` | Request | Company switch request (planned) |
+| `src/Warehouse.ServiceModel/Events/CompanyCreatedEvent.cs` | Event | MassTransit event contract (planned) |
+| `src/Warehouse.ServiceModel/Events/CompanyUpdatedEvent.cs` | Event | MassTransit event contract (planned) |
+| `src/Warehouse.Mapping/Profiles/CompanyMappingProfile.cs` | Mapping | AutoMapper profile (planned) |
+| `src/Interfaces/Auth/Warehouse.Auth.API.Tests/Unit/Services/CompanyServiceTests.cs` | Test | Company service tests (planned) |
+| `src/Interfaces/Auth/Warehouse.Auth.API.Tests/Unit/Services/UserCompanyServiceTests.cs` | Test | User-company assignment tests (planned) |
+| `src/Interfaces/Auth/Warehouse.Auth.API.Tests/Unit/Services/CompanySwitchServiceTests.cs` | Test | Company switching tests (planned) |
+
+### CHG-ENH-001 — Nomenclature Integration Across Consumer Domains (Implemented)
+
+| File | Type | Role |
+|---|---|---|
+| `frontend/src/shared/api/nomenclature.ts` | API | Shared Nomenclature API calls |
+| `frontend/src/shared/composables/useNomenclature.ts` | Composable | Nomenclature data loading and caching |
+| `frontend/src/shared/components/molecules/NomenclatureAddressFields.vue` | Component | Cascading Country > State > City dropdowns |
+| `src/Warehouse.ServiceModel/DTOs/Customers/CustomerAddressDto.cs` | DTO | Includes `CountryName` field |
+| `src/Warehouse.ServiceModel/DTOs/Customers/CustomerAccountDto.cs` | DTO | Includes `CurrencyName` field |
+| `src/Warehouse.ServiceModel/DTOs/Purchasing/SupplierAddressDto.cs` | DTO | Includes `CountryName` field |
+| `src/Warehouse.ServiceModel/DTOs/Fulfillment/SalesOrderDetailDto.cs` | DTO | Includes `ShippingCountryName` field |
+| `src/Warehouse.ServiceModel/DTOs/Fulfillment/ShipmentDetailDto.cs` | DTO | Includes `ShippingCountryName` field |

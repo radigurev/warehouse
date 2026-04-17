@@ -1,6 +1,6 @@
 # Warehouse — Spec-Driven Development (SDD) Documentation
 
-> Last updated: 2026-04-06
+> Last updated: 2026-04-17
 
 ## Documentation Structure
 
@@ -73,24 +73,48 @@ Test classes reference spec IDs: `{TestClassName}_SDD_{DOMAIN}_{NNN}_{Descriptio
 | SDD-UI-001 | Core | Auth Administration SPA | — | Implemented |
 | SDD-UI-002 | Domain | Form Display Mode (Modal vs Page) | — | Draft |
 | SDD-UI-003 | Domain | User Settings | — | Draft |
+| SDD-UI-004 | Core | Purchasing SPA | — | Implemented |
+| SDD-UI-005 | Core | Fulfillment SPA | — | Implemented |
 | SDD-CUST-001 | Domain | Customers and Accounts | — | Implemented |
-| SDD-INV-001 | Core | Products and Catalog | Part 2, Section 7 — Material Model | Active |
-| SDD-INV-002 | Core | Stock Management | Part 2 Section 7 + Part 3 — Inventory Operations | Active |
-| SDD-INV-003 | Core | Warehouse Structure | Part 2 Section 5 + Part 3 — Inventory Operations | Active |
-| SDD-INV-004 | Core | Stocktaking | Part 3 — Inventory Counting | Active |
-| SDD-INFRA-001 | Infrastructure | Shared Infrastructure & Middleware | Cross-cutting (all parts) | Active |
-| SDD-INFRA-002 | Infrastructure | API Gateway | Cross-cutting | Active |
-| SDD-OBS-001 | Infrastructure | Observability | Cross-cutting (Part 3 — Operations Events) | Active |
+| SDD-NOM-001 | Domain | Nomenclature Reference Data | Cross-cutting (reference data) | Implemented |
+| SDD-INV-001 | Core | Products and Catalog | Part 2, Section 7 — Material Model | Implemented |
+| SDD-INV-002 | Core | Stock Management | Part 2 Section 7 + Part 3 — Inventory Operations | Implemented |
+| SDD-INV-003 | Core | Warehouse Structure | Part 2 Section 5 + Part 3 — Inventory Operations | Implemented |
+| SDD-INV-004 | Core | Stocktaking | Part 3 — Inventory Counting | Implemented |
+| SDD-INV-005 | Core | Batch Creation on Goods Receipt | Part 2 Section 7 — Material Lot | Implemented |
+| SDD-PURCH-001 | Core | Procurement Operations | Part 3 — Material Receipt | Implemented |
+| SDD-FULF-001 | Core | Fulfillment Operations | Part 3 — Material Shipment | Implemented |
+| SDD-INFRA-001 | Infrastructure | Shared Infrastructure & Middleware | Cross-cutting (all parts) | Implemented |
+| SDD-INFRA-002 | Infrastructure | API Gateway | Cross-cutting | Implemented |
+| SDD-INFRA-003 | Infrastructure | Sequence Generation | Cross-cutting | Implemented |
+| SDD-EVTLOG-001 | Infrastructure | Centralized Event Logging | Cross-cutting (Part 3 — Operations Events) | Implemented |
+| SDD-OBS-001 | Infrastructure | Observability | Cross-cutting (Part 3 — Operations Events) | Implemented |
+| SDD-COMP-001 | Infrastructure | Multi-Company Support | Part 2, Section 5 — Equipment Model (Enterprise) | Draft |
 
 ## Change Spec Registry
 
 | ID | Title | Affected System Specs | Status |
 |---|---|---|---|
 | CHG-ENH-001 | Auth SPA UI Redesign | SDD-UI-001 | Implemented |
+| CHG-ENH-001-NOM | Nomenclature Integration | SDD-NOM-001, SDD-CUST-001, SDD-PURCH-001, SDD-FULF-001 | Implemented |
 | CHG-ENH-002 | Audit UX and Navigation Improvements | SDD-UI-001, SDD-AUTH-001 | Implemented |
 | CHG-ENH-003 | Server-Side Pagination | SDD-AUTH-001, SDD-CUST-001, SDD-INV-001 | Implemented |
+| CHG-ENH-004 | Realtime Permission Validation | SDD-AUTH-001, SDD-UI-001 | Implemented |
+| CHG-ENH-005 | Error Code Localization Contract | SDD-INFRA-001, SDD-AUTH-001, SDD-CUST-001, SDD-INV-001–004, SDD-UI-001 | Implemented |
+| CHG-ENH-006 | Correlation ID Propagation Gaps | SDD-INFRA-001, SDD-OBS-001 | Implemented |
 | CHG-REFAC-001 | Infrastructure Extraction and Service Split | SDD-AUTH-001 | Implemented |
-| CHG-ENH-005 | Error Code Localization Contract | SDD-INFRA-001, SDD-AUTH-001, SDD-CUST-001, SDD-INV-001–004, SDD-UI-001 | Draft |
+| CHG-REFAC-002 | Move Gateway to Infrastructure | SDD-INFRA-002 | Implemented |
+| CHG-REFAC-003 | State Pattern — Workflow State Machines | SDD-PURCH-001, SDD-FULF-001 | Implemented |
+| CHG-REFAC-004 | Template Method — Service Base Classes | SDD-INFRA-001 | Implemented |
+| CHG-REFAC-005 | Strategy Pattern — Movement, Sorting, Mapping | SDD-INV-002, SDD-EVTLOG-001 | Implemented |
+| CHG-REFAC-006 | Chain of Responsibility — Validation Pipelines | SDD-INFRA-001 | Implemented |
+| CHG-REFAC-007 | Decorator Pattern — Cache and Event Resilience | SDD-INFRA-001 | Implemented |
+| CHG-REFAC-008 | Factory Pattern — Generic EventLog Consumer | SDD-EVTLOG-001 | Implemented |
+| CHG-REFAC-009 | Facade Pattern — StockLevelManager | SDD-INV-002 | Implemented |
+| CHG-REFAC-010 | Builder & Bridge — Entity Construction | SDD-PURCH-001, SDD-FULF-001 | Implemented |
+| CHG-REFAC-011 | Frontend CRUD API Factory and List View Composable | SDD-UI-001 | Implemented |
+| CHG-REFAC-012 | Frontend Navigation Strategy and Utilities | SDD-UI-001 | Implemented |
+| CHG-REFAC-013 | SOLID Principle Violation Fixes | Cross-cutting | Implemented |
 
 ## Status Legend
 
@@ -107,15 +131,20 @@ Test classes reference spec IDs: `{TestClassName}_SDD_{DOMAIN}_{NNN}_{Descriptio
 
 | Prefix | Next ID |
 |---|---|
-| `SDD-CUST` | 002 |
-| `SDD-INV` | 005 |
-| `SDD-UI` | 004 |
 | `SDD-AUTH` | 002 |
-| `SDD-FILT` | 001 |
-| `SDD-INFRA` | 003 |
+| `SDD-CUST` | 002 |
+| `SDD-NOM` | 002 |
+| `SDD-INV` | 006 |
+| `SDD-PURCH` | 002 |
+| `SDD-FULF` | 002 |
+| `SDD-UI` | 006 |
+| `SDD-COMP` | 002 |
+| `SDD-INFRA` | 004 |
+| `SDD-EVTLOG` | 002 |
 | `SDD-OBS` | 002 |
+| `SDD-FILT` | 001 |
 | `CHG-FEAT` | 001 |
-| `CHG-ENH` | 006 |
+| `CHG-ENH` | 007 |
 | `CHG-FIX` | 001 |
-| `CHG-REFAC` | 002 |
+| `CHG-REFAC` | 014 |
 | `CHG-DEBT` | 001 |
