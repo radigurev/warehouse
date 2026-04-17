@@ -1,6 +1,9 @@
 using FluentAssertions;
 using FluentValidation.Results;
+using Microsoft.FeatureManagement;
+using Moq;
 using Warehouse.Fulfillment.API.Validators;
+using Warehouse.Infrastructure.Caching;
 using Warehouse.ServiceModel.Requests.Fulfillment;
 
 namespace Warehouse.Fulfillment.API.Tests.Unit.Validators;
@@ -14,16 +17,20 @@ namespace Warehouse.Fulfillment.API.Tests.Unit.Validators;
 [Category("SDD-FULF-001")]
 public sealed class CreateSalesOrderRequestValidatorTests
 {
+    private Mock<INomenclatureResolver> _mockNomenclatureResolver = null!;
+    private Mock<IFeatureManager> _mockFeatureManager = null!;
     private CreateSalesOrderRequestValidator _sut = null!;
 
     [SetUp]
     public void SetUp()
     {
-        _sut = new CreateSalesOrderRequestValidator();
+        _mockNomenclatureResolver = new Mock<INomenclatureResolver>();
+        _mockFeatureManager = new Mock<IFeatureManager>();
+        _sut = new CreateSalesOrderRequestValidator(_mockNomenclatureResolver.Object, _mockFeatureManager.Object);
     }
 
     [Test]
-    public void Validate_ValidRequest_ReturnsValid()
+    public async Task Validate_ValidRequest_ReturnsValid()
     {
         // Arrange
         CreateSalesOrderRequest request = new()
@@ -38,14 +45,14 @@ public sealed class CreateSalesOrderRequestValidatorTests
         };
 
         // Act
-        ValidationResult result = _sut.Validate(request);
+        ValidationResult result = await _sut.ValidateAsync(request);
 
         // Assert
         result.IsValid.Should().BeTrue();
     }
 
     [Test]
-    public void Validate_ZeroCustomerId_ReturnsInvalid()
+    public async Task Validate_ZeroCustomerId_ReturnsInvalid()
     {
         // Arrange
         CreateSalesOrderRequest request = new()
@@ -60,7 +67,7 @@ public sealed class CreateSalesOrderRequestValidatorTests
         };
 
         // Act
-        ValidationResult result = _sut.Validate(request);
+        ValidationResult result = await _sut.ValidateAsync(request);
 
         // Assert
         result.IsValid.Should().BeFalse();
@@ -68,7 +75,7 @@ public sealed class CreateSalesOrderRequestValidatorTests
     }
 
     [Test]
-    public void Validate_ZeroWarehouseId_ReturnsInvalid()
+    public async Task Validate_ZeroWarehouseId_ReturnsInvalid()
     {
         // Arrange
         CreateSalesOrderRequest request = new()
@@ -83,7 +90,7 @@ public sealed class CreateSalesOrderRequestValidatorTests
         };
 
         // Act
-        ValidationResult result = _sut.Validate(request);
+        ValidationResult result = await _sut.ValidateAsync(request);
 
         // Assert
         result.IsValid.Should().BeFalse();
@@ -91,7 +98,7 @@ public sealed class CreateSalesOrderRequestValidatorTests
     }
 
     [Test]
-    public void Validate_PastShipDate_ReturnsInvalid()
+    public async Task Validate_PastShipDate_ReturnsInvalid()
     {
         // Arrange
         CreateSalesOrderRequest request = new()
@@ -107,7 +114,7 @@ public sealed class CreateSalesOrderRequestValidatorTests
         };
 
         // Act
-        ValidationResult result = _sut.Validate(request);
+        ValidationResult result = await _sut.ValidateAsync(request);
 
         // Assert
         result.IsValid.Should().BeFalse();
@@ -115,7 +122,7 @@ public sealed class CreateSalesOrderRequestValidatorTests
     }
 
     [Test]
-    public void Validate_EmptyShippingCountryCode_ReturnsInvalid()
+    public async Task Validate_EmptyShippingCountryCode_ReturnsInvalid()
     {
         // Arrange
         CreateSalesOrderRequest request = new()
@@ -130,7 +137,7 @@ public sealed class CreateSalesOrderRequestValidatorTests
         };
 
         // Act
-        ValidationResult result = _sut.Validate(request);
+        ValidationResult result = await _sut.ValidateAsync(request);
 
         // Assert
         result.IsValid.Should().BeFalse();
@@ -138,7 +145,7 @@ public sealed class CreateSalesOrderRequestValidatorTests
     }
 
     [Test]
-    public void Validate_EmptyLines_ReturnsInvalid()
+    public async Task Validate_EmptyLines_ReturnsInvalid()
     {
         // Arrange
         CreateSalesOrderRequest request = new()
@@ -153,7 +160,7 @@ public sealed class CreateSalesOrderRequestValidatorTests
         };
 
         // Act
-        ValidationResult result = _sut.Validate(request);
+        ValidationResult result = await _sut.ValidateAsync(request);
 
         // Assert
         result.IsValid.Should().BeFalse();
@@ -161,7 +168,7 @@ public sealed class CreateSalesOrderRequestValidatorTests
     }
 
     [Test]
-    public void Validate_LineWithZeroProductId_ReturnsInvalid()
+    public async Task Validate_LineWithZeroProductId_ReturnsInvalid()
     {
         // Arrange
         CreateSalesOrderRequest request = new()
@@ -176,7 +183,7 @@ public sealed class CreateSalesOrderRequestValidatorTests
         };
 
         // Act
-        ValidationResult result = _sut.Validate(request);
+        ValidationResult result = await _sut.ValidateAsync(request);
 
         // Assert
         result.IsValid.Should().BeFalse();
@@ -184,7 +191,7 @@ public sealed class CreateSalesOrderRequestValidatorTests
     }
 
     [Test]
-    public void Validate_LineWithZeroQuantity_ReturnsInvalid()
+    public async Task Validate_LineWithZeroQuantity_ReturnsInvalid()
     {
         // Arrange
         CreateSalesOrderRequest request = new()
@@ -199,7 +206,7 @@ public sealed class CreateSalesOrderRequestValidatorTests
         };
 
         // Act
-        ValidationResult result = _sut.Validate(request);
+        ValidationResult result = await _sut.ValidateAsync(request);
 
         // Assert
         result.IsValid.Should().BeFalse();
@@ -207,7 +214,7 @@ public sealed class CreateSalesOrderRequestValidatorTests
     }
 
     [Test]
-    public void Validate_LineWithNegativeUnitPrice_ReturnsInvalid()
+    public async Task Validate_LineWithNegativeUnitPrice_ReturnsInvalid()
     {
         // Arrange
         CreateSalesOrderRequest request = new()
@@ -222,7 +229,7 @@ public sealed class CreateSalesOrderRequestValidatorTests
         };
 
         // Act
-        ValidationResult result = _sut.Validate(request);
+        ValidationResult result = await _sut.ValidateAsync(request);
 
         // Assert
         result.IsValid.Should().BeFalse();

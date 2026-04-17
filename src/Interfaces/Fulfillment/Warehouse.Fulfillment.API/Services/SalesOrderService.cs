@@ -6,6 +6,7 @@ using Warehouse.Fulfillment.API.Interfaces;
 using Warehouse.Fulfillment.API.Services.Base;
 using Warehouse.Fulfillment.DBModel;
 using Warehouse.Fulfillment.DBModel.Models;
+using Warehouse.Infrastructure.Caching;
 using Warehouse.ServiceModel.DTOs.Fulfillment;
 using Warehouse.ServiceModel.Requests.Fulfillment;
 using Warehouse.ServiceModel.Responses;
@@ -14,19 +15,25 @@ namespace Warehouse.Fulfillment.API.Services;
 
 /// <summary>
 /// Implements sales order lifecycle operations: CRUD, lines, status transitions.
-/// <para>See <see cref="ISalesOrderService"/>.</para>
+/// <para>See <see cref="ISalesOrderService"/>, <see cref="INomenclatureResolver"/>.</para>
 /// </summary>
 public sealed class SalesOrderService : BaseFulfillmentEntityService, ISalesOrderService
 {
     private readonly IFulfillmentEventService _eventService;
+    private readonly INomenclatureResolver _nomenclatureResolver;
 
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
-    public SalesOrderService(FulfillmentDbContext context, IMapper mapper, IFulfillmentEventService eventService)
+    public SalesOrderService(
+        FulfillmentDbContext context,
+        IMapper mapper,
+        IFulfillmentEventService eventService,
+        INomenclatureResolver nomenclatureResolver)
         : base(context, mapper)
     {
         _eventService = eventService;
+        _nomenclatureResolver = nomenclatureResolver;
     }
 
     /// <inheritdoc />
@@ -74,6 +81,7 @@ public sealed class SalesOrderService : BaseFulfillmentEntityService, ISalesOrde
         SalesOrder? so = await GetSOWithDetailsAsync(id, cancellationToken).ConfigureAwait(false);
         if (so is null) return Result<SalesOrderDetailDto>.Failure("SO_NOT_FOUND", "Sales order not found.", 404);
         SalesOrderDetailDto dto = Mapper.Map<SalesOrderDetailDto>(so);
+        dto = await EnrichDetailDtoAsync(dto, cancellationToken).ConfigureAwait(false);
         return Result<SalesOrderDetailDto>.Success(dto);
     }
 
@@ -105,6 +113,7 @@ public sealed class SalesOrderService : BaseFulfillmentEntityService, ISalesOrde
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         SalesOrderDetailDto dto = Mapper.Map<SalesOrderDetailDto>(so);
+        dto = await EnrichDetailDtoAsync(dto, cancellationToken).ConfigureAwait(false);
         return Result<SalesOrderDetailDto>.Success(dto);
     }
 
@@ -173,6 +182,7 @@ public sealed class SalesOrderService : BaseFulfillmentEntityService, ISalesOrde
         await _eventService.RecordEventAsync("SalesOrderConfirmed", "SalesOrder", id, userId, null, cancellationToken).ConfigureAwait(false);
 
         SalesOrderDetailDto dto = Mapper.Map<SalesOrderDetailDto>(so);
+        dto = await EnrichDetailDtoAsync(dto, cancellationToken).ConfigureAwait(false);
         return Result<SalesOrderDetailDto>.Success(dto);
     }
 
@@ -193,6 +203,7 @@ public sealed class SalesOrderService : BaseFulfillmentEntityService, ISalesOrde
         await _eventService.RecordEventAsync("SalesOrderCancelled", "SalesOrder", id, userId, null, cancellationToken).ConfigureAwait(false);
 
         SalesOrderDetailDto dto = Mapper.Map<SalesOrderDetailDto>(so);
+        dto = await EnrichDetailDtoAsync(dto, cancellationToken).ConfigureAwait(false);
         return Result<SalesOrderDetailDto>.Success(dto);
     }
 
@@ -209,7 +220,21 @@ public sealed class SalesOrderService : BaseFulfillmentEntityService, ISalesOrde
         await _eventService.RecordEventAsync("SalesOrderCompleted", "SalesOrder", id, userId, null, cancellationToken).ConfigureAwait(false);
 
         SalesOrderDetailDto dto = Mapper.Map<SalesOrderDetailDto>(so);
+        dto = await EnrichDetailDtoAsync(dto, cancellationToken).ConfigureAwait(false);
         return Result<SalesOrderDetailDto>.Success(dto);
+    }
+
+    /// <summary>
+    /// Resolves the shipping country name from Nomenclature cache and enriches the DTO.
+    /// </summary>
+    private async Task<SalesOrderDetailDto> EnrichDetailDtoAsync(
+        SalesOrderDetailDto dto, CancellationToken cancellationToken)
+    {
+        string? countryName = await _nomenclatureResolver
+            .ResolveCountryNameAsync(dto.ShippingCountryCode, cancellationToken)
+            .ConfigureAwait(false);
+
+        return dto with { ShippingCountryName = countryName };
     }
 
     private async Task<SalesOrder?> GetSOWithDetailsAsync(int id, CancellationToken cancellationToken)

@@ -46,6 +46,12 @@ public sealed record SupplierAddressDto
     public required string CountryCode { get; init; }
 
     /// <summary>
+    /// Gets the country display name resolved from Nomenclature cache.
+    /// Null when the cache is unavailable or the code is unresolved.
+    /// </summary>
+    public string? CountryName { get; init; }
+
+    /// <summary>
     /// Gets whether this is the default address for its type.
     /// </summary>
     public required bool IsDefault { get; init; }

@@ -16,6 +16,12 @@ public sealed record CustomerAccountDto
     public required string CurrencyCode { get; init; }
 
     /// <summary>
+    /// Gets the currency display name resolved from Nomenclature cache.
+    /// Null when the cache is unavailable or the code is unresolved.
+    /// </summary>
+    public string? CurrencyName { get; init; }
+
+    /// <summary>
     /// Gets the current account balance.
     /// </summary>
     public required decimal Balance { get; init; }

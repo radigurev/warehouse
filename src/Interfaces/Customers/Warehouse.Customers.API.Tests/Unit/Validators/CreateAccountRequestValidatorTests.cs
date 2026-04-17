@@ -1,6 +1,9 @@
 using FluentAssertions;
 using FluentValidation.Results;
+using Microsoft.FeatureManagement;
+using Moq;
 using Warehouse.Customers.API.Validators;
+using Warehouse.Infrastructure.Caching;
 using Warehouse.ServiceModel.Requests.Customers;
 
 namespace Warehouse.Customers.API.Tests.Unit.Validators;
@@ -12,22 +15,31 @@ namespace Warehouse.Customers.API.Tests.Unit.Validators;
 [Category("SDD-CUST-001")]
 public sealed class CreateAccountRequestValidatorTests
 {
+    private Mock<INomenclatureResolver> _nomenclatureResolverMock = null!;
+    private Mock<IFeatureManager> _featureManagerMock = null!;
     private CreateAccountRequestValidator _validator = null!;
 
     [SetUp]
     public void SetUp()
     {
-        _validator = new CreateAccountRequestValidator();
+        _nomenclatureResolverMock = new Mock<INomenclatureResolver>();
+        _featureManagerMock = new Mock<IFeatureManager>();
+        _featureManagerMock
+            .Setup(x => x.IsEnabledAsync(It.IsAny<string>()))
+            .ReturnsAsync(false);
+        _validator = new CreateAccountRequestValidator(
+            _nomenclatureResolverMock.Object,
+            _featureManagerMock.Object);
     }
 
     [Test]
-    public void CreateAccountRequestValidator_MissingCurrencyCode_Fails()
+    public async Task CreateAccountRequestValidator_MissingCurrencyCode_Fails()
     {
         // Arrange
         CreateAccountRequest request = new() { CurrencyCode = "" };
 
         // Act
-        ValidationResult result = _validator.Validate(request);
+        ValidationResult result = await _validator.ValidateAsync(request).ConfigureAwait(false);
 
         // Assert
         result.IsValid.Should().BeFalse();
@@ -35,13 +47,13 @@ public sealed class CreateAccountRequestValidatorTests
     }
 
     [Test]
-    public void CreateAccountRequestValidator_InvalidCurrencyCode_Fails()
+    public async Task CreateAccountRequestValidator_InvalidCurrencyCode_Fails()
     {
         // Arrange
         CreateAccountRequest request = new() { CurrencyCode = "us" };
 
         // Act
-        ValidationResult result = _validator.Validate(request);
+        ValidationResult result = await _validator.ValidateAsync(request).ConfigureAwait(false);
 
         // Assert
         result.IsValid.Should().BeFalse();

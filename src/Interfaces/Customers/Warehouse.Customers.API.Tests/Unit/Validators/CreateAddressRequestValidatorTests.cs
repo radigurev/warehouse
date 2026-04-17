@@ -1,6 +1,9 @@
 using FluentAssertions;
 using FluentValidation.Results;
+using Microsoft.FeatureManagement;
+using Moq;
 using Warehouse.Customers.API.Validators;
+using Warehouse.Infrastructure.Caching;
 using Warehouse.ServiceModel.Requests.Customers;
 
 namespace Warehouse.Customers.API.Tests.Unit.Validators;
@@ -12,16 +15,25 @@ namespace Warehouse.Customers.API.Tests.Unit.Validators;
 [Category("SDD-CUST-001")]
 public sealed class CreateAddressRequestValidatorTests
 {
+    private Mock<INomenclatureResolver> _nomenclatureResolverMock = null!;
+    private Mock<IFeatureManager> _featureManagerMock = null!;
     private CreateAddressRequestValidator _validator = null!;
 
     [SetUp]
     public void SetUp()
     {
-        _validator = new CreateAddressRequestValidator();
+        _nomenclatureResolverMock = new Mock<INomenclatureResolver>();
+        _featureManagerMock = new Mock<IFeatureManager>();
+        _featureManagerMock
+            .Setup(x => x.IsEnabledAsync(It.IsAny<string>()))
+            .ReturnsAsync(false);
+        _validator = new CreateAddressRequestValidator(
+            _nomenclatureResolverMock.Object,
+            _featureManagerMock.Object);
     }
 
     [Test]
-    public void CreateAddressRequestValidator_MissingRequiredFields_Fails()
+    public async Task CreateAddressRequestValidator_MissingRequiredFields_Fails()
     {
         // Arrange
         CreateAddressRequest request = new()
@@ -34,7 +46,7 @@ public sealed class CreateAddressRequestValidatorTests
         };
 
         // Act
-        ValidationResult result = _validator.Validate(request);
+        ValidationResult result = await _validator.ValidateAsync(request).ConfigureAwait(false);
 
         // Assert
         result.IsValid.Should().BeFalse();
@@ -45,7 +57,7 @@ public sealed class CreateAddressRequestValidatorTests
     }
 
     [Test]
-    public void CreateAddressRequestValidator_InvalidAddressType_Fails()
+    public async Task CreateAddressRequestValidator_InvalidAddressType_Fails()
     {
         // Arrange
         CreateAddressRequest request = new()
@@ -58,7 +70,7 @@ public sealed class CreateAddressRequestValidatorTests
         };
 
         // Act
-        ValidationResult result = _validator.Validate(request);
+        ValidationResult result = await _validator.ValidateAsync(request).ConfigureAwait(false);
 
         // Assert
         result.IsValid.Should().BeFalse();
@@ -66,7 +78,7 @@ public sealed class CreateAddressRequestValidatorTests
     }
 
     [Test]
-    public void CreateAddressRequestValidator_InvalidCountryCode_Fails()
+    public async Task CreateAddressRequestValidator_InvalidCountryCode_Fails()
     {
         // Arrange
         CreateAddressRequest request = new()
@@ -79,7 +91,7 @@ public sealed class CreateAddressRequestValidatorTests
         };
 
         // Act
-        ValidationResult result = _validator.Validate(request);
+        ValidationResult result = await _validator.ValidateAsync(request).ConfigureAwait(false);
 
         // Assert
         result.IsValid.Should().BeFalse();

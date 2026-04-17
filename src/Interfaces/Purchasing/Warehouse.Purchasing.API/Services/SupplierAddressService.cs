@@ -1,6 +1,7 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Warehouse.Common.Models;
+using Warehouse.Infrastructure.Caching;
 using Warehouse.Infrastructure.Services;
 using Warehouse.Purchasing.API.Interfaces;
 using Warehouse.Purchasing.API.Services.Base;
@@ -12,15 +13,24 @@ using Warehouse.ServiceModel.Requests.Purchasing;
 namespace Warehouse.Purchasing.API.Services;
 
 /// <summary>
-/// Implements CRUD operations for supplier addresses with default-flag management.
-/// <para>See <see cref="ISupplierAddressService"/>.</para>
+/// Implements CRUD operations for supplier addresses with default-flag management
+/// and Nomenclature-enriched DTO responses.
+/// <para>See <see cref="ISupplierAddressService"/>, <see cref="INomenclatureResolver"/>.</para>
 /// </summary>
 public sealed class SupplierAddressService : BasePurchasingEntityService, ISupplierAddressService
 {
+    private readonly INomenclatureResolver _nomenclatureResolver;
+
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
-    public SupplierAddressService(PurchasingDbContext context, IMapper mapper) : base(context, mapper) { }
+    public SupplierAddressService(
+        PurchasingDbContext context,
+        IMapper mapper,
+        INomenclatureResolver nomenclatureResolver) : base(context, mapper)
+    {
+        _nomenclatureResolver = nomenclatureResolver;
+    }
 
     /// <inheritdoc />
     public async Task<Result<SupplierAddressDto>> CreateAsync(int supplierId, CreateSupplierAddressRequest request, CancellationToken cancellationToken)
@@ -40,7 +50,10 @@ public sealed class SupplierAddressService : BasePurchasingEntityService, ISuppl
 
         Context.SupplierAddresses.Add(address);
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        return MapToResult<SupplierAddress, SupplierAddressDto>(address);
+
+        SupplierAddressDto dto = Mapper.Map<SupplierAddressDto>(address);
+        dto = await EnrichAddressDtoAsync(dto, cancellationToken).ConfigureAwait(false);
+        return Result<SupplierAddressDto>.Success(dto);
     }
 
     /// <inheritdoc />
@@ -51,7 +64,10 @@ public sealed class SupplierAddressService : BasePurchasingEntityService, ISuppl
 
         List<SupplierAddress> addresses = await Context.SupplierAddresses.AsNoTracking()
             .Where(a => a.SupplierId == supplierId).OrderBy(a => a.CreatedAtUtc).ToListAsync(cancellationToken).ConfigureAwait(false);
-        return MapListToResult<SupplierAddress, SupplierAddressDto>(addresses);
+
+        IReadOnlyList<SupplierAddressDto> dtos = Mapper.Map<IReadOnlyList<SupplierAddressDto>>(addresses);
+        IReadOnlyList<SupplierAddressDto> enriched = await EnrichAddressDtosAsync(dtos, cancellationToken).ConfigureAwait(false);
+        return Result<IReadOnlyList<SupplierAddressDto>>.Success(enriched);
     }
 
     /// <inheritdoc />
@@ -69,7 +85,10 @@ public sealed class SupplierAddressService : BasePurchasingEntityService, ISuppl
         address.IsDefault = request.IsDefault;
 
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        return MapToResult<SupplierAddress, SupplierAddressDto>(address);
+
+        SupplierAddressDto dto = Mapper.Map<SupplierAddressDto>(address);
+        dto = await EnrichAddressDtoAsync(dto, cancellationToken).ConfigureAwait(false);
+        return Result<SupplierAddressDto>.Success(dto);
     }
 
     /// <inheritdoc />
@@ -91,6 +110,34 @@ public sealed class SupplierAddressService : BasePurchasingEntityService, ISuppl
         return Result.Success();
     }
 
+    /// <summary>
+    /// Enriches a single address DTO with the resolved country name from cache.
+    /// </summary>
+    private async Task<SupplierAddressDto> EnrichAddressDtoAsync(
+        SupplierAddressDto dto, CancellationToken cancellationToken)
+    {
+        string? countryName = await _nomenclatureResolver.ResolveCountryNameAsync(dto.CountryCode, cancellationToken).ConfigureAwait(false);
+        return dto with { CountryName = countryName };
+    }
+
+    /// <summary>
+    /// Enriches a list of address DTOs with resolved country names from cache.
+    /// </summary>
+    private async Task<IReadOnlyList<SupplierAddressDto>> EnrichAddressDtosAsync(
+        IReadOnlyList<SupplierAddressDto> dtos, CancellationToken cancellationToken)
+    {
+        List<SupplierAddressDto> enriched = new(dtos.Count);
+        foreach (SupplierAddressDto dto in dtos)
+        {
+            SupplierAddressDto enrichedDto = await EnrichAddressDtoAsync(dto, cancellationToken).ConfigureAwait(false);
+            enriched.Add(enrichedDto);
+        }
+        return enriched;
+    }
+
+    /// <summary>
+    /// Validates that the specified supplier exists and is not soft-deleted.
+    /// </summary>
     private async Task<Result?> ValidateSupplierExistsAsync(int supplierId, CancellationToken cancellationToken)
     {
         bool exists = await Context.Suppliers.AnyAsync(s => s.Id == supplierId && !s.IsDeleted, cancellationToken).ConfigureAwait(false);

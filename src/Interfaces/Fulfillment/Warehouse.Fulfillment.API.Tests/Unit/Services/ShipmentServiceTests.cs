@@ -6,6 +6,7 @@ using Warehouse.Fulfillment.API.Interfaces;
 using Warehouse.Fulfillment.API.Services;
 using Warehouse.Fulfillment.API.Tests.Fixtures;
 using Warehouse.Fulfillment.DBModel.Models;
+using Warehouse.Infrastructure.Caching;
 using Warehouse.ServiceModel.DTOs.Fulfillment;
 using Warehouse.ServiceModel.Events;
 using Warehouse.ServiceModel.Requests.Fulfillment;
@@ -23,6 +24,7 @@ public sealed class ShipmentServiceTests : FulfillmentTestBase
 {
     private Mock<IPublishEndpoint> _mockPublishEndpoint = null!;
     private Mock<IFulfillmentEventService> _mockEventService = null!;
+    private Mock<INomenclatureResolver> _mockNomenclatureResolver = null!;
     private ShipmentService _sut = null!;
 
     [SetUp]
@@ -31,7 +33,8 @@ public sealed class ShipmentServiceTests : FulfillmentTestBase
         base.SetUp();
         _mockPublishEndpoint = new Mock<IPublishEndpoint>();
         _mockEventService = new Mock<IFulfillmentEventService>();
-        _sut = new ShipmentService(Context, Mapper, _mockPublishEndpoint.Object, _mockEventService.Object);
+        _mockNomenclatureResolver = new Mock<INomenclatureResolver>();
+        _sut = new ShipmentService(Context, Mapper, _mockPublishEndpoint.Object, _mockEventService.Object, _mockNomenclatureResolver.Object);
     }
 
     [Test]

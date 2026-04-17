@@ -8,6 +8,7 @@ using Warehouse.Fulfillment.API.Interfaces;
 using Warehouse.Fulfillment.API.Services.Base;
 using Warehouse.Fulfillment.DBModel;
 using Warehouse.Fulfillment.DBModel.Models;
+using Warehouse.Infrastructure.Caching;
 using Warehouse.ServiceModel.DTOs.Fulfillment;
 using Warehouse.ServiceModel.Events;
 using Warehouse.ServiceModel.Requests.Fulfillment;
@@ -17,7 +18,7 @@ namespace Warehouse.Fulfillment.API.Services;
 
 /// <summary>
 /// Implements shipment operations: dispatch, status updates, tracking, search.
-/// <para>See <see cref="IShipmentService"/>.</para>
+/// <para>See <see cref="IShipmentService"/>, <see cref="INomenclatureResolver"/>.</para>
 /// </summary>
 public sealed class ShipmentService : BaseFulfillmentEntityService, IShipmentService
 {
@@ -33,15 +34,22 @@ public sealed class ShipmentService : BaseFulfillmentEntityService, IShipmentSer
 
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly IFulfillmentEventService _eventService;
+    private readonly INomenclatureResolver _nomenclatureResolver;
 
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
-    public ShipmentService(FulfillmentDbContext context, IMapper mapper, IPublishEndpoint publishEndpoint, IFulfillmentEventService eventService)
+    public ShipmentService(
+        FulfillmentDbContext context,
+        IMapper mapper,
+        IPublishEndpoint publishEndpoint,
+        IFulfillmentEventService eventService,
+        INomenclatureResolver nomenclatureResolver)
         : base(context, mapper)
     {
         _publishEndpoint = publishEndpoint;
         _eventService = eventService;
+        _nomenclatureResolver = nomenclatureResolver;
     }
 
     /// <inheritdoc />
@@ -97,6 +105,7 @@ public sealed class ShipmentService : BaseFulfillmentEntityService, IShipmentSer
         Shipment? shipment = await GetShipmentWithDetailsAsync(id, cancellationToken).ConfigureAwait(false);
         if (shipment is null) return Result<ShipmentDetailDto>.Failure("SHIPMENT_NOT_FOUND", "Shipment not found.", 404);
         ShipmentDetailDto dto = Mapper.Map<ShipmentDetailDto>(shipment);
+        dto = await EnrichDetailDtoAsync(dto, cancellationToken).ConfigureAwait(false);
         return Result<ShipmentDetailDto>.Success(dto);
     }
 
@@ -132,6 +141,7 @@ public sealed class ShipmentService : BaseFulfillmentEntityService, IShipmentSer
         await _eventService.RecordEventAsync("ShipmentStatusUpdated", "Shipment", id, userId, null, cancellationToken).ConfigureAwait(false);
 
         ShipmentDetailDto dto = Mapper.Map<ShipmentDetailDto>(shipment);
+        dto = await EnrichDetailDtoAsync(dto, cancellationToken).ConfigureAwait(false);
         return Result<ShipmentDetailDto>.Success(dto);
     }
 
@@ -144,6 +154,19 @@ public sealed class ShipmentService : BaseFulfillmentEntityService, IShipmentSer
         List<ShipmentTracking> entries = await Context.ShipmentTrackingEntries.Where(t => t.ShipmentId == id).OrderBy(t => t.OccurredAtUtc).AsNoTracking().ToListAsync(cancellationToken).ConfigureAwait(false);
         IReadOnlyList<ShipmentTrackingDto> dtos = Mapper.Map<IReadOnlyList<ShipmentTrackingDto>>(entries);
         return Result<IReadOnlyList<ShipmentTrackingDto>>.Success(dtos);
+    }
+
+    /// <summary>
+    /// Resolves the shipping country name from Nomenclature cache and enriches the DTO.
+    /// </summary>
+    private async Task<ShipmentDetailDto> EnrichDetailDtoAsync(
+        ShipmentDetailDto dto, CancellationToken cancellationToken)
+    {
+        string? countryName = await _nomenclatureResolver
+            .ResolveCountryNameAsync(dto.ShippingCountryCode, cancellationToken)
+            .ConfigureAwait(false);
+
+        return dto with { ShippingCountryName = countryName };
     }
 
     private static bool IsValidTransition(string currentStatus, string newStatus)

@@ -2,25 +2,24 @@ using FluentValidation;
 using Microsoft.FeatureManagement;
 using Warehouse.Infrastructure.Caching;
 using Warehouse.Infrastructure.Configuration;
-using Warehouse.ServiceModel.Requests.Customers;
+using Warehouse.ServiceModel.Requests.Purchasing;
 
-namespace Warehouse.Customers.API.Validators;
+namespace Warehouse.Purchasing.API.Validators;
 
 /// <summary>
-/// Validates the create address request payload per SDD-CUST-001 section 2.3.1
-/// and CHG-ENH-001 country code validation against Nomenclature cache.
-/// <para>See <see cref="INomenclatureResolver"/>, <see cref="IFeatureManager"/>.</para>
+/// Validates the create supplier address request payload per SDD-PURCH-001 section 3.3
+/// with optional Nomenclature country code validation per CHG-ENH-001.
 /// </summary>
-public sealed class CreateAddressRequestValidator : AbstractValidator<CreateAddressRequest>
+public sealed class CreateSupplierAddressRequestValidator : AbstractValidator<CreateSupplierAddressRequest>
 {
     private static readonly string[] AllowedAddressTypes = ["Billing", "Shipping", "Both"];
 
     /// <summary>
-    /// Initializes validation rules for address creation.
+    /// Initializes validation rules for supplier address creation.
     /// </summary>
-    public CreateAddressRequestValidator(
-        INomenclatureResolver nomenclatureResolver,
-        IFeatureManager featureManager)
+    public CreateSupplierAddressRequestValidator(
+        IFeatureManager featureManager,
+        INomenclatureResolver nomenclatureResolver)
     {
         RuleFor(x => x.AddressType)
             .NotEmpty().WithErrorCode("INVALID_ADDRESS_TYPE").WithMessage("Address type is required.")
@@ -52,13 +51,14 @@ public sealed class CreateAddressRequestValidator : AbstractValidator<CreateAddr
             .NotEmpty().WithErrorCode("INVALID_COUNTRY_CODE").WithMessage("Country code is required.")
             .Length(2).WithErrorCode("INVALID_COUNTRY_CODE").WithMessage("Country code must be exactly 2 characters.")
             .Matches("^[A-Z]{2}$").WithErrorCode("INVALID_COUNTRY_CODE").WithMessage("Country code must be 2 uppercase letters (ISO 3166-1 alpha-2).")
-            .MustAsync(async (code, cancellation) =>
+            .MustAsync(async (code, cancellationToken) =>
             {
-                if (!await featureManager.IsEnabledAsync(FeatureFlags.EnableNomenclatureValidation).ConfigureAwait(false))
+                bool isEnabled = await featureManager.IsEnabledAsync(FeatureFlags.EnableNomenclatureValidation).ConfigureAwait(false);
+                if (!isEnabled)
                     return true;
 
-                bool? valid = await nomenclatureResolver.ValidateCountryCodeAsync(code, cancellation).ConfigureAwait(false);
-                return valid ?? true;
+                bool? isValid = await nomenclatureResolver.ValidateCountryCodeAsync(code, cancellationToken).ConfigureAwait(false);
+                return isValid ?? true;
             })
             .WithErrorCode("INVALID_COUNTRY_CODE")
             .WithMessage(x => $"The country code '{x.CountryCode}' is not recognized. Please select a valid country.");

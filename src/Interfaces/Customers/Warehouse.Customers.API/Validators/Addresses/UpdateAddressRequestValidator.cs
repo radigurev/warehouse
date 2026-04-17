@@ -1,10 +1,15 @@
 using FluentValidation;
+using Microsoft.FeatureManagement;
+using Warehouse.Infrastructure.Caching;
+using Warehouse.Infrastructure.Configuration;
 using Warehouse.ServiceModel.Requests.Customers;
 
 namespace Warehouse.Customers.API.Validators;
 
 /// <summary>
-/// Validates the update address request payload per SDD-CUST-001 section 2.3.2.
+/// Validates the update address request payload per SDD-CUST-001 section 2.3.2
+/// and CHG-ENH-001 country code validation against Nomenclature cache.
+/// <para>See <see cref="INomenclatureResolver"/>, <see cref="IFeatureManager"/>.</para>
 /// </summary>
 public sealed class UpdateAddressRequestValidator : AbstractValidator<UpdateAddressRequest>
 {
@@ -13,7 +18,9 @@ public sealed class UpdateAddressRequestValidator : AbstractValidator<UpdateAddr
     /// <summary>
     /// Initializes validation rules for address update.
     /// </summary>
-    public UpdateAddressRequestValidator()
+    public UpdateAddressRequestValidator(
+        INomenclatureResolver nomenclatureResolver,
+        IFeatureManager featureManager)
     {
         RuleFor(x => x.AddressType)
             .NotEmpty().WithErrorCode("INVALID_ADDRESS_TYPE").WithMessage("Address type is required.")
@@ -44,6 +51,16 @@ public sealed class UpdateAddressRequestValidator : AbstractValidator<UpdateAddr
         RuleFor(x => x.CountryCode)
             .NotEmpty().WithErrorCode("INVALID_COUNTRY_CODE").WithMessage("Country code is required.")
             .Length(2).WithErrorCode("INVALID_COUNTRY_CODE").WithMessage("Country code must be exactly 2 characters.")
-            .Matches("^[A-Z]{2}$").WithErrorCode("INVALID_COUNTRY_CODE").WithMessage("Country code must be 2 uppercase letters (ISO 3166-1 alpha-2).");
+            .Matches("^[A-Z]{2}$").WithErrorCode("INVALID_COUNTRY_CODE").WithMessage("Country code must be 2 uppercase letters (ISO 3166-1 alpha-2).")
+            .MustAsync(async (code, cancellation) =>
+            {
+                if (!await featureManager.IsEnabledAsync(FeatureFlags.EnableNomenclatureValidation).ConfigureAwait(false))
+                    return true;
+
+                bool? valid = await nomenclatureResolver.ValidateCountryCodeAsync(code, cancellation).ConfigureAwait(false);
+                return valid ?? true;
+            })
+            .WithErrorCode("INVALID_COUNTRY_CODE")
+            .WithMessage(x => $"The country code '{x.CountryCode}' is not recognized. Please select a valid country.");
     }
 }

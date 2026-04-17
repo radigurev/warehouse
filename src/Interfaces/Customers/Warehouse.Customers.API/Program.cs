@@ -6,6 +6,7 @@ using NLog.Web;
 using Warehouse.Customers.API.Interfaces;
 using Warehouse.Customers.API.Services;
 using Warehouse.Customers.DBModel;
+using Warehouse.Infrastructure.Caching;
 using Warehouse.Infrastructure.Extensions;
 using Warehouse.Mapping.Profiles.Customers;
 
@@ -54,6 +55,8 @@ static void ConfigureServices(WebApplicationBuilder builder)
     services.AddWarehouseHealthChecks(configuration);
     services.AddWarehouseRedisCache(configuration);
     services.AddWarehouseMessageBus(configuration);
+    services.AddWarehouseFeatureFlags();
+    services.AddSingleton<INomenclatureResolver, NomenclatureResolver>();
     services.AddSequenceGenerator<CustomersDbContext>();
     services.AddWarehouseTracing(configuration, "warehouse-customers-api");
     ConfigureApplicationServices(services);

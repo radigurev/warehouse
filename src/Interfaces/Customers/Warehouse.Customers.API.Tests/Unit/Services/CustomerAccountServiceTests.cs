@@ -1,8 +1,10 @@
 using FluentAssertions;
+using Moq;
 using Warehouse.Common.Models;
 using Warehouse.Customers.API.Services;
 using Warehouse.Customers.API.Tests.Fixtures;
 using Warehouse.Customers.DBModel.Models;
+using Warehouse.Infrastructure.Caching;
 using Warehouse.ServiceModel.DTOs.Customers;
 using Warehouse.ServiceModel.Requests.Customers;
 
@@ -15,13 +17,15 @@ namespace Warehouse.Customers.API.Tests.Unit.Services;
 [Category("SDD-CUST-001")]
 public sealed class CustomerAccountServiceTests : CustomerTestBase
 {
+    private Mock<INomenclatureResolver> _nomenclatureResolverMock = null!;
     private CustomerAccountService _sut = null!;
 
     [SetUp]
     public override void SetUp()
     {
         base.SetUp();
-        _sut = new CustomerAccountService(Context, Mapper);
+        _nomenclatureResolverMock = new Mock<INomenclatureResolver>();
+        _sut = new CustomerAccountService(Context, Mapper, _nomenclatureResolverMock.Object);
     }
 
     [Test]

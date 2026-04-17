@@ -41,6 +41,9 @@ public sealed record ShipmentDetailDto
     /// <summary>Gets the shipping address country code.</summary>
     public required string ShippingCountryCode { get; init; }
 
+    /// <summary>Gets the shipping country display name resolved from Nomenclature cache. Null when unresolved.</summary>
+    public string? ShippingCountryName { get; init; }
+
     /// <summary>Gets the optional tracking number.</summary>
     public string? TrackingNumber { get; init; }
 

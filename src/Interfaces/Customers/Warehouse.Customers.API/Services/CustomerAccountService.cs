@@ -4,6 +4,7 @@ using Warehouse.Common.Models;
 using Warehouse.Customers.API.Interfaces;
 using Warehouse.Customers.DBModel;
 using Warehouse.Customers.DBModel.Models;
+using Warehouse.Infrastructure.Caching;
 using Warehouse.Infrastructure.Services;
 using Warehouse.ServiceModel.DTOs.Customers;
 using Warehouse.ServiceModel.Requests.Customers;
@@ -12,16 +13,23 @@ namespace Warehouse.Customers.API.Services;
 
 /// <summary>
 /// Implements customer account operations: CRUD, deactivation, and merge.
-/// <para>See <see cref="ICustomerAccountService"/>.</para>
+/// Enriches account DTOs with resolved currency names from Nomenclature cache.
+/// <para>See <see cref="ICustomerAccountService"/>, <see cref="INomenclatureResolver"/>.</para>
 /// </summary>
 public sealed class CustomerAccountService : BaseCustomerEntityService, ICustomerAccountService
 {
+    private readonly INomenclatureResolver _nomenclatureResolver;
+
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
-    public CustomerAccountService(CustomersDbContext context, IMapper mapper)
+    public CustomerAccountService(
+        CustomersDbContext context,
+        IMapper mapper,
+        INomenclatureResolver nomenclatureResolver)
         : base(context, mapper)
     {
+        _nomenclatureResolver = nomenclatureResolver;
     }
 
     /// <inheritdoc />
@@ -57,7 +65,8 @@ public sealed class CustomerAccountService : BaseCustomerEntityService, ICustome
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         CustomerAccountDto dto = Mapper.Map<CustomerAccountDto>(account);
-        return Result<CustomerAccountDto>.Success(dto);
+        CustomerAccountDto enriched = await EnrichAccountDtoAsync(dto, cancellationToken).ConfigureAwait(false);
+        return Result<CustomerAccountDto>.Success(enriched);
     }
 
     /// <inheritdoc />
@@ -77,7 +86,8 @@ public sealed class CustomerAccountService : BaseCustomerEntityService, ICustome
             .ConfigureAwait(false);
 
         IReadOnlyList<CustomerAccountDto> dtos = Mapper.Map<IReadOnlyList<CustomerAccountDto>>(accounts);
-        return Result<IReadOnlyList<CustomerAccountDto>>.Success(dtos);
+        IReadOnlyList<CustomerAccountDto> enriched = await EnrichAccountDtosAsync(dtos, cancellationToken).ConfigureAwait(false);
+        return Result<IReadOnlyList<CustomerAccountDto>>.Success(enriched);
     }
 
     /// <inheritdoc />
@@ -109,7 +119,8 @@ public sealed class CustomerAccountService : BaseCustomerEntityService, ICustome
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         CustomerAccountDto dto = Mapper.Map<CustomerAccountDto>(account);
-        return Result<CustomerAccountDto>.Success(dto);
+        CustomerAccountDto enriched = await EnrichAccountDtoAsync(dto, cancellationToken).ConfigureAwait(false);
+        return Result<CustomerAccountDto>.Success(enriched);
     }
 
     /// <inheritdoc />
@@ -181,7 +192,40 @@ public sealed class CustomerAccountService : BaseCustomerEntityService, ICustome
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
 
         CustomerAccountDto dto = Mapper.Map<CustomerAccountDto>(target);
-        return Result<CustomerAccountDto>.Success(dto);
+        CustomerAccountDto enriched = await EnrichAccountDtoAsync(dto, cancellationToken).ConfigureAwait(false);
+        return Result<CustomerAccountDto>.Success(enriched);
+    }
+
+    /// <summary>
+    /// Enriches a single account DTO with the resolved currency name.
+    /// </summary>
+    private async Task<CustomerAccountDto> EnrichAccountDtoAsync(
+        CustomerAccountDto dto,
+        CancellationToken cancellationToken)
+    {
+        string? currencyName = await _nomenclatureResolver
+            .ResolveCurrencyNameAsync(dto.CurrencyCode, cancellationToken)
+            .ConfigureAwait(false);
+
+        return dto with { CurrencyName = currencyName };
+    }
+
+    /// <summary>
+    /// Enriches a list of account DTOs with resolved currency names.
+    /// </summary>
+    private async Task<IReadOnlyList<CustomerAccountDto>> EnrichAccountDtosAsync(
+        IReadOnlyList<CustomerAccountDto> dtos,
+        CancellationToken cancellationToken)
+    {
+        List<CustomerAccountDto> enriched = new(dtos.Count);
+
+        foreach (CustomerAccountDto dto in dtos)
+        {
+            CustomerAccountDto enrichedDto = await EnrichAccountDtoAsync(dto, cancellationToken).ConfigureAwait(false);
+            enriched.Add(enrichedDto);
+        }
+
+        return enriched;
     }
 
     /// <summary>

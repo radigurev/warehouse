@@ -28,6 +28,9 @@
     "Username": "warehouse",
     "Password": "warehouse"
   },
+  "FeatureManagement": {
+    "EnableNomenclatureValidation": false
+  },
   "Kestrel": {
     "Endpoints": {
       "Http": {

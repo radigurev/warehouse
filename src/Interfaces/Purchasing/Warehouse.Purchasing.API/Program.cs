@@ -3,6 +3,7 @@ using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
 using NLog;
 using NLog.Web;
+using Warehouse.Infrastructure.Caching;
 using Warehouse.Infrastructure.Extensions;
 using Warehouse.Purchasing.API.Interfaces;
 using Warehouse.Purchasing.API.Services;
@@ -56,6 +57,8 @@ static void ConfigureServices(WebApplicationBuilder builder)
     services.AddWarehouseMessageBus(configuration);
     services.AddSequenceGenerator<PurchasingDbContext>();
     services.AddWarehouseTracing(configuration, "warehouse-purchasing-api");
+    services.AddWarehouseFeatureFlags();
+    services.AddSingleton<INomenclatureResolver, NomenclatureResolver>();
     ConfigureApplicationServices(services);
 
     services.AddControllers();

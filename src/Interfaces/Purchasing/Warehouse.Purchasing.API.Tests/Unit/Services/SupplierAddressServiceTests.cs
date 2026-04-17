@@ -1,5 +1,7 @@
 using FluentAssertions;
+using Moq;
 using Warehouse.Common.Models;
+using Warehouse.Infrastructure.Caching;
 using Warehouse.Purchasing.API.Services;
 using Warehouse.Purchasing.API.Tests.Fixtures;
 using Warehouse.Purchasing.DBModel.Models;
@@ -17,12 +19,14 @@ namespace Warehouse.Purchasing.API.Tests.Unit.Services;
 public sealed class SupplierAddressServiceTests : PurchasingTestBase
 {
     private SupplierAddressService _sut = null!;
+    private Mock<INomenclatureResolver> _nomenclatureResolverMock = null!;
 
     [SetUp]
     public override void SetUp()
     {
         base.SetUp();
-        _sut = new SupplierAddressService(Context, Mapper);
+        _nomenclatureResolverMock = new Mock<INomenclatureResolver>();
+        _sut = new SupplierAddressService(Context, Mapper, _nomenclatureResolverMock.Object);
     }
 
     [Test]

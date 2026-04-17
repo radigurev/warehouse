@@ -6,6 +6,7 @@ using NLog.Web;
 using Warehouse.Fulfillment.API.Interfaces;
 using Warehouse.Fulfillment.API.Services;
 using Warehouse.Fulfillment.DBModel;
+using Warehouse.Infrastructure.Caching;
 using Warehouse.Infrastructure.Extensions;
 using Warehouse.Mapping.Profiles.Fulfillment;
 
@@ -56,6 +57,7 @@ static void ConfigureServices(WebApplicationBuilder builder)
     services.AddWarehouseMessageBus(configuration);
     services.AddSequenceGenerator<FulfillmentDbContext>();
     services.AddWarehouseTracing(configuration, "warehouse-fulfillment-api");
+    services.AddWarehouseFeatureFlags();
     ConfigureApplicationServices(services);
 
     services.AddControllers();
@@ -84,6 +86,7 @@ static void ConfigureAutoMapper(IServiceCollection services)
 
 static void ConfigureApplicationServices(IServiceCollection services)
 {
+    services.AddSingleton<INomenclatureResolver, NomenclatureResolver>();
     services.AddScoped<IFulfillmentEventService, FulfillmentEventService>();
     services.AddScoped<ISalesOrderService, SalesOrderService>();
     services.AddScoped<IPickListService, PickListService>();

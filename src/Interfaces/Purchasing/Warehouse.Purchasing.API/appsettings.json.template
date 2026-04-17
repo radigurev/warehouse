@@ -23,6 +23,9 @@
   "PermissionValidation": {
     "AuthApiBaseAddress": "http://localhost:5001"
   },
+  "FeatureManagement": {
+    "EnableNomenclatureValidation": false
+  },
   "RabbitMQ": {
     "Host": "localhost",
     "Username": "warehouse",

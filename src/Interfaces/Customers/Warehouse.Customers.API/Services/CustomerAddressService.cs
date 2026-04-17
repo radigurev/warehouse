@@ -4,6 +4,7 @@ using Warehouse.Common.Models;
 using Warehouse.Customers.API.Interfaces;
 using Warehouse.Customers.DBModel;
 using Warehouse.Customers.DBModel.Models;
+using Warehouse.Infrastructure.Caching;
 using Warehouse.Infrastructure.Services;
 using Warehouse.ServiceModel.DTOs.Customers;
 using Warehouse.ServiceModel.Requests.Customers;
@@ -12,16 +13,23 @@ namespace Warehouse.Customers.API.Services;
 
 /// <summary>
 /// Implements CRUD operations for customer addresses with default-flag management.
-/// <para>See <see cref="ICustomerAddressService"/>, <see cref="BaseCustomerEntityService"/>.</para>
+/// Enriches address DTOs with resolved country names from Nomenclature cache.
+/// <para>See <see cref="ICustomerAddressService"/>, <see cref="INomenclatureResolver"/>.</para>
 /// </summary>
 public sealed class CustomerAddressService : BaseCustomerEntityService, ICustomerAddressService
 {
+    private readonly INomenclatureResolver _nomenclatureResolver;
+
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
-    public CustomerAddressService(CustomersDbContext context, IMapper mapper)
+    public CustomerAddressService(
+        CustomersDbContext context,
+        IMapper mapper,
+        INomenclatureResolver nomenclatureResolver)
         : base(context, mapper)
     {
+        _nomenclatureResolver = nomenclatureResolver;
     }
 
     /// <inheritdoc />
@@ -55,7 +63,9 @@ public sealed class CustomerAddressService : BaseCustomerEntityService, ICustome
         Context.CustomerAddresses.Add(address);
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        return MapToResult<CustomerAddress, CustomerAddressDto>(address);
+        CustomerAddressDto dto = Mapper.Map<CustomerAddressDto>(address);
+        CustomerAddressDto enriched = await EnrichAddressDtoAsync(dto, cancellationToken).ConfigureAwait(false);
+        return Result<CustomerAddressDto>.Success(enriched);
     }
 
     /// <inheritdoc />
@@ -74,7 +84,9 @@ public sealed class CustomerAddressService : BaseCustomerEntityService, ICustome
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        return MapListToResult<CustomerAddress, CustomerAddressDto>(addresses);
+        IReadOnlyList<CustomerAddressDto> dtos = Mapper.Map<IReadOnlyList<CustomerAddressDto>>(addresses);
+        IReadOnlyList<CustomerAddressDto> enriched = await EnrichAddressDtosAsync(dtos, cancellationToken).ConfigureAwait(false);
+        return Result<IReadOnlyList<CustomerAddressDto>>.Success(enriched);
     }
 
     /// <inheritdoc />
@@ -111,7 +123,9 @@ public sealed class CustomerAddressService : BaseCustomerEntityService, ICustome
 
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        return MapToResult<CustomerAddress, CustomerAddressDto>(address);
+        CustomerAddressDto dto = Mapper.Map<CustomerAddressDto>(address);
+        CustomerAddressDto enriched = await EnrichAddressDtoAsync(dto, cancellationToken).ConfigureAwait(false);
+        return Result<CustomerAddressDto>.Success(enriched);
     }
 
     /// <inheritdoc />
@@ -143,6 +157,38 @@ public sealed class CustomerAddressService : BaseCustomerEntityService, ICustome
         }
 
         return Result.Success();
+    }
+
+    /// <summary>
+    /// Enriches a single address DTO with the resolved country name.
+    /// </summary>
+    private async Task<CustomerAddressDto> EnrichAddressDtoAsync(
+        CustomerAddressDto dto,
+        CancellationToken cancellationToken)
+    {
+        string? countryName = await _nomenclatureResolver
+            .ResolveCountryNameAsync(dto.CountryCode, cancellationToken)
+            .ConfigureAwait(false);
+
+        return dto with { CountryName = countryName };
+    }
+
+    /// <summary>
+    /// Enriches a list of address DTOs with resolved country names.
+    /// </summary>
+    private async Task<IReadOnlyList<CustomerAddressDto>> EnrichAddressDtosAsync(
+        IReadOnlyList<CustomerAddressDto> dtos,
+        CancellationToken cancellationToken)
+    {
+        List<CustomerAddressDto> enriched = new(dtos.Count);
+
+        foreach (CustomerAddressDto dto in dtos)
+        {
+            CustomerAddressDto enrichedDto = await EnrichAddressDtoAsync(dto, cancellationToken).ConfigureAwait(false);
+            enriched.Add(enrichedDto);
+        }
+
+        return enriched;
     }
 
     /// <summary>
