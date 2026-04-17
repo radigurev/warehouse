@@ -1,6 +1,6 @@
 # SDD-UI-005 — Fulfillment Operations SPA
 
-> Status: Draft
+> Status: Active
 > Last updated: 2026-04-09
 > Owner: TBD
 > Category: Core
