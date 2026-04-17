@@ -14,7 +14,8 @@
     "AuthApi": "http://localhost:5001",
     "CustomersApi": "http://localhost:5002",
     "InventoryApi": "http://localhost:5003",
-    "EventLogApi": "http://localhost:5006"
+    "EventLogApi": "http://localhost:5006",
+    "NomenclatureApi": "http://localhost:5007"
   },
   "Kestrel": {
     "Endpoints": {
@@ -240,6 +241,30 @@
         "Match": {
           "Path": "/api/v1/fulfillment-events/{**catch-all}"
         }
+      },
+      "countries-route": {
+        "ClusterId": "nomenclature-cluster",
+        "Match": {
+          "Path": "/api/v1/countries/{**catch-all}"
+        }
+      },
+      "state-provinces-route": {
+        "ClusterId": "nomenclature-cluster",
+        "Match": {
+          "Path": "/api/v1/state-provinces/{**catch-all}"
+        }
+      },
+      "cities-route": {
+        "ClusterId": "nomenclature-cluster",
+        "Match": {
+          "Path": "/api/v1/cities/{**catch-all}"
+        }
+      },
+      "currencies-route": {
+        "ClusterId": "nomenclature-cluster",
+        "Match": {
+          "Path": "/api/v1/currencies/{**catch-all}"
+        }
       }
     },
     "Clusters": {
@@ -282,6 +307,13 @@
         "Destinations": {
           "fulfillment-api": {
             "Address": "<FULFILLMENT_API_URL>"
+          }
+        }
+      },
+      "nomenclature-cluster": {
+        "Destinations": {
+          "nomenclature-api": {
+            "Address": "<NOMENCLATURE_API_URL>"
           }
         }
       }

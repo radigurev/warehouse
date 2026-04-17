@@ -101,6 +101,8 @@ services:
       - OpenTelemetry__OtlpEndpoint=http://jaeger:4317
       - RabbitMQ__Host=rabbitmq
       - LOKI_ENDPOINT=http://loki:3100
+      - FeatureManagement__EnableDatabaseSeeding=true
+      - FeatureManagement__EnableSeedDefaultAdmin=true
     depends_on:
       - sqlserver
       - redis
@@ -234,6 +236,41 @@ services:
       - jaeger
     restart: unless-stopped
 
+  nomenclature-api:
+    build:
+      context: .
+      dockerfile: docker/dotnet.Dockerfile
+      args:
+        PROJECT_PATH: Interfaces/Nomenclature/Warehouse.Nomenclature.API/Warehouse.Nomenclature.API.csproj
+        ASSEMBLY_NAME: Warehouse.Nomenclature.API.dll
+    container_name: warehouse-nomenclature-api
+    ports:
+      - "5007:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__WarehouseDb=Server=sqlserver;Database=Warehouse;User Id=sa;Password=Warehouse@Dev123;TrustServerCertificate=True
+      - ConnectionStrings__Redis=redis:6379
+      - Jwt__SecretKey=WarehouseDevSecretKey_MinLength32!
+      - Jwt__Issuer=Warehouse.Auth.API
+      - Jwt__Audience=Warehouse
+      - Jwt__AccessTokenExpirationMinutes=30
+      - Jwt__RefreshTokenExpirationDays=7
+      - OpenTelemetry__OtlpEndpoint=http://jaeger:4317
+      - PermissionValidation__AuthApiBaseAddress=http://auth-api:8080
+      - LOKI_ENDPOINT=http://loki:3100
+      - FeatureManagement__EnableNomenclatureSeeding=true
+      - FeatureManagement__EnableSeedCountries=true
+      - FeatureManagement__EnableSeedCurrencies=true
+      - FeatureManagement__EnableSeedStateProvinces=true
+      - FeatureManagement__EnableSeedCities=true
+    depends_on:
+      - sqlserver
+      - redis
+      - auth-api
+      - loki
+      - jaeger
+    restart: unless-stopped
+
   eventlog-api:
     build:
       context: .
@@ -285,12 +322,14 @@ services:
       - ReverseProxy__Clusters__eventlog-cluster__Destinations__eventlog-api__Address=http://eventlog-api:8080
       - ReverseProxy__Clusters__purchasing-cluster__Destinations__purchasing-api__Address=http://purchasing-api:8080
       - ReverseProxy__Clusters__fulfillment-cluster__Destinations__fulfillment-api__Address=http://fulfillment-api:8080
+      - ReverseProxy__Clusters__nomenclature-cluster__Destinations__nomenclature-api__Address=http://nomenclature-api:8080
       - HealthChecks__AuthApi=http://auth-api:8080
       - HealthChecks__CustomersApi=http://customers-api:8080
       - HealthChecks__InventoryApi=http://inventory-api:8080
       - HealthChecks__EventLogApi=http://eventlog-api:8080
       - HealthChecks__PurchasingApi=http://purchasing-api:8080
       - HealthChecks__FulfillmentApi=http://fulfillment-api:8080
+      - HealthChecks__NomenclatureApi=http://nomenclature-api:8080
       - LOKI_ENDPOINT=http://loki:3100
     depends_on:
       - auth-api
@@ -299,6 +338,7 @@ services:
       - eventlog-api
       - purchasing-api
       - fulfillment-api
+      - nomenclature-api
       - jaeger
     restart: unless-stopped
 

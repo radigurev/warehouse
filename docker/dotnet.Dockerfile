@@ -14,6 +14,7 @@ COPY src/Databases/Warehouse.Customers.DBModel/Warehouse.Customers.DBModel.cspro
 COPY src/Databases/Warehouse.Inventory.DBModel/Warehouse.Inventory.DBModel.csproj Databases/Warehouse.Inventory.DBModel/
 COPY src/Databases/Warehouse.Purchasing.DBModel/Warehouse.Purchasing.DBModel.csproj Databases/Warehouse.Purchasing.DBModel/
 COPY src/Databases/Warehouse.Fulfillment.DBModel/Warehouse.Fulfillment.DBModel.csproj Databases/Warehouse.Fulfillment.DBModel/
+COPY src/Databases/Warehouse.Nomenclature.DBModel/Warehouse.Nomenclature.DBModel.csproj Databases/Warehouse.Nomenclature.DBModel/
 COPY src/Databases/Warehouse.EventLog.DBModel/Warehouse.EventLog.DBModel.csproj Databases/Warehouse.EventLog.DBModel/
 COPY src/Infrastructure/EventLog/Warehouse.EventLog.API/Warehouse.EventLog.API.csproj Infrastructure/EventLog/Warehouse.EventLog.API/
 COPY src/Infrastructure/Gateway/Warehouse.Gateway/Warehouse.Gateway.csproj Infrastructure/Gateway/Warehouse.Gateway/
@@ -22,6 +23,7 @@ COPY src/Interfaces/Customers/Warehouse.Customers.API/Warehouse.Customers.API.cs
 COPY src/Interfaces/Inventory/Warehouse.Inventory.API/Warehouse.Inventory.API.csproj Interfaces/Inventory/Warehouse.Inventory.API/
 COPY src/Interfaces/Purchasing/Warehouse.Purchasing.API/Warehouse.Purchasing.API.csproj Interfaces/Purchasing/Warehouse.Purchasing.API/
 COPY src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Warehouse.Fulfillment.API.csproj Interfaces/Fulfillment/Warehouse.Fulfillment.API/
+COPY src/Interfaces/Nomenclature/Warehouse.Nomenclature.API/Warehouse.Nomenclature.API.csproj Interfaces/Nomenclature/Warehouse.Nomenclature.API/
 
 RUN dotnet restore ${PROJECT_PATH}
 
