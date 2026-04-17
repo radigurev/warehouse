@@ -52,4 +52,11 @@
     <Project Path="Infrastructure/EventLog/Warehouse.EventLog.API/Warehouse.EventLog.API.csproj" />
     <Project Path="Infrastructure/EventLog/Warehouse.EventLog.API.Tests/Warehouse.EventLog.API.Tests.csproj" />
   </Folder>
+  <Folder Name="/Databases/Nomenclature/">
+    <Project Path="Databases/Warehouse.Nomenclature.DBModel/Warehouse.Nomenclature.DBModel.csproj" />
+  </Folder>
+  <Folder Name="/Interfaces/Nomenclature/">
+    <Project Path="Interfaces/Nomenclature/Warehouse.Nomenclature.API/Warehouse.Nomenclature.API.csproj" />
+    <Project Path="Interfaces/Nomenclature/Warehouse.Nomenclature.API.Tests/Warehouse.Nomenclature.API.Tests.csproj" />
+  </Folder>
 </Solution>

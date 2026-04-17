@@ -2,7 +2,7 @@
 
 > Last updated: 2026-04-16
 >
-> Note: Added SDD-NOM-001 placeholder for Nomenclature Reference Data microservice
+> Note: Added CHG-ENH-001 for Nomenclature integration across consumer domains
 
 This document provides a bidirectional mapping between SDD specifications and source files.
 
@@ -572,3 +572,18 @@ This document provides a bidirectional mapping between SDD specifications and so
 | `src/Warehouse.ServiceModel/Requests/Nomenclature/` | Requests | Nomenclature request models (planned) |
 | `src/Warehouse.Mapping/Profiles/Nomenclature/NomenclatureMappingProfile.cs` | Mapping | AutoMapper profile (planned) |
 | `src/Interfaces/Nomenclature/Warehouse.Nomenclature.API.Tests/` | Tests | Unit and integration tests (planned) |
+
+### CHG-ENH-001 — Nomenclature Integration Across Consumer Domains (Draft)
+
+| File | Type | Role |
+|---|---|---|
+| `src/Warehouse.Infrastructure/Services/NomenclatureResolver.cs` | Service | Read-only resolver for cached Nomenclature data (planned) |
+| `src/Warehouse.Infrastructure/Interfaces/INomenclatureResolver.cs` | Interface | Nomenclature resolver contract (planned) |
+| `frontend/src/shared/api/nomenclature.ts` | API | Shared Nomenclature API calls (planned) |
+| `frontend/src/shared/composables/useNomenclature.ts` | Composable | Nomenclature data loading and caching (planned) |
+| `frontend/src/shared/components/molecules/NomenclatureAddressFields.vue` | Component | Cascading Country > State > City dropdowns (planned) |
+| `src/Warehouse.ServiceModel/DTOs/Customers/CustomerAddressDto.cs` | DTO | Add `CountryName` field (planned) |
+| `src/Warehouse.ServiceModel/DTOs/Customers/CustomerAccountDto.cs` | DTO | Add `CurrencyName` field (planned) |
+| `src/Warehouse.ServiceModel/DTOs/Purchasing/SupplierAddressDto.cs` | DTO | Add `CountryName` field (planned) |
+| `src/Warehouse.ServiceModel/DTOs/Fulfillment/SalesOrderDetailDto.cs` | DTO | Add `ShippingCountryName` field (planned) |
+| `src/Warehouse.ServiceModel/DTOs/Fulfillment/ShipmentDetailDto.cs` | DTO | Add `ShippingCountryName` field (planned) |

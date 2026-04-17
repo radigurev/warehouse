@@ -1,0 +1,37 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "WarehouseDb": "<WAREHOUSE_DB_CONNECTION_STRING>",
+    "Redis": "<REDIS_CONNECTION_STRING>"
+  },
+  "Jwt": {
+    "SecretKey": "<JWT_SECRET_KEY>",
+    "Issuer": "Warehouse.Auth.API",
+    "Audience": "Warehouse",
+    "AccessTokenExpirationMinutes": 30,
+    "RefreshTokenExpirationDays": 7
+  },
+  "OpenTelemetry": {
+    "OtlpEndpoint": "http://localhost:4317"
+  },
+  "Kestrel": {
+    "Endpoints": {
+      "Http": {
+        "Url": "http://localhost:5007"
+      }
+    }
+  },
+  "FeatureManagement": {
+    "EnableNomenclatureSeeding": true,
+    "EnableSeedCountries": true,
+    "EnableSeedCurrencies": true,
+    "EnableSeedStateProvinces": true,
+    "EnableSeedCities": true
+  }
+}

@@ -1,6 +1,6 @@
 # SDD-NOM-001 — Nomenclature Reference Data
 
-> Status: Draft
+> Status: Active
 > Last updated: 2026-04-16
 > Owner: TBD
 > Category: Domain
