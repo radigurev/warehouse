@@ -40,21 +40,11 @@
               />
             </v-col>
 
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="form.city"
-                :label="t('supplierAddresses.form.city')"
-                prepend-inner-icon="mdi-city"
-                density="compact"
-                :rules="[rules.required, rules.cityLength]"
-              />
-            </v-col>
-
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="form.stateProvince"
-                :label="t('supplierAddresses.form.stateProvince')"
-                prepend-inner-icon="mdi-map"
+            <v-col cols="12">
+              <NomenclatureAddressFields
+                v-model:country-code="form.countryCode"
+                v-model:state-province="form.stateProvince"
+                v-model:city="form.city"
                 density="compact"
               />
             </v-col>
@@ -66,19 +56,6 @@
                 prepend-inner-icon="mdi-mailbox"
                 density="compact"
                 :rules="[rules.required, rules.postalCodeLength]"
-              />
-            </v-col>
-
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="form.countryCode"
-                :label="t('supplierAddresses.form.countryCode')"
-                prepend-inner-icon="mdi-flag"
-                density="compact"
-                :rules="[rules.required, rules.countryCodeFormat]"
-                maxlength="2"
-                hint="ISO 3166-1 alpha-2 (e.g. US, DE, BG)"
-                persistent-hint
               />
             </v-col>
 
@@ -112,6 +89,7 @@ import { useI18n } from 'vue-i18n';
 import { useNotificationStore } from '@shared/stores/notification';
 import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 import { createSupplierAddress, updateSupplierAddress } from '@features/purchasing/api/supplier-contacts';
+import NomenclatureAddressFields from '@shared/components/molecules/NomenclatureAddressFields.vue';
 import type { SupplierAddressDto } from '@features/purchasing/types/purchasing';
 
 const { t } = useI18n();
@@ -175,9 +153,7 @@ watch(() => props.address, populateForm);
 const rules = {
   required: (v: string) => !!v || t('common.required'),
   streetLength: (v: string) => !v || v.length <= 200 || t('validation.streetLength'),
-  cityLength: (v: string) => !v || v.length <= 100 || t('validation.cityLength'),
   postalCodeLength: (v: string) => !v || v.length <= 20 || t('validation.postalCodeLength'),
-  countryCodeFormat: (v: string) => !v || /^[A-Za-z]{2}$/.test(v) || t('validation.countryCodeFormat'),
 };
 
 async function handleSubmit(): Promise<void> {

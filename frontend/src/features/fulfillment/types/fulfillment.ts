@@ -83,6 +83,7 @@ export interface SalesOrderDetailDto {
   shippingStateProvince: string | null;
   shippingPostalCode: string;
   shippingCountryCode: string;
+  shippingCountryName?: string | null;
   notes: string | null;
   totalAmount: number;
   createdByUserId: number;
@@ -218,6 +219,7 @@ export interface ShipmentDetailDto {
   shippingStateProvince: string | null;
   shippingPostalCode: string;
   shippingCountryCode: string;
+  shippingCountryName?: string | null;
   dispatchedByUserId: number;
   dispatchedAtUtc: string;
   notes: string | null;

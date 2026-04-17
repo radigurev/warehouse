@@ -1428,4 +1428,17 @@ export default {
       payload: 'Детайли',
     },
   },
+  nomenclature: {
+    countryPlaceholder: 'Изберете държава...',
+    stateProvincePlaceholder: 'Изберете област/провинция...',
+    cityPlaceholder: 'Изберете град...',
+    currencyPlaceholder: 'Изберете валута...',
+    loadingCountries: 'Зареждане на държави...',
+    loadingError: 'Не успяхме да заредим справочни данни. Можете да въведете стойности ръчно.',
+    noStateProvinces: 'Няма налични области/провинции. Въведете ръчно.',
+    noCities: 'Няма налични градове. Въведете ръчно.',
+    addNewCountry: 'Добави нова държава...',
+    addNewStateProvince: 'Добави нова област/провинция...',
+    addNewCity: 'Добави нов град...',
+  },
 };

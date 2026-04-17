@@ -35,6 +35,7 @@ export interface CustomerAddressDto {
   stateProvince: string | null;
   postalCode: string;
   countryCode: string;
+  countryName?: string | null;
   isDefault: boolean;
   createdAtUtc: string;
 }
@@ -59,6 +60,7 @@ export interface CustomerEmailDto {
 export interface CustomerAccountDto {
   id: number;
   currencyCode: string;
+  currencyName?: string | null;
   balance: number;
   description: string | null;
   isPrimary: boolean;

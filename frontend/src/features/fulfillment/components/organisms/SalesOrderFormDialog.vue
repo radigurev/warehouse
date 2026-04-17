@@ -123,18 +123,11 @@
               :rules="[rules.streetLength]"
             />
           </v-col>
-          <v-col v-bind="grid.fieldCols">
-            <v-text-field
-              v-model="form.shippingCity"
-              :label="t('salesOrders.form.city')"
-              :density="layout.vuetifyDensity"
-              :rules="[rules.required, rules.cityLength]"
-            />
-          </v-col>
-          <v-col v-bind="grid.fieldCols">
-            <v-text-field
-              v-model="form.shippingStateProvince"
-              :label="t('salesOrders.form.stateProvince')"
+          <v-col v-bind="grid.fullCols">
+            <NomenclatureAddressFields
+              v-model:country-code="form.shippingCountryCode"
+              v-model:state-province="form.shippingStateProvince"
+              v-model:city="form.shippingCity"
               :density="layout.vuetifyDensity"
             />
           </v-col>
@@ -144,15 +137,6 @@
               :label="t('salesOrders.form.postalCode')"
               :density="layout.vuetifyDensity"
               :rules="[rules.required, rules.postalCodeLength]"
-            />
-          </v-col>
-          <v-col v-bind="grid.fieldCols">
-            <v-text-field
-              v-model="form.shippingCountryCode"
-              :label="t('salesOrders.form.countryCode')"
-              :density="layout.vuetifyDensity"
-              :rules="[rules.required, rules.countryCodeFormat]"
-              maxlength="2"
             />
           </v-col>
         </v-row>
@@ -262,6 +246,7 @@ import { useLayoutStore } from '@shared/stores/layout';
 import { useFormGrid } from '@shared/composables/useFormGrid';
 import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
+import NomenclatureAddressFields from '@shared/components/molecules/NomenclatureAddressFields.vue';
 import {
   createSalesOrder,
   updateSalesOrder,
@@ -458,9 +443,7 @@ const rules = {
   requiredSelect: (v: number | null) => v !== null || t('common.required'),
   notesLength: (v: string) => !v || v.length <= 2000 || t('validation.notesLength'),
   streetLength: (v: string) => !v || v.length <= 200 || t('validation.streetLength'),
-  cityLength: (v: string) => !v || v.length <= 100 || t('validation.cityLength'),
   postalCodeLength: (v: string) => !v || v.length <= 20 || t('validation.postalCodeLength'),
-  countryCodeFormat: (v: string) => /^[A-Z]{2}$/.test(v) || t('validation.countryCodeFormat'),
 };
 
 async function handleSubmit(): Promise<void> {

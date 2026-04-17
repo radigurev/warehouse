@@ -182,10 +182,13 @@
           <v-select v-model="addressForm.addressType" :label="vm.t('suppliers.detail.addressType')" :items="['Billing', 'Shipping', 'Both']" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
           <v-text-field v-model="addressForm.streetLine1" :label="vm.t('suppliers.detail.street1')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
           <v-text-field v-model="addressForm.streetLine2" :label="vm.t('suppliers.detail.street2')" :density="vm.layout.vuetifyDensity" />
-          <v-text-field v-model="addressForm.city" :label="vm.t('suppliers.detail.city')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
-          <v-text-field v-model="addressForm.stateProvince" :label="vm.t('suppliers.detail.state')" :density="vm.layout.vuetifyDensity" />
+          <NomenclatureAddressFields
+            v-model:country-code="addressForm.countryCode"
+            v-model:state-province="addressForm.stateProvince"
+            v-model:city="addressForm.city"
+            :density="vm.layout.vuetifyDensity"
+          />
           <v-text-field v-model="addressForm.postalCode" :label="vm.t('suppliers.detail.postalCode')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
-          <v-text-field v-model="addressForm.countryCode" :label="vm.t('suppliers.detail.countryCode')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule, countryCodeRule]" maxlength="2" />
         </v-form>
       </v-card-text>
       <v-card-actions>
@@ -262,6 +265,7 @@ import type { PurchaseOrderDto } from '@features/purchasing/types/purchasing';
 import StatusChip from '@shared/components/atoms/StatusChip.vue';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
 import ConfirmDialog from '@shared/components/molecules/ConfirmDialog.vue';
+import NomenclatureAddressFields from '@shared/components/molecules/NomenclatureAddressFields.vue';
 import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 const router = useRouter();
@@ -305,7 +309,6 @@ const emailForm = reactive({
 });
 
 const requiredRule = (v: string) => !!v || vm.t('common.required');
-const countryCodeRule = (v: string) => /^[A-Z]{2}$/.test(v) || vm.t('validation.countryCodeFormat');
 const emailRule = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || vm.t('validation.emailInvalid');
 
 onMounted(async () => {

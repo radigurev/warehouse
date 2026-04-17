@@ -79,6 +79,7 @@ export interface SupplierAddressDto {
   stateProvince: string | null;
   postalCode: string;
   countryCode: string;
+  countryName?: string | null;
   isDefault: boolean;
   createdAtUtc: string;
 }

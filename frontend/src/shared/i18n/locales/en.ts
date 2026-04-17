@@ -1428,4 +1428,17 @@ export default {
       payload: 'Details',
     },
   },
+  nomenclature: {
+    countryPlaceholder: 'Select a country...',
+    stateProvincePlaceholder: 'Select a state/province...',
+    cityPlaceholder: 'Select a city...',
+    currencyPlaceholder: 'Select a currency...',
+    loadingCountries: 'Loading countries...',
+    loadingError: 'Could not load reference data. You may type values manually.',
+    noStateProvinces: 'No state/provinces available. Type manually.',
+    noCities: 'No cities available. Type manually.',
+    addNewCountry: 'Add new country...',
+    addNewStateProvince: 'Add new state/province...',
+    addNewCity: 'Add new city...',
+  },
 };

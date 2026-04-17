@@ -172,10 +172,13 @@
           <v-select v-model="addressForm.addressType" :label="vm.t('customers.detail.addressType')" :items="['Billing', 'Shipping', 'Both']" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
           <v-text-field v-model="addressForm.streetLine1" :label="vm.t('customers.detail.street1')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
           <v-text-field v-model="addressForm.streetLine2" :label="vm.t('customers.detail.street2')" :density="vm.layout.vuetifyDensity" />
-          <v-text-field v-model="addressForm.city" :label="vm.t('customers.detail.city')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
-          <v-text-field v-model="addressForm.stateProvince" :label="vm.t('customers.detail.state')" :density="vm.layout.vuetifyDensity" />
+          <NomenclatureAddressFields
+            v-model:country-code="addressForm.countryCode"
+            v-model:state-province="addressForm.stateProvince"
+            v-model:city="addressForm.city"
+            :density="vm.layout.vuetifyDensity"
+          />
           <v-text-field v-model="addressForm.postalCode" :label="vm.t('customers.detail.postalCode')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule]" />
-          <v-text-field v-model="addressForm.countryCode" :label="vm.t('customers.detail.countryCode')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule, countryCodeRule]" maxlength="2" />
         </v-form>
       </v-card-text>
       <v-card-actions>
@@ -220,7 +223,7 @@
     <FormWrapper v-model="showAccountForm" max-width="400" :title="vm.t('customers.detail.addAccount')" icon="mdi-bank-plus">
       <v-card-text>
         <v-form ref="accountFormRef" @submit.prevent="submitAccount">
-          <v-text-field v-model="accountForm.currencyCode" :label="vm.t('customers.detail.currencyCode')" :density="vm.layout.vuetifyDensity" :rules="[requiredRule, currencyCodeRule]" maxlength="3" />
+          <NomenclatureCurrencyField v-model="accountForm.currencyCode" :density="vm.layout.vuetifyDensity" />
           <v-text-field v-model="accountForm.description" :label="vm.t('customers.detail.accountDescription')" :density="vm.layout.vuetifyDensity" />
         </v-form>
       </v-card-text>
@@ -264,6 +267,8 @@ import { useNotificationStore } from '@shared/stores/notification';
 import StatusChip from '@shared/components/atoms/StatusChip.vue';
 import FormWrapper from '@shared/components/molecules/FormWrapper.vue';
 import ConfirmDialog from '@shared/components/molecules/ConfirmDialog.vue';
+import NomenclatureAddressFields from '@shared/components/molecules/NomenclatureAddressFields.vue';
+import NomenclatureCurrencyField from '@shared/components/molecules/NomenclatureCurrencyField.vue';
 import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 
 const notification = useNotificationStore();
@@ -337,8 +342,6 @@ const accountForm = reactive({
 });
 
 const requiredRule = (v: string) => !!v || vm.t('common.required');
-const countryCodeRule = (v: string) => /^[A-Z]{2}$/.test(v) || vm.t('validation.countryCodeFormat');
-const currencyCodeRule = (v: string) => /^[A-Z]{3}$/.test(v) || vm.t('validation.currencyCodeFormat');
 const emailRule = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || vm.t('validation.emailInvalid');
 
 async function submitAddress(): Promise<void> {
