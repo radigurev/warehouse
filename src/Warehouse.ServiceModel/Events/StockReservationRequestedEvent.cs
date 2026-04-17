@@ -4,7 +4,7 @@ namespace Warehouse.ServiceModel.Events;
 /// Published when a pick list is generated to request stock reservation.
 /// Event naming: Fulfillment.StockReservation.Requested.
 /// </summary>
-public sealed record StockReservationRequestedEvent
+public sealed record StockReservationRequestedEvent : ICorrelatedEvent
 {
     /// <summary>
     /// Gets the pick list ID.
@@ -40,4 +40,9 @@ public sealed record StockReservationRequestedEvent
     /// Gets the collection of reservation lines.
     /// </summary>
     public required IReadOnlyList<StockReservationLine> Lines { get; init; }
+
+    /// <summary>
+    /// Gets the correlation ID from the originating HTTP request.
+    /// </summary>
+    public string? CorrelationId { get; set; }
 }

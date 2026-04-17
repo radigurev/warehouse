@@ -4,7 +4,7 @@ namespace Warehouse.ServiceModel.Events;
 /// Published by Customers.API when a customer operations event occurs.
 /// Consumed by EventLog service for centralized operations event logging.
 /// </summary>
-public sealed record CustomerEventOccurredEvent
+public sealed record CustomerEventOccurredEvent : ICorrelatedEvent
 {
     /// <summary>
     /// Gets the event type (e.g., CustomerCreated, CustomerDeactivated).
@@ -49,5 +49,5 @@ public sealed record CustomerEventOccurredEvent
     /// <summary>
     /// Gets the correlation ID from the originating HTTP request.
     /// </summary>
-    public string? CorrelationId { get; init; }
+    public string? CorrelationId { get; set; }
 }

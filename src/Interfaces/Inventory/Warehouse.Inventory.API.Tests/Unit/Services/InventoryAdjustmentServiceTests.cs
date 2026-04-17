@@ -3,6 +3,7 @@ using MassTransit;
 using Moq;
 using Warehouse.Common.Models;
 using Warehouse.Common.Workflow;
+using Warehouse.Infrastructure.Correlation;
 using Warehouse.Inventory.API.Services.Stock;
 using Warehouse.Inventory.API.Tests.Fixtures;
 using Warehouse.Inventory.API.Workflow.Adjustment;
@@ -21,6 +22,7 @@ namespace Warehouse.Inventory.API.Tests.Unit.Services;
 public sealed class InventoryAdjustmentServiceTests : InventoryTestBase
 {
     private Mock<IPublishEndpoint> _mockPublishEndpoint = null!;
+    private Mock<ICorrelationIdAccessor> _mockCorrelationIdAccessor = null!;
     private InventoryAdjustmentService _sut = null!;
 
     [SetUp]
@@ -28,8 +30,9 @@ public sealed class InventoryAdjustmentServiceTests : InventoryTestBase
     {
         base.SetUp();
         _mockPublishEndpoint = new Mock<IPublishEndpoint>();
+        _mockCorrelationIdAccessor = new Mock<ICorrelationIdAccessor>();
         IWorkflowEngine<InventoryAdjustment> workflowEngine = CreateAdjustmentWorkflowEngine();
-        _sut = new InventoryAdjustmentService(Context, Mapper, _mockPublishEndpoint.Object, workflowEngine);
+        _sut = new InventoryAdjustmentService(Context, Mapper, _mockPublishEndpoint.Object, _mockCorrelationIdAccessor.Object, workflowEngine);
     }
 
     /// <summary>

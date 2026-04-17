@@ -2,6 +2,7 @@ using FluentAssertions;
 using MassTransit;
 using Moq;
 using Warehouse.Common.Enums;
+using Warehouse.Infrastructure.Correlation;
 using Warehouse.Common.Models;
 using Warehouse.Purchasing.API.Interfaces;
 using Warehouse.Purchasing.API.Services;
@@ -23,6 +24,7 @@ namespace Warehouse.Purchasing.API.Tests.Unit.Services;
 public sealed class SupplierReturnServiceTests : PurchasingTestBase
 {
     private Mock<IPublishEndpoint> _mockPublishEndpoint = null!;
+    private Mock<ICorrelationIdAccessor> _mockCorrelationIdAccessor = null!;
     private Mock<IPurchaseEventService> _mockEventService = null!;
     private SupplierReturnService _sut = null!;
 
@@ -31,8 +33,9 @@ public sealed class SupplierReturnServiceTests : PurchasingTestBase
     {
         base.SetUp();
         _mockPublishEndpoint = new Mock<IPublishEndpoint>();
+        _mockCorrelationIdAccessor = new Mock<ICorrelationIdAccessor>();
         _mockEventService = new Mock<IPurchaseEventService>();
-        _sut = new SupplierReturnService(Context, Mapper, _mockPublishEndpoint.Object, _mockEventService.Object);
+        _sut = new SupplierReturnService(Context, Mapper, _mockPublishEndpoint.Object, _mockCorrelationIdAccessor.Object, _mockEventService.Object);
     }
 
     [Test]

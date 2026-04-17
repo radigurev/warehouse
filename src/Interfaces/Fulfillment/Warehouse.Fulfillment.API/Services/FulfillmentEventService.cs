@@ -6,6 +6,7 @@ using Warehouse.Fulfillment.API.Interfaces;
 using Warehouse.Fulfillment.API.Services.Base;
 using Warehouse.Fulfillment.DBModel;
 using Warehouse.Fulfillment.DBModel.Models;
+using Warehouse.Infrastructure.Correlation;
 using Warehouse.ServiceModel.DTOs.Fulfillment;
 using Warehouse.ServiceModel.Events;
 using Warehouse.ServiceModel.Requests.Fulfillment;
@@ -20,6 +21,7 @@ namespace Warehouse.Fulfillment.API.Services;
 public sealed class FulfillmentEventService : BaseFulfillmentEntityService, IFulfillmentEventService
 {
     private readonly IPublishEndpoint _publishEndpoint;
+    private readonly ICorrelationIdAccessor _correlationIdAccessor;
     private readonly ILogger<FulfillmentEventService> _logger;
 
     /// <summary>
@@ -29,10 +31,12 @@ public sealed class FulfillmentEventService : BaseFulfillmentEntityService, IFul
         FulfillmentDbContext context,
         IMapper mapper,
         IPublishEndpoint publishEndpoint,
+        ICorrelationIdAccessor correlationIdAccessor,
         ILogger<FulfillmentEventService> logger)
         : base(context, mapper)
     {
         _publishEndpoint = publishEndpoint;
+        _correlationIdAccessor = correlationIdAccessor;
         _logger = logger;
     }
 
@@ -62,7 +66,7 @@ public sealed class FulfillmentEventService : BaseFulfillmentEntityService, IFul
 
         try
         {
-            await _publishEndpoint.Publish(new FulfillmentEventOccurredEvent
+            await _publishEndpoint.PublishWithCorrelationAsync(new FulfillmentEventOccurredEvent
             {
                 EventType = eventType,
                 EntityType = entityType,
@@ -72,7 +76,7 @@ public sealed class FulfillmentEventService : BaseFulfillmentEntityService, IFul
                 Payload = payload,
                 CustomerName = customerName,
                 DocumentNumber = documentNumber
-            }, cancellationToken).ConfigureAwait(false);
+            }, _correlationIdAccessor, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {

@@ -10,6 +10,7 @@ using Warehouse.Auth.DBModel.Models;
 using Warehouse.Common.Models;
 using Warehouse.Infrastructure.Authorization;
 using Warehouse.ServiceModel.DTOs.Auth;
+using Warehouse.Infrastructure.Correlation;
 using Warehouse.ServiceModel.Events;
 using Warehouse.ServiceModel.Requests.Auth;
 using Warehouse.ServiceModel.Responses;
@@ -30,6 +31,7 @@ public sealed class RoleService : IRoleService
     private readonly IMapper _mapper;
     private readonly IDistributedCache _cache;
     private readonly IPublishEndpoint _publishEndpoint;
+    private readonly ICorrelationIdAccessor _correlationIdAccessor;
     private readonly ILogger<RoleService> _logger;
 
     /// <summary>
@@ -41,6 +43,7 @@ public sealed class RoleService : IRoleService
         IMapper mapper,
         IDistributedCache cache,
         IPublishEndpoint publishEndpoint,
+        ICorrelationIdAccessor correlationIdAccessor,
         ILogger<RoleService> logger)
     {
         _context = context;
@@ -48,6 +51,7 @@ public sealed class RoleService : IRoleService
         _mapper = mapper;
         _cache = cache;
         _publishEndpoint = publishEndpoint;
+        _correlationIdAccessor = correlationIdAccessor;
         _logger = logger;
     }
 
@@ -293,11 +297,11 @@ public sealed class RoleService : IRoleService
 
             try
             {
-                await _publishEndpoint.Publish(new UserPermissionsChangedEvent
+                await _publishEndpoint.PublishWithCorrelationAsync(new UserPermissionsChangedEvent
                 {
                     UserId = userId,
                     OccurredAt = DateTime.UtcNow
-                }, cancellationToken).ConfigureAwait(false);
+                }, _correlationIdAccessor, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

@@ -4,7 +4,7 @@ namespace Warehouse.ServiceModel.Events;
 /// Published when a supplier return is confirmed.
 /// Event naming: Purchasing.SupplierReturn.Completed.
 /// </summary>
-public sealed record SupplierReturnCompletedEvent
+public sealed record SupplierReturnCompletedEvent : ICorrelatedEvent
 {
     /// <summary>
     /// Gets the supplier return ID.
@@ -35,6 +35,11 @@ public sealed record SupplierReturnCompletedEvent
     /// Gets the collection of return lines.
     /// </summary>
     public required IReadOnlyList<SupplierReturnCompletedLine> Lines { get; init; }
+
+    /// <summary>
+    /// Gets the correlation ID from the originating HTTP request.
+    /// </summary>
+    public string? CorrelationId { get; set; }
 }
 
 /// <summary>

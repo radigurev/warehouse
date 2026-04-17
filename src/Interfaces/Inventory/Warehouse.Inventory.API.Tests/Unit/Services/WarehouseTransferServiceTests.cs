@@ -3,6 +3,7 @@ using MassTransit;
 using Moq;
 using Warehouse.Common.Models;
 using Warehouse.Common.Workflow;
+using Warehouse.Infrastructure.Correlation;
 using Warehouse.Inventory.API.Services.Warehouse;
 using Warehouse.Inventory.API.Tests.Fixtures;
 using Warehouse.Inventory.API.Workflow.Transfer;
@@ -21,6 +22,7 @@ namespace Warehouse.Inventory.API.Tests.Unit.Services;
 public sealed class WarehouseTransferServiceTests : InventoryTestBase
 {
     private Mock<IPublishEndpoint> _mockPublishEndpoint = null!;
+    private Mock<ICorrelationIdAccessor> _mockCorrelationIdAccessor = null!;
     private WarehouseTransferService _sut = null!;
 
     [SetUp]
@@ -28,8 +30,9 @@ public sealed class WarehouseTransferServiceTests : InventoryTestBase
     {
         base.SetUp();
         _mockPublishEndpoint = new Mock<IPublishEndpoint>();
+        _mockCorrelationIdAccessor = new Mock<ICorrelationIdAccessor>();
         IWorkflowEngine<WarehouseTransfer> workflowEngine = CreateTransferWorkflowEngine();
-        _sut = new WarehouseTransferService(Context, Mapper, _mockPublishEndpoint.Object, workflowEngine);
+        _sut = new WarehouseTransferService(Context, Mapper, _mockPublishEndpoint.Object, _mockCorrelationIdAccessor.Object, workflowEngine);
     }
 
     /// <summary>

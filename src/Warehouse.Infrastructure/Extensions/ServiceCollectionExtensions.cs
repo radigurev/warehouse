@@ -12,9 +12,11 @@ using Microsoft.Extensions.Http.Resilience;
 using Microsoft.FeatureManagement;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Warehouse.Infrastructure.Authorization;
 using Warehouse.Infrastructure.Caching;
 using Warehouse.Infrastructure.Configuration;
+using Warehouse.Infrastructure.Correlation;
 using Warehouse.Infrastructure.Http;
 using Warehouse.Infrastructure.Messaging;
 using Warehouse.Infrastructure.Sequences;
@@ -199,6 +201,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddHttpContextAccessor();
         services.AddTransient<CorrelationIdDelegatingHandler>();
+        services.TryAddScoped<ICorrelationIdAccessor, CorrelationIdAccessor>();
 
         return services;
     }

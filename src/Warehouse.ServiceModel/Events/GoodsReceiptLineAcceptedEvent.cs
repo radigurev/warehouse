@@ -4,7 +4,7 @@ namespace Warehouse.ServiceModel.Events;
 /// Published when a quarantined goods receipt line is resolved to Accepted.
 /// Event naming: Purchasing.GoodsReceiptLine.Accepted.
 /// </summary>
-public sealed record GoodsReceiptLineAcceptedEvent
+public sealed record GoodsReceiptLineAcceptedEvent : ICorrelatedEvent
 {
     /// <summary>
     /// Gets the goods receipt ID.
@@ -70,4 +70,9 @@ public sealed record GoodsReceiptLineAcceptedEvent
     /// Gets the UTC timestamp when the line was accepted.
     /// </summary>
     public required DateTime AcceptedAtUtc { get; init; }
+
+    /// <summary>
+    /// Gets the correlation ID from the originating HTTP request.
+    /// </summary>
+    public string? CorrelationId { get; set; }
 }

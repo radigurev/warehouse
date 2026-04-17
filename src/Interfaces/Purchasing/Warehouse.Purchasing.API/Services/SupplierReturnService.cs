@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using NLog;
 using Warehouse.Common.Enums;
 using Warehouse.Common.Models;
+using Warehouse.Infrastructure.Correlation;
 using Warehouse.Purchasing.API.Interfaces;
 using Warehouse.Purchasing.API.Services.Base;
 using Warehouse.Purchasing.DBModel;
@@ -23,15 +24,17 @@ public sealed class SupplierReturnService : BasePurchasingEntityService, ISuppli
 {
     private static readonly NLog.Logger Logger = LogManager.GetCurrentClassLogger();
     private readonly IPublishEndpoint _publishEndpoint;
+    private readonly ICorrelationIdAccessor _correlationIdAccessor;
     private readonly IPurchaseEventService _eventService;
 
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
-    public SupplierReturnService(PurchasingDbContext context, IMapper mapper, IPublishEndpoint publishEndpoint, IPurchaseEventService eventService)
+    public SupplierReturnService(PurchasingDbContext context, IMapper mapper, IPublishEndpoint publishEndpoint, ICorrelationIdAccessor correlationIdAccessor, IPurchaseEventService eventService)
         : base(context, mapper)
     {
         _publishEndpoint = publishEndpoint;
+        _correlationIdAccessor = correlationIdAccessor;
         _eventService = eventService;
     }
 
@@ -113,7 +116,7 @@ public sealed class SupplierReturnService : BasePurchasingEntityService, ISuppli
 
         try
         {
-            await _publishEndpoint.Publish(new SupplierReturnCompletedEvent
+            await _publishEndpoint.PublishWithCorrelationAsync(new SupplierReturnCompletedEvent
             {
                 SupplierReturnId = sr.Id, SupplierReturnNumber = sr.ReturnNumber, SupplierId = sr.SupplierId,
                 ConfirmedByUserId = userId, ConfirmedAtUtc = sr.ConfirmedAtUtc!.Value,
@@ -122,7 +125,7 @@ public sealed class SupplierReturnService : BasePurchasingEntityService, ISuppli
                     SupplierReturnLineId = l.Id, ProductId = l.ProductId, WarehouseId = l.WarehouseId,
                     LocationId = l.LocationId, Quantity = l.Quantity, BatchId = l.BatchId
                 }).ToList()
-            }, cancellationToken).ConfigureAwait(false);
+            }, _correlationIdAccessor, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) { Logger.Warn(ex, "Failed to publish {EventType} event", "SupplierReturnCompleted"); }
 

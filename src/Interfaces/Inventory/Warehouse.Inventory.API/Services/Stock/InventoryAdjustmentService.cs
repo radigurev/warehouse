@@ -6,6 +6,7 @@ using Warehouse.Common.Enums;
 using Warehouse.Common.Models;
 using Warehouse.Common.Workflow;
 using Warehouse.GenericFiltering;
+using Warehouse.Infrastructure.Correlation;
 using Warehouse.Inventory.API.Interfaces.Stock;
 using Warehouse.Inventory.API.Services.Base;
 using Warehouse.Inventory.DBModel;
@@ -25,6 +26,7 @@ namespace Warehouse.Inventory.API.Services.Stock;
 public sealed class InventoryAdjustmentService : BaseInventoryEntityService, IInventoryAdjustmentService
 {
     private readonly IPublishEndpoint _publishEndpoint;
+    private readonly ICorrelationIdAccessor _correlationIdAccessor;
     private readonly IWorkflowEngine<InventoryAdjustment> _workflowEngine;
 
     /// <summary>
@@ -34,10 +36,12 @@ public sealed class InventoryAdjustmentService : BaseInventoryEntityService, IIn
         InventoryDbContext context,
         IMapper mapper,
         IPublishEndpoint publishEndpoint,
+        ICorrelationIdAccessor correlationIdAccessor,
         IWorkflowEngine<InventoryAdjustment> workflowEngine)
         : base(context, mapper)
     {
         _publishEndpoint = publishEndpoint;
+        _correlationIdAccessor = correlationIdAccessor;
         _workflowEngine = workflowEngine;
     }
 
@@ -203,21 +207,21 @@ public sealed class InventoryAdjustmentService : BaseInventoryEntityService, IIn
 
         try
         {
-            await _publishEndpoint.Publish(new InventoryAdjustmentAppliedEvent
+            await _publishEndpoint.PublishWithCorrelationAsync(new InventoryAdjustmentAppliedEvent
             {
                 AdjustmentId = adjustment.Id,
                 AppliedByUserId = userId,
                 AppliedAt = adjustment.AppliedAtUtc!.Value
-            }, cancellationToken).ConfigureAwait(false);
+            }, _correlationIdAccessor, cancellationToken).ConfigureAwait(false);
 
-            await _publishEndpoint.Publish(new InventoryEventOccurredEvent
+            await _publishEndpoint.PublishWithCorrelationAsync(new InventoryEventOccurredEvent
             {
                 EventType = "AdjustmentApplied",
                 EntityType = "InventoryAdjustment",
                 EntityId = adjustment.Id,
                 UserId = userId,
                 OccurredAtUtc = adjustment.AppliedAtUtc!.Value
-            }, cancellationToken).ConfigureAwait(false);
+            }, _correlationIdAccessor, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception)
         {

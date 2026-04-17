@@ -5,7 +5,7 @@ namespace Warehouse.ServiceModel.Events;
 /// <summary>
 /// Published when a stock movement is successfully recorded.
 /// </summary>
-public sealed record StockMovementRecordedEvent
+public sealed record StockMovementRecordedEvent : ICorrelatedEvent
 {
     /// <summary>
     /// Gets the database-assigned movement identifier.
@@ -41,4 +41,9 @@ public sealed record StockMovementRecordedEvent
     /// Gets the UTC timestamp when the movement was recorded.
     /// </summary>
     public required DateTime Timestamp { get; init; }
+
+    /// <summary>
+    /// Gets the correlation ID from the originating HTTP request.
+    /// </summary>
+    public string? CorrelationId { get; set; }
 }

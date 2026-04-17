@@ -4,7 +4,7 @@ namespace Warehouse.ServiceModel.Events;
 /// Published when a goods receipt is completed with at least one accepted line.
 /// Event naming: Purchasing.GoodsReceipt.Completed.
 /// </summary>
-public sealed record GoodsReceiptCompletedEvent
+public sealed record GoodsReceiptCompletedEvent : ICorrelatedEvent
 {
     /// <summary>
     /// Gets the goods receipt ID.
@@ -50,6 +50,11 @@ public sealed record GoodsReceiptCompletedEvent
     /// Gets the collection of accepted receipt lines.
     /// </summary>
     public required IReadOnlyList<GoodsReceiptCompletedLine> Lines { get; init; }
+
+    /// <summary>
+    /// Gets the correlation ID from the originating HTTP request.
+    /// </summary>
+    public string? CorrelationId { get; set; }
 }
 
 /// <summary>

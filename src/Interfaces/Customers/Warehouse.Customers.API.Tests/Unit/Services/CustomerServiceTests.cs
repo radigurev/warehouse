@@ -1,6 +1,7 @@
 using FluentAssertions;
 using MassTransit;
 using Moq;
+using Warehouse.Infrastructure.Correlation;
 using Warehouse.Common.Models;
 using Warehouse.Customers.API.Services;
 using Warehouse.Customers.API.Tests.Fixtures;
@@ -19,6 +20,7 @@ namespace Warehouse.Customers.API.Tests.Unit.Services;
 public sealed class CustomerServiceTests : CustomerTestBase
 {
     private Mock<IPublishEndpoint> _mockPublishEndpoint = null!;
+    private Mock<ICorrelationIdAccessor> _mockCorrelationIdAccessor = null!;
     private CustomerService _sut = null!;
 
     [SetUp]
@@ -26,7 +28,8 @@ public sealed class CustomerServiceTests : CustomerTestBase
     {
         base.SetUp();
         _mockPublishEndpoint = new Mock<IPublishEndpoint>();
-        _sut = new CustomerService(Context, Mapper, _mockPublishEndpoint.Object);
+        _mockCorrelationIdAccessor = new Mock<ICorrelationIdAccessor>();
+        _sut = new CustomerService(Context, Mapper, _mockPublishEndpoint.Object, _mockCorrelationIdAccessor.Object);
     }
 
     [Test]

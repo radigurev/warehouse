@@ -8,6 +8,7 @@ using Warehouse.Fulfillment.API.Interfaces;
 using Warehouse.Fulfillment.API.Services.Base;
 using Warehouse.Fulfillment.DBModel;
 using Warehouse.Fulfillment.DBModel.Models;
+using Warehouse.Infrastructure.Correlation;
 using Warehouse.ServiceModel.DTOs.Fulfillment;
 using Warehouse.ServiceModel.Events;
 using Warehouse.ServiceModel.Requests.Fulfillment;
@@ -23,15 +24,17 @@ public sealed class PickListService : BaseFulfillmentEntityService, IPickListSer
 {
     private static readonly NLog.Logger Logger = LogManager.GetCurrentClassLogger();
     private readonly IPublishEndpoint _publishEndpoint;
+    private readonly ICorrelationIdAccessor _correlationIdAccessor;
     private readonly IFulfillmentEventService _eventService;
 
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
-    public PickListService(FulfillmentDbContext context, IMapper mapper, IPublishEndpoint publishEndpoint, IFulfillmentEventService eventService)
+    public PickListService(FulfillmentDbContext context, IMapper mapper, IPublishEndpoint publishEndpoint, ICorrelationIdAccessor correlationIdAccessor, IFulfillmentEventService eventService)
         : base(context, mapper)
     {
         _publishEndpoint = publishEndpoint;
+        _correlationIdAccessor = correlationIdAccessor;
         _eventService = eventService;
     }
 
@@ -165,13 +168,13 @@ public sealed class PickListService : BaseFulfillmentEntityService, IPickListSer
     {
         try
         {
-            await _publishEndpoint.Publish(new StockReservationRequestedEvent
+            await _publishEndpoint.PublishWithCorrelationAsync(new StockReservationRequestedEvent
             {
                 PickListId = pickList.Id, PickListNumber = pickList.PickListNumber,
                 SalesOrderId = so.Id, SalesOrderNumber = so.OrderNumber,
                 RequestedByUserId = userId, RequestedAtUtc = DateTime.UtcNow,
                 Lines = pickList.Lines.Select(l => new StockReservationLine { PickListLineId = l.Id, ProductId = l.ProductId, WarehouseId = l.WarehouseId, LocationId = l.LocationId, Quantity = l.RequestedQuantity }).ToList()
-            }, cancellationToken).ConfigureAwait(false);
+            }, _correlationIdAccessor, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) { Logger.Warn(ex, "Failed to publish {EventType} event", "StockReservationRequested"); }
     }
@@ -181,12 +184,12 @@ public sealed class PickListService : BaseFulfillmentEntityService, IPickListSer
         decimal releasedQty = line.RequestedQuantity - (line.ActualQuantity ?? 0);
         try
         {
-            await _publishEndpoint.Publish(new StockReservationReleasedEvent
+            await _publishEndpoint.PublishWithCorrelationAsync(new StockReservationReleasedEvent
             {
                 PickListId = pickList.Id, PickListNumber = pickList.PickListNumber,
                 SalesOrderId = pickList.SalesOrderId, ReleasedByUserId = userId, ReleasedAtUtc = DateTime.UtcNow,
                 Lines = [new StockReservationLine { PickListLineId = line.Id, ProductId = line.ProductId, WarehouseId = line.WarehouseId, LocationId = line.LocationId, Quantity = releasedQty }]
-            }, cancellationToken).ConfigureAwait(false);
+            }, _correlationIdAccessor, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) { Logger.Warn(ex, "Failed to publish {EventType} event", "StockReservationReleased"); }
     }
@@ -196,12 +199,12 @@ public sealed class PickListService : BaseFulfillmentEntityService, IPickListSer
         if (unpickedLines.Count == 0) return;
         try
         {
-            await _publishEndpoint.Publish(new StockReservationReleasedEvent
+            await _publishEndpoint.PublishWithCorrelationAsync(new StockReservationReleasedEvent
             {
                 PickListId = pickList.Id, PickListNumber = pickList.PickListNumber,
                 SalesOrderId = pickList.SalesOrderId, ReleasedByUserId = userId, ReleasedAtUtc = DateTime.UtcNow,
                 Lines = unpickedLines.Select(l => new StockReservationLine { PickListLineId = l.Id, ProductId = l.ProductId, WarehouseId = l.WarehouseId, LocationId = l.LocationId, Quantity = l.RequestedQuantity }).ToList()
-            }, cancellationToken).ConfigureAwait(false);
+            }, _correlationIdAccessor, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) { Logger.Warn(ex, "Failed to publish {EventType} event", "StockReservationReleased"); }
     }

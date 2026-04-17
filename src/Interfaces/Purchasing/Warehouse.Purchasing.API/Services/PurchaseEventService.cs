@@ -7,6 +7,7 @@ using Warehouse.Purchasing.API.Services.Base;
 using Warehouse.Purchasing.DBModel;
 using Warehouse.Purchasing.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Purchasing;
+using Warehouse.Infrastructure.Correlation;
 using Warehouse.ServiceModel.Events;
 using Warehouse.ServiceModel.Requests.Purchasing;
 using Warehouse.ServiceModel.Responses;
@@ -20,6 +21,7 @@ namespace Warehouse.Purchasing.API.Services;
 public sealed class PurchaseEventService : BasePurchasingEntityService, IPurchaseEventService
 {
     private readonly IPublishEndpoint _publishEndpoint;
+    private readonly ICorrelationIdAccessor _correlationIdAccessor;
     private readonly ILogger<PurchaseEventService> _logger;
 
     /// <summary>
@@ -29,10 +31,12 @@ public sealed class PurchaseEventService : BasePurchasingEntityService, IPurchas
         PurchasingDbContext context,
         IMapper mapper,
         IPublishEndpoint publishEndpoint,
+        ICorrelationIdAccessor correlationIdAccessor,
         ILogger<PurchaseEventService> logger)
         : base(context, mapper)
     {
         _publishEndpoint = publishEndpoint;
+        _correlationIdAccessor = correlationIdAccessor;
         _logger = logger;
     }
 
@@ -62,7 +66,7 @@ public sealed class PurchaseEventService : BasePurchasingEntityService, IPurchas
 
         try
         {
-            await _publishEndpoint.Publish(new PurchaseEventOccurredEvent
+            await _publishEndpoint.PublishWithCorrelationAsync(new PurchaseEventOccurredEvent
             {
                 EventType = eventType,
                 EntityType = entityType,
@@ -72,7 +76,7 @@ public sealed class PurchaseEventService : BasePurchasingEntityService, IPurchas
                 Payload = payload,
                 SupplierName = supplierName,
                 DocumentNumber = documentNumber
-            }, cancellationToken).ConfigureAwait(false);
+            }, _correlationIdAccessor, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {

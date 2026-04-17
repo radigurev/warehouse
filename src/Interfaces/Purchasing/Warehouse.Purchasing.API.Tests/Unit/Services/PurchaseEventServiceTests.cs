@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Warehouse.Common.Models;
+using Warehouse.Infrastructure.Correlation;
 using Warehouse.Purchasing.API.Services;
 using Warehouse.Purchasing.API.Tests.Fixtures;
 using Warehouse.Purchasing.DBModel.Models;
@@ -23,6 +24,7 @@ public sealed class PurchaseEventServiceTests : PurchasingTestBase
 {
     private PurchaseEventService _sut = null!;
     private Mock<IPublishEndpoint> _mockPublishEndpoint = null!;
+    private Mock<ICorrelationIdAccessor> _mockCorrelationIdAccessor = null!;
     private Mock<ILogger<PurchaseEventService>> _mockLogger = null!;
 
     [SetUp]
@@ -30,8 +32,9 @@ public sealed class PurchaseEventServiceTests : PurchasingTestBase
     {
         base.SetUp();
         _mockPublishEndpoint = new Mock<IPublishEndpoint>();
+        _mockCorrelationIdAccessor = new Mock<ICorrelationIdAccessor>();
         _mockLogger = new Mock<ILogger<PurchaseEventService>>();
-        _sut = new PurchaseEventService(Context, Mapper, _mockPublishEndpoint.Object, _mockLogger.Object);
+        _sut = new PurchaseEventService(Context, Mapper, _mockPublishEndpoint.Object, _mockCorrelationIdAccessor.Object, _mockLogger.Object);
     }
 
     [Test]

@@ -6,6 +6,7 @@ using Warehouse.Common.Models;
 using Warehouse.Auth.DBModel;
 using Warehouse.Auth.DBModel.Models;
 using Warehouse.ServiceModel.DTOs.Auth;
+using Warehouse.Infrastructure.Correlation;
 using Warehouse.ServiceModel.Events;
 using Warehouse.ServiceModel.Responses;
 
@@ -20,6 +21,7 @@ public sealed class AuditService : IAuditService
     private readonly AuthDbContext _context;
     private readonly IMapper _mapper;
     private readonly IPublishEndpoint _publishEndpoint;
+    private readonly ICorrelationIdAccessor _correlationIdAccessor;
     private readonly ILogger<AuditService> _logger;
 
     /// <summary>
@@ -29,11 +31,13 @@ public sealed class AuditService : IAuditService
         AuthDbContext context,
         IMapper mapper,
         IPublishEndpoint publishEndpoint,
+        ICorrelationIdAccessor correlationIdAccessor,
         ILogger<AuditService> logger)
     {
         _context = context;
         _mapper = mapper;
         _publishEndpoint = publishEndpoint;
+        _correlationIdAccessor = correlationIdAccessor;
         _logger = logger;
     }
 
@@ -61,7 +65,7 @@ public sealed class AuditService : IAuditService
 
         try
         {
-            await _publishEndpoint.Publish(new AuthAuditLoggedEvent
+            await _publishEndpoint.PublishWithCorrelationAsync(new AuthAuditLoggedEvent
             {
                 UserId = userId,
                 Action = action,
@@ -70,7 +74,7 @@ public sealed class AuditService : IAuditService
                 IpAddress = ipAddress,
                 Username = username,
                 OccurredAtUtc = entry.CreatedAt
-            }, cancellationToken).ConfigureAwait(false);
+            }, _correlationIdAccessor, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {

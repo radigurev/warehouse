@@ -4,7 +4,7 @@ namespace Warehouse.ServiceModel.Events;
 /// Published by Inventory.API when an inventory operations event occurs.
 /// Consumed by EventLog service for centralized operations event logging.
 /// </summary>
-public sealed record InventoryEventOccurredEvent
+public sealed record InventoryEventOccurredEvent : ICorrelatedEvent
 {
     /// <summary>
     /// Gets the event type (e.g., StockMovementRecorded, AdjustmentApplied, TransferCompleted).
@@ -49,5 +49,5 @@ public sealed record InventoryEventOccurredEvent
     /// <summary>
     /// Gets the correlation ID from the originating HTTP request.
     /// </summary>
-    public string? CorrelationId { get; init; }
+    public string? CorrelationId { get; set; }
 }

@@ -4,7 +4,7 @@ namespace Warehouse.ServiceModel.Events;
 /// Published when a pick list is cancelled or a short pick releases excess reservation.
 /// Event naming: Fulfillment.StockReservation.Released.
 /// </summary>
-public sealed record StockReservationReleasedEvent
+public sealed record StockReservationReleasedEvent : ICorrelatedEvent
 {
     /// <summary>
     /// Gets the pick list ID.
@@ -35,4 +35,9 @@ public sealed record StockReservationReleasedEvent
     /// Gets the collection of released reservation lines.
     /// </summary>
     public required IReadOnlyList<StockReservationLine> Lines { get; init; }
+
+    /// <summary>
+    /// Gets the correlation ID from the originating HTTP request.
+    /// </summary>
+    public string? CorrelationId { get; set; }
 }

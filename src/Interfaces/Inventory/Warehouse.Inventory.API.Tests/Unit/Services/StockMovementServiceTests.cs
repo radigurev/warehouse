@@ -5,6 +5,7 @@ using Moq;
 using Warehouse.Common.Enums;
 using Warehouse.Common.Models;
 using Warehouse.Common.Validation;
+using Warehouse.Infrastructure.Correlation;
 using Warehouse.Inventory.API.Services.Stock;
 using Warehouse.Inventory.API.Tests.Fixtures;
 using Warehouse.Inventory.API.Validators.Chain;
@@ -24,6 +25,7 @@ namespace Warehouse.Inventory.API.Tests.Unit.Services;
 public sealed class StockMovementServiceTests : InventoryTestBase
 {
     private Mock<IPublishEndpoint> _mockPublishEndpoint = null!;
+    private Mock<ICorrelationIdAccessor> _mockCorrelationIdAccessor = null!;
     private StockMovementService _sut = null!;
 
     [SetUp]
@@ -31,6 +33,7 @@ public sealed class StockMovementServiceTests : InventoryTestBase
     {
         base.SetUp();
         _mockPublishEndpoint = new Mock<IPublishEndpoint>();
+        _mockCorrelationIdAccessor = new Mock<ICorrelationIdAccessor>();
         ValidationChain<RecordStockMovementRequest> validationChain = new(new IChainValidator<RecordStockMovementRequest>[]
         {
             new ProductExistsValidator(Context),
@@ -38,7 +41,7 @@ public sealed class StockMovementServiceTests : InventoryTestBase
             new WarehouseExistsValidator(Context),
             new SufficientStockValidator(Context)
         });
-        _sut = new StockMovementService(Context, Mapper, _mockPublishEndpoint.Object, validationChain);
+        _sut = new StockMovementService(Context, Mapper, _mockPublishEndpoint.Object, _mockCorrelationIdAccessor.Object, validationChain);
     }
 
     [Test]

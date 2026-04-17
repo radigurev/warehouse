@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using NLog;
 using Warehouse.Common.Enums;
 using Warehouse.Common.Models;
+using Warehouse.Infrastructure.Correlation;
 using Warehouse.Purchasing.API.Interfaces;
 using Warehouse.Purchasing.API.Services.Base;
 using Warehouse.Purchasing.DBModel;
@@ -22,15 +23,17 @@ public sealed class ReceivingInspectionService : BasePurchasingEntityService, IR
 {
     private static readonly NLog.Logger Logger = LogManager.GetCurrentClassLogger();
     private readonly IPublishEndpoint _publishEndpoint;
+    private readonly ICorrelationIdAccessor _correlationIdAccessor;
     private readonly IPurchaseEventService _eventService;
 
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
-    public ReceivingInspectionService(PurchasingDbContext context, IMapper mapper, IPublishEndpoint publishEndpoint, IPurchaseEventService eventService)
+    public ReceivingInspectionService(PurchasingDbContext context, IMapper mapper, IPublishEndpoint publishEndpoint, ICorrelationIdAccessor correlationIdAccessor, IPurchaseEventService eventService)
         : base(context, mapper)
     {
         _publishEndpoint = publishEndpoint;
+        _correlationIdAccessor = correlationIdAccessor;
         _eventService = eventService;
     }
 
@@ -83,7 +86,7 @@ public sealed class ReceivingInspectionService : BasePurchasingEntityService, IR
         {
             try
             {
-                await _publishEndpoint.Publish(new GoodsReceiptLineAcceptedEvent
+                await _publishEndpoint.PublishWithCorrelationAsync(new GoodsReceiptLineAcceptedEvent
                 {
                     GoodsReceiptId = receiptId, GoodsReceiptLineId = lineId,
                     ProductId = line.PurchaseOrderLine?.ProductId ?? 0,
@@ -93,7 +96,7 @@ public sealed class ReceivingInspectionService : BasePurchasingEntityService, IR
                     PurchaseOrderNumber = line.GoodsReceipt.PurchaseOrder.OrderNumber,
                     GoodsReceiptNumber = line.GoodsReceipt.ReceiptNumber,
                     AcceptedByUserId = userId, AcceptedAtUtc = DateTime.UtcNow
-                }, cancellationToken).ConfigureAwait(false);
+                }, _correlationIdAccessor, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex) { Logger.Warn(ex, "Failed to publish {EventType} event", "GoodsReceiptLineAccepted"); }
         }

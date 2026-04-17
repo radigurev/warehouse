@@ -4,7 +4,7 @@ namespace Warehouse.ServiceModel.Events;
 /// Published by Fulfillment.API when a fulfillment operations event is recorded.
 /// Consumed by EventLog service for centralized operations event logging.
 /// </summary>
-public sealed record FulfillmentEventOccurredEvent
+public sealed record FulfillmentEventOccurredEvent : ICorrelatedEvent
 {
     /// <summary>
     /// Gets the event type (e.g., SalesOrderCreated, ShipmentDispatched).
@@ -49,5 +49,5 @@ public sealed record FulfillmentEventOccurredEvent
     /// <summary>
     /// Gets the correlation ID from the originating HTTP request.
     /// </summary>
-    public string? CorrelationId { get; init; }
+    public string? CorrelationId { get; set; }
 }

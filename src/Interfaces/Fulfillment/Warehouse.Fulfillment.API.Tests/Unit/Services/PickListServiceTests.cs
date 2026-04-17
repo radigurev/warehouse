@@ -6,6 +6,7 @@ using Warehouse.Fulfillment.API.Interfaces;
 using Warehouse.Fulfillment.API.Services;
 using Warehouse.Fulfillment.API.Tests.Fixtures;
 using Warehouse.Fulfillment.DBModel.Models;
+using Warehouse.Infrastructure.Correlation;
 using Warehouse.ServiceModel.DTOs.Fulfillment;
 using Warehouse.ServiceModel.Events;
 using Warehouse.ServiceModel.Requests.Fulfillment;
@@ -22,6 +23,7 @@ namespace Warehouse.Fulfillment.API.Tests.Unit.Services;
 public sealed class PickListServiceTests : FulfillmentTestBase
 {
     private Mock<IPublishEndpoint> _mockPublishEndpoint = null!;
+    private Mock<ICorrelationIdAccessor> _mockCorrelationIdAccessor = null!;
     private Mock<IFulfillmentEventService> _mockEventService = null!;
     private PickListService _sut = null!;
 
@@ -30,8 +32,9 @@ public sealed class PickListServiceTests : FulfillmentTestBase
     {
         base.SetUp();
         _mockPublishEndpoint = new Mock<IPublishEndpoint>();
+        _mockCorrelationIdAccessor = new Mock<ICorrelationIdAccessor>();
         _mockEventService = new Mock<IFulfillmentEventService>();
-        _sut = new PickListService(Context, Mapper, _mockPublishEndpoint.Object, _mockEventService.Object);
+        _sut = new PickListService(Context, Mapper, _mockPublishEndpoint.Object, _mockCorrelationIdAccessor.Object, _mockEventService.Object);
     }
 
     [Test]

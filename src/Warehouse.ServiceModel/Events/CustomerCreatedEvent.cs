@@ -3,7 +3,7 @@ namespace Warehouse.ServiceModel.Events;
 /// <summary>
 /// Published when a new customer is created.
 /// </summary>
-public sealed record CustomerCreatedEvent
+public sealed record CustomerCreatedEvent : ICorrelatedEvent
 {
     /// <summary>
     /// Gets the database-assigned customer identifier.
@@ -34,4 +34,9 @@ public sealed record CustomerCreatedEvent
     /// Gets the UTC timestamp when the customer was created.
     /// </summary>
     public required DateTime CreatedAt { get; init; }
+
+    /// <summary>
+    /// Gets the correlation ID from the originating HTTP request.
+    /// </summary>
+    public string? CorrelationId { get; set; }
 }

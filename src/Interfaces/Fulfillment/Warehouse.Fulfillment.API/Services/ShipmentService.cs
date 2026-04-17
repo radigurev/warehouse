@@ -9,6 +9,7 @@ using Warehouse.Fulfillment.API.Services.Base;
 using Warehouse.Fulfillment.DBModel;
 using Warehouse.Fulfillment.DBModel.Models;
 using Warehouse.Infrastructure.Caching;
+using Warehouse.Infrastructure.Correlation;
 using Warehouse.ServiceModel.DTOs.Fulfillment;
 using Warehouse.ServiceModel.Events;
 using Warehouse.ServiceModel.Requests.Fulfillment;
@@ -33,6 +34,7 @@ public sealed class ShipmentService : BaseFulfillmentEntityService, IShipmentSer
     };
 
     private readonly IPublishEndpoint _publishEndpoint;
+    private readonly ICorrelationIdAccessor _correlationIdAccessor;
     private readonly IFulfillmentEventService _eventService;
     private readonly INomenclatureResolver _nomenclatureResolver;
 
@@ -43,11 +45,13 @@ public sealed class ShipmentService : BaseFulfillmentEntityService, IShipmentSer
         FulfillmentDbContext context,
         IMapper mapper,
         IPublishEndpoint publishEndpoint,
+        ICorrelationIdAccessor correlationIdAccessor,
         IFulfillmentEventService eventService,
         INomenclatureResolver nomenclatureResolver)
         : base(context, mapper)
     {
         _publishEndpoint = publishEndpoint;
+        _correlationIdAccessor = correlationIdAccessor;
         _eventService = eventService;
         _nomenclatureResolver = nomenclatureResolver;
     }
@@ -179,13 +183,13 @@ public sealed class ShipmentService : BaseFulfillmentEntityService, IShipmentSer
     {
         try
         {
-            await _publishEndpoint.Publish(new ShipmentDispatchedEvent
+            await _publishEndpoint.PublishWithCorrelationAsync(new ShipmentDispatchedEvent
             {
                 ShipmentId = shipment.Id, ShipmentNumber = shipment.ShipmentNumber,
                 SalesOrderId = so.Id, SalesOrderNumber = so.OrderNumber,
                 WarehouseId = so.WarehouseId, DispatchedByUserId = userId, DispatchedAtUtc = shipment.DispatchedAtUtc,
                 Lines = shipment.Lines.Select(l => new ShipmentDispatchedLine { ShipmentLineId = l.Id, ProductId = l.ProductId, Quantity = l.Quantity, LocationId = l.LocationId, BatchId = l.BatchId }).ToList()
-            }, cancellationToken).ConfigureAwait(false);
+            }, _correlationIdAccessor, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) { Logger.Warn(ex, "Failed to publish {EventType} event", "ShipmentDispatched"); }
     }

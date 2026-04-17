@@ -3,7 +3,7 @@ namespace Warehouse.ServiceModel.Events;
 /// <summary>
 /// Published when an inter-warehouse transfer is completed.
 /// </summary>
-public sealed record WarehouseTransferCompletedEvent
+public sealed record WarehouseTransferCompletedEvent : ICorrelatedEvent
 {
     /// <summary>
     /// Gets the transfer identifier.
@@ -29,4 +29,9 @@ public sealed record WarehouseTransferCompletedEvent
     /// Gets the UTC timestamp when the transfer was completed.
     /// </summary>
     public required DateTime CompletedAt { get; init; }
+
+    /// <summary>
+    /// Gets the correlation ID from the originating HTTP request.
+    /// </summary>
+    public string? CorrelationId { get; set; }
 }

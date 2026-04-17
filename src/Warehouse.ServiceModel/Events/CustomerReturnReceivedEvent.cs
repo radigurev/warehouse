@@ -4,7 +4,7 @@ namespace Warehouse.ServiceModel.Events;
 /// Published when a customer return is physically received at the warehouse.
 /// Event naming: Fulfillment.CustomerReturn.Received.
 /// </summary>
-public sealed record CustomerReturnReceivedEvent
+public sealed record CustomerReturnReceivedEvent : ICorrelatedEvent
 {
     /// <summary>
     /// Gets the customer return ID.
@@ -40,4 +40,9 @@ public sealed record CustomerReturnReceivedEvent
     /// Gets the collection of received return lines.
     /// </summary>
     public required IReadOnlyList<CustomerReturnReceivedLine> Lines { get; init; }
+
+    /// <summary>
+    /// Gets the correlation ID from the originating HTTP request.
+    /// </summary>
+    public string? CorrelationId { get; set; }
 }

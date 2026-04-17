@@ -1,6 +1,6 @@
 # CHG-ENH-006 — Fix X-Correlation-ID Propagation Gaps
 
-> Status: Draft
+> Status: Implemented
 > Last updated: 2026-04-16
 > Owner: TBD
 > Priority: P1

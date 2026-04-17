@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Warehouse.Common.Models;
 using Warehouse.Common.Validation;
 using Warehouse.GenericFiltering;
+using Warehouse.Infrastructure.Correlation;
 using Warehouse.Inventory.API.Interfaces.Stock;
 using Warehouse.Inventory.API.Services.Base;
 using Warehouse.Inventory.DBModel;
@@ -22,6 +23,7 @@ namespace Warehouse.Inventory.API.Services.Stock;
 public sealed class StockMovementService : BaseInventoryEntityService, IStockMovementService
 {
     private readonly IPublishEndpoint _publishEndpoint;
+    private readonly ICorrelationIdAccessor _correlationIdAccessor;
     private readonly ValidationChain<RecordStockMovementRequest> _validationChain;
 
     /// <summary>
@@ -31,10 +33,12 @@ public sealed class StockMovementService : BaseInventoryEntityService, IStockMov
         InventoryDbContext context,
         IMapper mapper,
         IPublishEndpoint publishEndpoint,
+        ICorrelationIdAccessor correlationIdAccessor,
         ValidationChain<RecordStockMovementRequest> validationChain)
         : base(context, mapper)
     {
         _publishEndpoint = publishEndpoint;
+        _correlationIdAccessor = correlationIdAccessor;
         _validationChain = validationChain;
     }
 
@@ -56,7 +60,7 @@ public sealed class StockMovementService : BaseInventoryEntityService, IStockMov
 
         try
         {
-            await _publishEndpoint.Publish(new StockMovementRecordedEvent
+            await _publishEndpoint.PublishWithCorrelationAsync(new StockMovementRecordedEvent
             {
                 MovementId = movement.Id,
                 ProductId = movement.ProductId,
@@ -65,9 +69,9 @@ public sealed class StockMovementService : BaseInventoryEntityService, IStockMov
                 ReasonCode = movement.ReasonCode,
                 CreatedByUserId = userId,
                 Timestamp = movement.CreatedAtUtc
-            }, cancellationToken).ConfigureAwait(false);
+            }, _correlationIdAccessor, cancellationToken).ConfigureAwait(false);
 
-            await _publishEndpoint.Publish(new InventoryEventOccurredEvent
+            await _publishEndpoint.PublishWithCorrelationAsync(new InventoryEventOccurredEvent
             {
                 EventType = "StockMovementRecorded",
                 EntityType = "StockMovement",
@@ -76,7 +80,7 @@ public sealed class StockMovementService : BaseInventoryEntityService, IStockMov
                 OccurredAtUtc = movement.CreatedAtUtc,
                 WarehouseName = request.WarehouseId.ToString(),
                 ProductInfo = request.ProductId.ToString()
-            }, cancellationToken).ConfigureAwait(false);
+            }, _correlationIdAccessor, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception)
         {

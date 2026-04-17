@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using NLog;
 using Warehouse.Common.Enums;
 using Warehouse.Common.Models;
+using Warehouse.Infrastructure.Correlation;
 using Warehouse.Infrastructure.Sequences;
 using Warehouse.Purchasing.API.Interfaces;
 using Warehouse.Purchasing.API.Services.Base;
@@ -24,6 +25,7 @@ public sealed class GoodsReceiptService : BasePurchasingEntityService, IGoodsRec
 {
     private static readonly NLog.Logger Logger = LogManager.GetCurrentClassLogger();
     private readonly IPublishEndpoint _publishEndpoint;
+    private readonly ICorrelationIdAccessor _correlationIdAccessor;
     private readonly IPurchaseEventService _eventService;
     private readonly ISequenceGenerator _sequenceGenerator;
 
@@ -34,11 +36,13 @@ public sealed class GoodsReceiptService : BasePurchasingEntityService, IGoodsRec
         PurchasingDbContext context,
         IMapper mapper,
         IPublishEndpoint publishEndpoint,
+        ICorrelationIdAccessor correlationIdAccessor,
         IPurchaseEventService eventService,
         ISequenceGenerator sequenceGenerator)
         : base(context, mapper)
     {
         _publishEndpoint = publishEndpoint;
+        _correlationIdAccessor = correlationIdAccessor;
         _eventService = eventService;
         _sequenceGenerator = sequenceGenerator;
     }
@@ -195,13 +199,13 @@ public sealed class GoodsReceiptService : BasePurchasingEntityService, IGoodsRec
 
         try
         {
-            await _publishEndpoint.Publish(new GoodsReceiptCompletedEvent
+            await _publishEndpoint.PublishWithCorrelationAsync(new GoodsReceiptCompletedEvent
             {
                 GoodsReceiptId = receipt.Id, GoodsReceiptNumber = receipt.ReceiptNumber,
                 PurchaseOrderId = receipt.PurchaseOrderId, PurchaseOrderNumber = po?.OrderNumber ?? string.Empty,
                 WarehouseId = receipt.WarehouseId, LocationId = receipt.LocationId,
                 ReceivedByUserId = userId, ReceivedAtUtc = receipt.ReceivedAtUtc, Lines = acceptedLines
-            }, cancellationToken).ConfigureAwait(false);
+            }, _correlationIdAccessor, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) { Logger.Warn(ex, "Failed to publish {EventType} event", "GoodsReceiptCompleted"); }
     }

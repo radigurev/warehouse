@@ -4,7 +4,7 @@ namespace Warehouse.ServiceModel.Events;
 /// Published when a shipment is dispatched from a packed sales order.
 /// Event naming: Fulfillment.Shipment.Dispatched.
 /// </summary>
-public sealed record ShipmentDispatchedEvent
+public sealed record ShipmentDispatchedEvent : ICorrelatedEvent
 {
     /// <summary>
     /// Gets the shipment ID.
@@ -45,4 +45,9 @@ public sealed record ShipmentDispatchedEvent
     /// Gets the collection of shipped lines.
     /// </summary>
     public required IReadOnlyList<ShipmentDispatchedLine> Lines { get; init; }
+
+    /// <summary>
+    /// Gets the correlation ID from the originating HTTP request.
+    /// </summary>
+    public string? CorrelationId { get; set; }
 }

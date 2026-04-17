@@ -6,6 +6,7 @@ using Warehouse.Common.Enums;
 using Warehouse.Common.Models;
 using Warehouse.Common.Workflow;
 using Warehouse.GenericFiltering;
+using Warehouse.Infrastructure.Correlation;
 using Warehouse.Inventory.API.Interfaces.Warehouse;
 using Warehouse.Inventory.API.Services.Base;
 using Warehouse.Inventory.DBModel;
@@ -25,6 +26,7 @@ namespace Warehouse.Inventory.API.Services.Warehouse;
 public sealed class WarehouseTransferService : BaseInventoryEntityService, IWarehouseTransferService
 {
     private readonly IPublishEndpoint _publishEndpoint;
+    private readonly ICorrelationIdAccessor _correlationIdAccessor;
     private readonly IWorkflowEngine<WarehouseTransfer> _workflowEngine;
 
     /// <summary>
@@ -34,10 +36,12 @@ public sealed class WarehouseTransferService : BaseInventoryEntityService, IWare
         InventoryDbContext context,
         IMapper mapper,
         IPublishEndpoint publishEndpoint,
+        ICorrelationIdAccessor correlationIdAccessor,
         IWorkflowEngine<WarehouseTransfer> workflowEngine)
         : base(context, mapper)
     {
         _publishEndpoint = publishEndpoint;
+        _correlationIdAccessor = correlationIdAccessor;
         _workflowEngine = workflowEngine;
     }
 
@@ -156,23 +160,23 @@ public sealed class WarehouseTransferService : BaseInventoryEntityService, IWare
 
         try
         {
-            await _publishEndpoint.Publish(new WarehouseTransferCompletedEvent
+            await _publishEndpoint.PublishWithCorrelationAsync(new WarehouseTransferCompletedEvent
             {
                 TransferId = transfer.Id,
                 SourceWarehouseId = transfer.SourceWarehouseId,
                 DestinationWarehouseId = transfer.DestinationWarehouseId,
                 CompletedByUserId = userId,
                 CompletedAt = transfer.CompletedAtUtc!.Value
-            }, cancellationToken).ConfigureAwait(false);
+            }, _correlationIdAccessor, cancellationToken).ConfigureAwait(false);
 
-            await _publishEndpoint.Publish(new InventoryEventOccurredEvent
+            await _publishEndpoint.PublishWithCorrelationAsync(new InventoryEventOccurredEvent
             {
                 EventType = "TransferCompleted",
                 EntityType = "WarehouseTransfer",
                 EntityId = transfer.Id,
                 UserId = userId,
                 OccurredAtUtc = transfer.CompletedAtUtc!.Value
-            }, cancellationToken).ConfigureAwait(false);
+            }, _correlationIdAccessor, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception)
         {

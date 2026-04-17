@@ -8,6 +8,7 @@ using Warehouse.Fulfillment.API.Interfaces;
 using Warehouse.Fulfillment.API.Services.Base;
 using Warehouse.Fulfillment.DBModel;
 using Warehouse.Fulfillment.DBModel.Models;
+using Warehouse.Infrastructure.Correlation;
 using Warehouse.ServiceModel.DTOs.Fulfillment;
 using Warehouse.ServiceModel.Events;
 using Warehouse.ServiceModel.Requests.Fulfillment;
@@ -23,15 +24,17 @@ public sealed class CustomerReturnService : BaseFulfillmentEntityService, ICusto
 {
     private static readonly NLog.Logger Logger = LogManager.GetCurrentClassLogger();
     private readonly IPublishEndpoint _publishEndpoint;
+    private readonly ICorrelationIdAccessor _correlationIdAccessor;
     private readonly IFulfillmentEventService _eventService;
 
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
-    public CustomerReturnService(FulfillmentDbContext context, IMapper mapper, IPublishEndpoint publishEndpoint, IFulfillmentEventService eventService)
+    public CustomerReturnService(FulfillmentDbContext context, IMapper mapper, IPublishEndpoint publishEndpoint, ICorrelationIdAccessor correlationIdAccessor, IFulfillmentEventService eventService)
         : base(context, mapper)
     {
         _publishEndpoint = publishEndpoint;
+        _correlationIdAccessor = correlationIdAccessor;
         _eventService = eventService;
     }
 
@@ -156,12 +159,12 @@ public sealed class CustomerReturnService : BaseFulfillmentEntityService, ICusto
     {
         try
         {
-            await _publishEndpoint.Publish(new CustomerReturnReceivedEvent
+            await _publishEndpoint.PublishWithCorrelationAsync(new CustomerReturnReceivedEvent
             {
                 CustomerReturnId = cr.Id, CustomerReturnNumber = cr.ReturnNumber, CustomerId = cr.CustomerId,
                 SalesOrderId = cr.SalesOrderId, ReceivedByUserId = userId, ReceivedAtUtc = cr.ReceivedAtUtc!.Value,
                 Lines = cr.Lines.Select(l => new CustomerReturnReceivedLine { CustomerReturnLineId = l.Id, ProductId = l.ProductId, WarehouseId = l.WarehouseId, LocationId = l.LocationId, Quantity = l.Quantity, BatchId = l.BatchId }).ToList()
-            }, cancellationToken).ConfigureAwait(false);
+            }, _correlationIdAccessor, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) { Logger.Warn(ex, "Failed to publish {EventType} event", "CustomerReturnReceived"); }
     }

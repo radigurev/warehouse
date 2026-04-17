@@ -18,6 +18,20 @@ apiClient.interceptors.request.use(
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
+
+    if (!config.headers['X-Correlation-ID']) {
+      try {
+        config.headers['X-Correlation-ID'] = crypto.randomUUID();
+      } catch {
+        config.headers['X-Correlation-ID'] =
+          'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+            const r = (Math.random() * 16) | 0;
+            const v = c === 'x' ? r : (r & 0x3) | 0x8;
+            return v.toString(16);
+          });
+      }
+    }
+
     return config;
   },
 );

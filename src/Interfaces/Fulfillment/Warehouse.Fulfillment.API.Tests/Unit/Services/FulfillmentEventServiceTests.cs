@@ -5,6 +5,7 @@ using Warehouse.Common.Models;
 using Warehouse.Fulfillment.API.Services;
 using Warehouse.Fulfillment.API.Tests.Fixtures;
 using Warehouse.Fulfillment.DBModel.Models;
+using Warehouse.Infrastructure.Correlation;
 using Warehouse.ServiceModel.DTOs.Fulfillment;
 using Warehouse.ServiceModel.Requests.Fulfillment;
 using Warehouse.ServiceModel.Responses;
@@ -21,6 +22,7 @@ public sealed class FulfillmentEventServiceTests : FulfillmentTestBase
 {
     private FulfillmentEventService _sut = null!;
     private Mock<IPublishEndpoint> _mockPublishEndpoint = null!;
+    private Mock<ICorrelationIdAccessor> _mockCorrelationIdAccessor = null!;
     private Mock<ILogger<FulfillmentEventService>> _mockLogger = null!;
 
     [SetUp]
@@ -28,8 +30,9 @@ public sealed class FulfillmentEventServiceTests : FulfillmentTestBase
     {
         base.SetUp();
         _mockPublishEndpoint = new Mock<IPublishEndpoint>();
+        _mockCorrelationIdAccessor = new Mock<ICorrelationIdAccessor>();
         _mockLogger = new Mock<ILogger<FulfillmentEventService>>();
-        _sut = new FulfillmentEventService(Context, Mapper, _mockPublishEndpoint.Object, _mockLogger.Object);
+        _sut = new FulfillmentEventService(Context, Mapper, _mockPublishEndpoint.Object, _mockCorrelationIdAccessor.Object, _mockLogger.Object);
     }
 
     [Test]

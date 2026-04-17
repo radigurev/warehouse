@@ -4,7 +4,7 @@ namespace Warehouse.ServiceModel.Events;
 /// Published by Auth.API when an audit entry is recorded.
 /// Consumed by EventLog service for centralized operations event logging.
 /// </summary>
-public sealed record AuthAuditLoggedEvent
+public sealed record AuthAuditLoggedEvent : ICorrelatedEvent
 {
     /// <summary>
     /// Gets the user who performed the action (nullable for system actions).
@@ -44,5 +44,5 @@ public sealed record AuthAuditLoggedEvent
     /// <summary>
     /// Gets the correlation ID from the originating HTTP request.
     /// </summary>
-    public string? CorrelationId { get; init; }
+    public string? CorrelationId { get; set; }
 }

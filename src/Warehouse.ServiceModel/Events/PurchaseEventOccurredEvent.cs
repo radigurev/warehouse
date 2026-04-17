@@ -4,7 +4,7 @@ namespace Warehouse.ServiceModel.Events;
 /// Published by Purchasing.API when a procurement operations event is recorded.
 /// Consumed by EventLog service for centralized operations event logging.
 /// </summary>
-public sealed record PurchaseEventOccurredEvent
+public sealed record PurchaseEventOccurredEvent : ICorrelatedEvent
 {
     /// <summary>
     /// Gets the event type (e.g., PurchaseOrderCreated, GoodsReceiptCompleted).
@@ -49,5 +49,5 @@ public sealed record PurchaseEventOccurredEvent
     /// <summary>
     /// Gets the correlation ID from the originating HTTP request.
     /// </summary>
-    public string? CorrelationId { get; init; }
+    public string? CorrelationId { get; set; }
 }

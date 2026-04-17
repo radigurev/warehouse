@@ -3,7 +3,7 @@ namespace Warehouse.ServiceModel.Events;
 /// <summary>
 /// Published when an inventory adjustment is applied to stock levels.
 /// </summary>
-public sealed record InventoryAdjustmentAppliedEvent
+public sealed record InventoryAdjustmentAppliedEvent : ICorrelatedEvent
 {
     /// <summary>
     /// Gets the adjustment identifier.
@@ -19,4 +19,9 @@ public sealed record InventoryAdjustmentAppliedEvent
     /// Gets the UTC timestamp when the adjustment was applied.
     /// </summary>
     public required DateTime AppliedAt { get; init; }
+
+    /// <summary>
+    /// Gets the correlation ID from the originating HTTP request.
+    /// </summary>
+    public string? CorrelationId { get; set; }
 }

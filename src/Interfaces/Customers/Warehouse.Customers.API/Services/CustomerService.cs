@@ -7,6 +7,7 @@ using Warehouse.Customers.DBModel;
 using Warehouse.Customers.DBModel.Models;
 using Warehouse.GenericFiltering;
 using Warehouse.ServiceModel.DTOs.Customers;
+using Warehouse.Infrastructure.Correlation;
 using Warehouse.ServiceModel.Events;
 using Warehouse.ServiceModel.Requests.Customers;
 using Warehouse.ServiceModel.Responses;
@@ -20,14 +21,16 @@ namespace Warehouse.Customers.API.Services;
 public sealed class CustomerService : BaseCustomerEntityService, ICustomerService
 {
     private readonly IPublishEndpoint _publishEndpoint;
+    private readonly ICorrelationIdAccessor _correlationIdAccessor;
 
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
-    public CustomerService(CustomersDbContext context, IMapper mapper, IPublishEndpoint publishEndpoint)
+    public CustomerService(CustomersDbContext context, IMapper mapper, IPublishEndpoint publishEndpoint, ICorrelationIdAccessor correlationIdAccessor)
         : base(context, mapper)
     {
         _publishEndpoint = publishEndpoint;
+        _correlationIdAccessor = correlationIdAccessor;
     }
 
     /// <inheritdoc />
@@ -120,7 +123,7 @@ public sealed class CustomerService : BaseCustomerEntityService, ICustomerServic
 
         try
         {
-            await _publishEndpoint.Publish(new CustomerCreatedEvent
+            await _publishEndpoint.PublishWithCorrelationAsync(new CustomerCreatedEvent
             {
                 CustomerId = customer.Id,
                 Code = customer.Code,
@@ -128,9 +131,9 @@ public sealed class CustomerService : BaseCustomerEntityService, ICustomerServic
                 CategoryId = customer.CategoryId,
                 CreatedByUserId = userId,
                 CreatedAt = customer.CreatedAtUtc
-            }, cancellationToken).ConfigureAwait(false);
+            }, _correlationIdAccessor, cancellationToken).ConfigureAwait(false);
 
-            await _publishEndpoint.Publish(new CustomerEventOccurredEvent
+            await _publishEndpoint.PublishWithCorrelationAsync(new CustomerEventOccurredEvent
             {
                 EventType = "CustomerCreated",
                 EntityType = "Customer",
@@ -139,7 +142,7 @@ public sealed class CustomerService : BaseCustomerEntityService, ICustomerServic
                 OccurredAtUtc = customer.CreatedAtUtc,
                 CustomerName = customer.Name,
                 CustomerCode = customer.Code
-            }, cancellationToken).ConfigureAwait(false);
+            }, _correlationIdAccessor, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception)
         {
