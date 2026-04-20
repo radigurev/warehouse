@@ -242,6 +242,12 @@
           "Path": "/api/v1/fulfillment-events/{**catch-all}"
         }
       },
+      "product-prices-route": {
+        "ClusterId": "fulfillment-cluster",
+        "Match": {
+          "Path": "/api/v1/product-prices/{**catch-all}"
+        }
+      },
       "countries-route": {
         "ClusterId": "nomenclature-cluster",
         "Match": {
