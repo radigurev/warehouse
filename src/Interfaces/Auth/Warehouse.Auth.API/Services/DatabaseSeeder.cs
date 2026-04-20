@@ -57,6 +57,8 @@ public sealed class DatabaseSeeder
         ["carriers", "read"], ["carriers", "create"], ["carriers", "update"],
         ["customer-returns", "read"], ["customer-returns", "create"], ["customer-returns", "update"],
         ["fulfillment-events", "read"],
+        // Fulfillment -- Product Price Catalog (CHG-FEAT-007)
+        ["product-prices", "read"], ["product-prices", "create"], ["product-prices", "update"], ["product-prices", "delete"],
         // Nomenclature
         ["nomenclature", "read"], ["nomenclature", "write"],
         // EventLog
@@ -92,7 +94,57 @@ public sealed class DatabaseSeeder
 
         Role adminRole = await SeedAdminRoleAsync(cancellationToken).ConfigureAwait(false);
         await SeedPermissionsAsync(adminRole, cancellationToken).ConfigureAwait(false);
+        await SeedCascadingPermissionsAsync(cancellationToken).ConfigureAwait(false);
         await SeedAdminUserAsync(adminRole, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Applies cascading permission grants: for each role that holds a source permission, ensure the target permission is also granted.
+    /// <para>Current rules (CHG-FEAT-007): any role with <c>sales-orders:create</c> MUST also hold <c>product-prices:read</c>.</para>
+    /// </summary>
+    private async Task SeedCascadingPermissionsAsync(CancellationToken cancellationToken)
+    {
+        (string SourceResource, string SourceAction, string TargetResource, string TargetAction)[] cascades =
+        [
+            ("sales-orders", "create", "product-prices", "read")
+        ];
+
+        foreach ((string sourceResource, string sourceAction, string targetResource, string targetAction) in cascades)
+        {
+            Permission? sourcePermission = await _context.Permissions
+                .FirstOrDefaultAsync(p => p.Resource == sourceResource && p.Action == sourceAction, cancellationToken)
+                .ConfigureAwait(false);
+
+            Permission? targetPermission = await _context.Permissions
+                .FirstOrDefaultAsync(p => p.Resource == targetResource && p.Action == targetAction, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (sourcePermission is null || targetPermission is null)
+                continue;
+
+            List<int> rolesWithSource = await _context.RolePermissions
+                .Where(rp => rp.PermissionId == sourcePermission.Id)
+                .Select(rp => rp.RoleId)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            foreach (int roleId in rolesWithSource)
+            {
+                bool alreadyHasTarget = await _context.RolePermissions
+                    .AnyAsync(rp => rp.RoleId == roleId && rp.PermissionId == targetPermission.Id, cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (alreadyHasTarget)
+                    continue;
+
+                _context.RolePermissions.Add(new RolePermission { RoleId = roleId, PermissionId = targetPermission.Id });
+                _logger.LogInformation(
+                    "Cascading grant: role {RoleId} received {TargetResource}:{TargetAction} because it holds {SourceResource}:{SourceAction}",
+                    roleId, targetResource, targetAction, sourceResource, sourceAction);
+            }
+        }
+
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<Role> SeedAdminRoleAsync(CancellationToken cancellationToken)

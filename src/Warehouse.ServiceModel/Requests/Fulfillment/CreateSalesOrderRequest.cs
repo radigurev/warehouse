@@ -8,6 +8,20 @@ public sealed record CreateSalesOrderRequest
     /// <summary>Gets the customer ID. Required.</summary>
     public required int CustomerId { get; init; }
 
+    /// <summary>
+    /// Gets the customer account ID selected by the caller. Required.
+    /// Cached on the SO header so that the price resolver and reporting can determine the billing currency.
+    /// Added by CHG-FEAT-007 §2.9.
+    /// </summary>
+    public required int CustomerAccountId { get; init; }
+
+    /// <summary>
+    /// Gets the ISO 4217 currency code matching the selected customer account. Required.
+    /// Must be 3 uppercase ASCII letters. Cached on the SO header (immutable after creation).
+    /// Added by CHG-FEAT-007 §2.9.
+    /// </summary>
+    public required string CurrencyCode { get; init; }
+
     /// <summary>Gets the ship-from warehouse ID. Required.</summary>
     public required int WarehouseId { get; init; }
 

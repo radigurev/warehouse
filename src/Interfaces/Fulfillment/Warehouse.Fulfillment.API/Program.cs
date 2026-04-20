@@ -88,6 +88,8 @@ static void ConfigureApplicationServices(IServiceCollection services)
 {
     services.AddSingleton<INomenclatureResolver, NomenclatureResolver>();
     services.AddScoped<IFulfillmentEventService, FulfillmentEventService>();
+    services.AddScoped<IProductPriceResolver, ProductPriceResolver>();
+    services.AddScoped<IProductPriceService, ProductPriceService>();
     services.AddScoped<ISalesOrderService, SalesOrderService>();
     services.AddScoped<IPickListService, PickListService>();
     services.AddScoped<IPackingService, PackingService>();

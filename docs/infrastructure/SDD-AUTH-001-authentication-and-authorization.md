@@ -1,7 +1,7 @@
 # SDD-AUTH-001 — Authentication and Authorization
 
 > Status: Implemented
-> Last updated: 2026-04-03
+> Last updated: 2026-04-19
 > Owner: TBD
 > Category: Infrastructure
 
@@ -93,6 +93,19 @@ This spec defines the authentication and authorization system for all Warehouse 
 - On startup, the system MUST create the `Admin` role (with `IsSystem = true`) if it does not exist.
 - On startup, the system MUST create a default `admin` user (username: `admin`, password: `Admin123!`) with the Admin role if no admin user exists.
 - The seed user is intended for initial setup only. The password SHOULD be changed after first login in production.
+
+#### 2.5.1 Seeded Permission Catalog
+
+The seeder MUST ensure the following permissions exist in the `auth.Permissions` table and are assigned to the `Admin` role. Other roles receive selective grants as noted.
+
+| Permission | Purpose | Seeded to `Admin` | Additional role grants |
+|---|---|---|---|
+| `product-prices:read` | Read the Fulfillment product price catalog (see `SDD-FULF-001` §2.10, CHG-FEAT-007) | Yes | Any role holding `sales-orders:create` MUST also receive this permission so sales order creators can view effective prices. |
+| `product-prices:create` | Create a new catalog entry | Yes | — |
+| `product-prices:update` | Update `UnitPrice`, `ValidFrom`, `ValidTo` on a catalog entry | Yes | — |
+| `product-prices:delete` | Delete a catalog entry (historical SO lines retain their snapshot `UnitPrice`) | Yes | — |
+
+**Rule (cascading read grant):** When the seeder adds `sales-orders:create` to a role, it MUST also add `product-prices:read` to that role. This guarantees that SO line create/update flows (which depend on `IProductPriceResolver`) can always preview the resolved price through the diagnostic endpoint.
 
 ---
 
@@ -313,6 +326,12 @@ All error responses MUST use ProblemDetails (RFC 7807) format:
   - Updated test plan to match implemented tests
   - Updated Key Files to reflect Data Annotations approach
   - Status changed from Draft to Implemented
+
+- **v2.1 — CHG-FEAT-007 seeded permission catalog (2026-04-19)** (non-breaking additive)
+  - Seeder gains four new permissions: `product-prices:read|create|update|delete` (see `SDD-FULF-001` §2.10).
+  - All four are assigned to the `Admin` role.
+  - `product-prices:read` additionally cascades to any role that holds `sales-orders:create`, so sales order creators can preview catalog prices.
+  - No schema changes; additions are data-only via `DatabaseSeeder`.
 
 ---
 

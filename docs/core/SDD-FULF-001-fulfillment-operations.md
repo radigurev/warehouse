@@ -1,7 +1,7 @@
 # SDD-FULF-001 -- Fulfillment Operations
 
 > Status: Implemented
-> Last updated: 2026-04-06
+> Last updated: 2026-04-19
 > Owner: TBD
 > Category: Core
 
@@ -53,7 +53,8 @@ This spec defines the Fulfillment Operations domain for the Warehouse system. It
 
 #### 2.1.1 Create Sales Order
 
-- The system MUST support creating a sales order with a customer ID, requested ship date (optional), ship-from warehouse ID, shipping address fields (street line 1, street line 2, city, state/province, postal code, country code), optional carrier ID, optional carrier service level ID, optional notes, and one or more lines.
+- The system MUST support creating a sales order with a customer ID, **customer account ID (required)**, **currency code (required, ISO 4217 3-letter uppercase)**, requested ship date (optional), ship-from warehouse ID, shipping address fields (street line 1, street line 2, city, state/province, postal code, country code), optional carrier ID, optional carrier service level ID, optional notes, and one or more lines.
+- The system MUST persist the caller-supplied `CustomerAccountId` and `CurrencyCode` on the SO header. Both fields MUST be immutable after creation (no header update endpoint MAY change them). They are cached from the customer's chosen account so that the price resolver (§2.10) and downstream reporting do not require a cross-context lookup. See `CHG-FEAT-007` §2.9 for the full capture policy.
 - The system MUST auto-generate a unique SO number following the format `SO-{YYYYMMDD}-{sequential number padded to 4 digits}` (e.g., `SO-20260406-0001`). The sequential counter resets daily.
 - The system MUST set the initial status to `Draft`.
 - The system MUST calculate `TotalAmount` as the sum of all line totals.
@@ -70,8 +71,13 @@ This spec defines the Fulfillment Operations domain for the Warehouse system. It
 
 #### 2.1.2 Add Sales Order Line
 
-- Each SO line MUST specify a product ID, ordered quantity, unit price, and optional notes.
+- Each SO line MUST specify a product ID, ordered quantity, and optional notes. `UnitPrice` is OPTIONAL on the request payload.
 - The system MUST validate that the product ID references an existing, non-deleted product (cross-service: Inventory).
+- The system MUST resolve the effective `UnitPrice` from the Product Price Catalog (see §2.10) before persisting the line:
+  - The lookup key is `(ProductId, SalesOrder.CustomerAccount.Currency, UtcNow)` resolved via `IProductPriceResolver`.
+  - If the caller did NOT supply `UnitPrice`, the resolved catalog price MUST be written to the line.
+  - If the caller DID supply `UnitPrice`, the caller value MUST be preserved (manual override for one-off discounts), BUT the catalog MUST still contain an active price for the `(ProductId, Currency)` pair or the operation MUST fail.
+  - If no active catalog row matches the `(ProductId, Currency)` pair, the operation MUST fail with a 400 Bad Request ProblemDetails using error code `FULF_PRICE_NOT_FOUND` and MUST NOT persist the line or mutate the SO header. The error's `extensions` object MUST carry `productId` and `currencyCode`.
 - The system MUST prevent duplicate product entries within the same SO. This MUST return a 409 Conflict error with code `DUPLICATE_SO_LINE`.
 - Lines can only be added when the SO is in `Draft` status. Adding a line to a non-Draft SO MUST return a 409 Conflict error with code `SO_NOT_EDITABLE`.
 - The system MUST recalculate `TotalAmount` on the SO header when a line is added.
@@ -79,6 +85,10 @@ This spec defines the Fulfillment Operations domain for the Warehouse system. It
 #### 2.1.3 Update Sales Order Line
 
 - The system MUST support updating line quantity, unit price, and notes.
+- The system MUST re-run price resolution against the Product Price Catalog (see §2.10) on every line update:
+  - If `UnitPrice` is omitted from the update payload, the resolver MUST run and the newly-resolved catalog price MUST be persisted.
+  - If `UnitPrice` is supplied, the caller override MUST be preserved, but the catalog MUST still hold an active price for `(ProductId, Currency)` or the operation MUST fail with `FULF_PRICE_NOT_FOUND` (400).
+  - No partial update MUST occur when price resolution fails; the line and header remain unmodified.
 - Lines can only be updated when the SO is in `Draft` status.
 - The system MUST recalculate `TotalAmount` on the SO header when a line is updated.
 
@@ -472,6 +482,38 @@ Event contracts are defined in `Warehouse.ServiceModel/Events/`.
     - `Quantity` (decimal)
 - Event naming: `Fulfillment.StockReservation.Released`.
 
+### 2.10 Product Price Catalog
+
+> Added by CHG-FEAT-007 (2026-04-19). See `docs/changes/CHG-FEAT-007-fulfillment-product-price-catalog.md` for full behaviour, validation, errors, and test plan.
+
+**Purpose:** The Fulfillment domain owns a commercial product price catalog used to auto-resolve the `UnitPrice` on sales order lines. The catalog is indexed by `(ProductId, CurrencyCode)` with time-bounded validity windows so operators never enter prices manually in the common case.
+
+**ISA-95 deviation:** Commercial pricing is a Level 4 (Business Planning / ERP) concern under ISA-95 Part 2. Owning product prices inside this Level 3 WMS is a pragmatic deviation driven by the absence of an ERP integration. The `ProductPrice` entity is classified as **"Extended (non-ISA-95) WMS-owned commercial data"** and is NOT added to the ISA-95 terminology mapping in `CLAUDE.md` §1.1.3. When ERP integration arrives (per `CLAUDE.md` §1.1.5), this catalog MUST become a read-through projection of ERP master data or be deprecated outright.
+
+**Entity:** `ProductPrice` persisted in `fulfillment.ProductPrices` with columns `Id`, `ProductId` (cross-context plain FK to `inventory.Products`, no EF navigation), `CurrencyCode` (`nvarchar(3)`, ISO 4217), `UnitPrice` (`decimal(18,4)`, excl. tax), `ValidFrom` (nullable `datetime2(7)` — `NULL` = effective immediately), `ValidTo` (nullable `datetime2(7)` — `NULL` = no end date), `CreatedAt`, `CreatedByUserId`, `ModifiedAt`, `ModifiedByUserId`. Unique index `UX_ProductPrices_ProductId_CurrencyCode_ValidFrom`; lookup index `IX_ProductPrices_ProductId_CurrencyCode_ValidFrom_ValidTo`.
+
+**Resolution algorithm (used by §2.1.2, §2.1.3, and the diagnostic endpoint):**
+1. Query rows where `ProductId = {productId}` AND `CurrencyCode = {currency}` AND `(ValidFrom IS NULL OR ValidFrom <= onUtc)` AND `(ValidTo IS NULL OR ValidTo > onUtc)`.
+2. Pick the row with the greatest `ValidFrom`, treating `NULL` as strictly lower precedence than any concrete date.
+3. If no row matches, surface "no active price" to the caller. In SO line flows this maps to `FULF_PRICE_NOT_FOUND` (400).
+4. The SO line flows MUST pass `UtcNow` as the `onUtc` reference point and MUST NOT accept a caller-supplied override.
+
+**API endpoints (new under `/api/v1/product-prices`):**
+
+| Method | Route | Permission | Response |
+|---|---|---|---|
+| GET | `/api/v1/product-prices` | `product-prices:read` | 200 OK paged list (GenericFiltering by `productId`, `currencyCode`, `activeOnDate`) |
+| GET | `/api/v1/product-prices/{id}` | `product-prices:read` | 200 OK / 404 `FULF_PRICE_NOT_FOUND_BY_ID` |
+| GET | `/api/v1/product-prices/resolve?productId=&currencyCode=&onDate=` | `product-prices:read` | 200 OK / 404 `FULF_PRICE_NOT_FOUND` (diagnostic mirror of step 1–2) |
+| POST | `/api/v1/product-prices` | `product-prices:create` | 201 Created |
+| PUT | `/api/v1/product-prices/{id}` | `product-prices:update` | 200 OK — `ProductId` and `CurrencyCode` are IMMUTABLE after creation (`FULF_PRICE_IMMUTABLE_KEY`) |
+| DELETE | `/api/v1/product-prices/{id}` | `product-prices:delete` | 204 No Content — historical SO lines retain their own `UnitPrice` snapshot (no FK constraint) |
+
+**Behavioural rules (summary — see CHG-FEAT-007 §2 for the full RFC 2119 text):**
+- Overlapping validity ranges for the same `(ProductId, CurrencyCode)` MUST be allowed (supports staging a future price).
+- Deleting a `ProductPrice` referenced only historically by existing SO lines MUST succeed and MUST NOT alter the lines' snapshot `UnitPrice`.
+- Catalog operations MUST NOT publish MassTransit events and MUST NOT be cached in Redis in this iteration.
+
 ---
 
 ## 3. Validation Rules
@@ -500,7 +542,7 @@ Event contracts are defined in `Warehouse.ServiceModel/Events/`.
 |---|---|---|---|
 | V14 | ProductId | Required. Must reference an existing, non-deleted product (cross-service: Inventory). | `INVALID_PRODUCT` |
 | V15 | OrderedQuantity | Required. Must be > 0. | `INVALID_QUANTITY` |
-| V16 | UnitPrice | Required. Must be >= 0. | `INVALID_UNIT_PRICE` |
+| V16 | UnitPrice | Optional on the request (resolver-supplied from the catalog when omitted — see §2.10 / CHG-FEAT-007). When provided, must be >= 0. | `INVALID_UNIT_PRICE` |
 | V17 | ProductId | Must be unique within the same SO. | `DUPLICATE_SO_LINE` |
 | V18 | Notes | Optional. Max 500 characters. | `INVALID_LINE_NOTES` |
 
@@ -739,6 +781,13 @@ All error responses MUST use ProblemDetails (RFC 7807) format:
 | POST | `/api/v1/customer-returns/{id}/cancel` | Cancel return | Yes | `customer-returns:update` |
 | **Fulfillment Events** | | | | |
 | GET | `/api/v1/fulfillment-events` | List fulfillment events (paginated) | Yes | `fulfillment-events:read` |
+| **Product Price Catalog** (see §2.10, CHG-FEAT-007) | | | | |
+| GET | `/api/v1/product-prices` | List product prices (paginated, filterable) | Yes | `product-prices:read` |
+| GET | `/api/v1/product-prices/{id}` | Get product price by ID | Yes | `product-prices:read` |
+| GET | `/api/v1/product-prices/resolve` | Diagnostic price resolution | Yes | `product-prices:read` |
+| POST | `/api/v1/product-prices` | Create product price | Yes | `product-prices:create` |
+| PUT | `/api/v1/product-prices/{id}` | Update product price (UnitPrice/ValidFrom/ValidTo only) | Yes | `product-prices:update` |
+| DELETE | `/api/v1/product-prices/{id}` | Delete product price | Yes | `product-prices:delete` |
 | **Health** | | | | |
 | GET | `/health` | Liveness check | No | -- |
 | GET | `/health/ready` | Readiness check (DB + RabbitMQ) | No | -- |
@@ -758,6 +807,8 @@ All error responses MUST use ProblemDetails (RFC 7807) format:
 | Id | INT | PK, IDENTITY(1,1) |
 | OrderNumber | NVARCHAR(20) | NOT NULL, UNIQUE |
 | CustomerId | INT | NOT NULL (cross-schema ref to customers.Customers -- no EF navigation) |
+| CustomerAccountId | INT | NOT NULL (cross-schema ref to customers.CustomerAccounts -- no EF navigation). Immutable after SO creation. Added by CHG-FEAT-007. |
+| CurrencyCode | NVARCHAR(3) | NOT NULL. ISO 4217 currency cached at SO creation. Immutable. Added by CHG-FEAT-007. |
 | Status | NVARCHAR(30) | NOT NULL, DEFAULT 'Draft' |
 | WarehouseId | INT | NOT NULL (cross-schema ref to inventory.Warehouses -- no EF navigation) |
 | RequestedShipDate | DATE | NULL |
@@ -985,6 +1036,7 @@ All error responses MUST use ProblemDetails (RFC 7807) format:
 | IX_SalesOrders_Status | SalesOrders | Status | Non-unique |
 | IX_SalesOrders_CreatedAtUtc | SalesOrders | CreatedAtUtc | Non-unique |
 | IX_SalesOrders_WarehouseId | SalesOrders | WarehouseId | Non-unique |
+| IX_SalesOrders_CustomerAccountId | SalesOrders | CustomerAccountId | Non-unique (added by CHG-FEAT-007) |
 | IX_SalesOrderLines_SalesOrderId | SalesOrderLines | SalesOrderId | Non-unique |
 | IX_SalesOrderLines_ProductId | SalesOrderLines | ProductId | Non-unique |
 | IX_SalesOrderLines_SOId_ProductId | SalesOrderLines | SalesOrderId, ProductId | Unique |
@@ -1041,6 +1093,20 @@ All error responses MUST use ProblemDetails (RFC 7807) format:
   - Database schema on `fulfillment` schema
   - Single shipment per SO (v1 limitation -- partial shipments deferred)
   - Labels/printing and dispatch documents deferred to future versions
+
+- **v1.1 -- CHG-FEAT-007 Product Price Catalog (2026-04-19)**
+  - Adds the Product Price Catalog (§2.10): new `ProductPrice` entity, `fulfillment.ProductPrices` table, CRUD endpoints under `/api/v1/product-prices`, and diagnostic `GET /api/v1/product-prices/resolve` endpoint.
+  - Modifies §2.1.2 Add Sales Order Line and §2.1.3 Update Sales Order Line: `UnitPrice` is now OPTIONAL on the wire. When omitted, it MUST be resolved from the catalog using `SalesOrder.CustomerAccount.Currency` as the lookup key and `UtcNow` as the validity reference point. When supplied, the caller value is preserved but the catalog MUST still contain an active row for `(ProductId, Currency)`; otherwise the operation fails with `FULF_PRICE_NOT_FOUND` (400) and no persistence occurs.
+  - Additive at the API level (no removal of existing endpoints). Behaviourally breaking for deployments that do not seed the catalog before rollout: existing well-formed SO line create calls that previously succeeded will fail until at least one active `ProductPrice` row exists for every `(ProductId, Currency)` pair in active use. Ops MUST run a pre-deployment catalog seed.
+  - Four new RBAC permissions: `product-prices:read|create|update|delete` (see `SDD-AUTH-001`).
+  - No MassTransit events are published by catalog operations (by design in this iteration). No Redis caching (by design in this iteration).
+  - Historical SO line `UnitPrice` values are snapshot columns; deleting a catalog row MUST NOT affect them.
+
+- **v1.2 -- CHG-FEAT-007 Sales Order Currency Capture (2026-04-19)**
+  - Adds two required columns to `fulfillment.SalesOrders`: `CustomerAccountId INT NOT NULL` (cross-context plain FK to `customers.CustomerAccounts`) and `CurrencyCode NVARCHAR(3) NOT NULL` (ISO 4217). Both are immutable after SO creation and are supplied by the caller on `CreateSalesOrderRequest`.
+  - Adds non-unique index `IX_SalesOrders_CustomerAccountId`.
+  - Behaviourally required by §2.10 Product Price Catalog: the price resolver now reads the SO's billing currency directly from the header instead of performing a cross-context lookup on every line create/update.
+  - EF Core migration performs an `ALTER TABLE` and backfills existing rows from `customers.CustomerAccounts` (primary account, lowest `Id` on ties). Migration fails loudly if any SO has no primary account.
 
 ---
 

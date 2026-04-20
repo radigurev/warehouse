@@ -22,7 +22,7 @@ public abstract class BaseApiController : ControllerBase
         if (result.IsSuccess)
             return NoContent();
 
-        return ToProblemResult(result.ErrorCode!, result.ErrorMessage!, result.StatusCode!.Value);
+        return ToProblemResult(result.ErrorCode!, result.ErrorMessage!, result.StatusCode!.Value, result.Extensions);
     }
 
     /// <summary>
@@ -33,7 +33,7 @@ public abstract class BaseApiController : ControllerBase
         if (result.IsSuccess)
             return Ok(result.Value);
 
-        return ToProblemResult(result.ErrorCode!, result.ErrorMessage!, result.StatusCode!.Value);
+        return ToProblemResult(result.ErrorCode!, result.ErrorMessage!, result.StatusCode!.Value, result.Extensions);
     }
 
     /// <summary>
@@ -44,7 +44,7 @@ public abstract class BaseApiController : ControllerBase
         if (result.IsSuccess)
             return CreatedAtRoute(routeName, routeValues(result.Value!), result.Value);
 
-        return ToProblemResult(result.ErrorCode!, result.ErrorMessage!, result.StatusCode!.Value);
+        return ToProblemResult(result.ErrorCode!, result.ErrorMessage!, result.StatusCode!.Value, result.Extensions);
     }
 
     /// <summary>
@@ -76,7 +76,14 @@ public abstract class BaseApiController : ControllerBase
         return result.Succeeded;
     }
 
-    private ObjectResult ToProblemResult(string errorCode, string errorMessage, int statusCode)
+    /// <summary>
+    /// Builds a ProblemDetails response with optional structured extensions.
+    /// </summary>
+    protected ObjectResult ToProblemResult(
+        string errorCode,
+        string errorMessage,
+        int statusCode,
+        IReadOnlyDictionary<string, object?>? extensions = null)
     {
         ProblemDetails problem = new()
         {
@@ -86,6 +93,12 @@ public abstract class BaseApiController : ControllerBase
             Detail = errorMessage,
             Instance = HttpContext.Request.Path
         };
+
+        if (extensions is not null)
+        {
+            foreach (KeyValuePair<string, object?> kv in extensions)
+                problem.Extensions[kv.Key] = kv.Value;
+        }
 
         return StatusCode(statusCode, problem);
     }

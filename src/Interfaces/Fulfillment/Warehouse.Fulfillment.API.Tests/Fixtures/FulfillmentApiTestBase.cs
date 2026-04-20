@@ -14,7 +14,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Http;
 using Warehouse.Fulfillment.DBModel;
+using Warehouse.Infrastructure.Authorization;
 using Warehouse.ServiceModel.DTOs.Fulfillment;
 using Warehouse.ServiceModel.Requests.Fulfillment;
 using Warehouse.ServiceModel.Responses;
@@ -75,6 +77,10 @@ public abstract class FulfillmentApiTestBase
                     services.RemoveAll<IHealthCheck>();
                     services.AddMassTransitTestHarness();
 
+                    services.RemoveAll<IUserPermissionService>();
+                    services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+                    services.AddScoped<IUserPermissionService, JwtClaimsUserPermissionService>();
+
                     services.PostConfigure<JwtBearerOptions>(
                         JwtBearerDefaults.AuthenticationScheme,
                         options =>
@@ -130,6 +136,9 @@ public abstract class FulfillmentApiTestBase
 
     /// <summary>
     /// Creates a sales order via the API and returns the response message.
+    /// Seeds a Product Price Catalog entry for the (productId, currencyCode) pair first so that
+    /// the CHG-FEAT-007 resolver does not block the create. Callers that want to exercise the
+    /// block path should not use this helper.
     /// </summary>
     protected async Task<HttpResponseMessage> CreateSalesOrderViaApiAsync(
         HttpClient client,
@@ -137,12 +146,18 @@ public abstract class FulfillmentApiTestBase
         int warehouseId = 1,
         int productId = 100,
         decimal orderedQuantity = 10m,
-        decimal unitPrice = 25m)
+        decimal unitPrice = 25m,
+        int customerAccountId = 1,
+        string currencyCode = "USD")
     {
+        await EnsureProductPriceAsync(productId, currencyCode, unitPrice);
+
         int sequence = Interlocked.Increment(ref _orderSequence);
         CreateSalesOrderRequest request = new()
         {
             CustomerId = customerId,
+            CustomerAccountId = customerAccountId,
+            CurrencyCode = currencyCode,
             WarehouseId = warehouseId,
             ShippingStreetLine1 = $"123 Main St #{sequence}",
             ShippingCity = "Springfield",
@@ -152,6 +167,32 @@ public abstract class FulfillmentApiTestBase
         };
 
         return await client.PostAsJsonAsync("/api/v1/sales-orders", request);
+    }
+
+    /// <summary>
+    /// Seeds a Product Price Catalog entry (open-ended validity) for the given
+    /// (productId, currencyCode) pair unless one already exists.
+    /// </summary>
+    protected async Task EnsureProductPriceAsync(int productId, string currencyCode, decimal unitPrice)
+    {
+        await WithDbContextAsync(async db =>
+        {
+            bool exists = await db.ProductPrices.AnyAsync(
+                p => p.ProductId == productId && p.CurrencyCode == currencyCode);
+            if (exists) return;
+
+            db.ProductPrices.Add(new Warehouse.Fulfillment.DBModel.Models.ProductPrice
+            {
+                ProductId = productId,
+                CurrencyCode = currencyCode,
+                UnitPrice = unitPrice,
+                ValidFrom = null,
+                ValidTo = null,
+                CreatedAtUtc = DateTime.UtcNow,
+                CreatedByUserId = 1
+            });
+            await db.SaveChangesAsync();
+        });
     }
 
     /// <summary>

@@ -25,6 +25,22 @@ public sealed class SalesOrder : IEntity
     public int CustomerId { get; set; }
 
     /// <summary>
+    /// Gets or sets the customer account ID (cross-schema ref to customers.CustomerAccounts -- no EF navigation).
+    /// Cached at SO creation to supply the billing currency to the Product Price Catalog resolver
+    /// without a cross-context lookup. Immutable after creation.
+    /// <para>Added by CHG-FEAT-007 per SDD-FULF-001 v1.2.</para>
+    /// </summary>
+    public int CustomerAccountId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the ISO 4217 currency code cached at SO creation from the chosen customer account.
+    /// Used by the Product Price Catalog resolver as the lookup key for (product, currency).
+    /// Immutable after creation.
+    /// <para>Added by CHG-FEAT-007 per SDD-FULF-001 v1.2.</para>
+    /// </summary>
+    public required string CurrencyCode { get; set; }
+
+    /// <summary>
     /// Gets or sets the SO status (stored as nvarchar(30)).
     /// </summary>
     public required string Status { get; set; }

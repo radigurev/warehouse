@@ -21,6 +21,7 @@ public sealed class SalesOrderService : BaseFulfillmentEntityService, ISalesOrde
 {
     private readonly IFulfillmentEventService _eventService;
     private readonly INomenclatureResolver _nomenclatureResolver;
+    private readonly IProductPriceResolver _priceResolver;
 
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
@@ -29,11 +30,13 @@ public sealed class SalesOrderService : BaseFulfillmentEntityService, ISalesOrde
         FulfillmentDbContext context,
         IMapper mapper,
         IFulfillmentEventService eventService,
-        INomenclatureResolver nomenclatureResolver)
+        INomenclatureResolver nomenclatureResolver,
+        IProductPriceResolver priceResolver)
         : base(context, mapper)
     {
         _eventService = eventService;
         _nomenclatureResolver = nomenclatureResolver;
+        _priceResolver = priceResolver;
     }
 
     /// <inheritdoc />
@@ -47,11 +50,17 @@ public sealed class SalesOrderService : BaseFulfillmentEntityService, ISalesOrde
         // via typed HttpClient to Inventory.API with Polly resilience.
         // Error: INVALID_WAREHOUSE (400)
 
+        Result<List<SalesOrderLine>> linesResult = await BuildResolvedLinesAsync(request, cancellationToken).ConfigureAwait(false);
+        if (!linesResult.IsSuccess)
+            return Result<SalesOrderDetailDto>.Failure(linesResult.ErrorCode!, linesResult.ErrorMessage!, linesResult.StatusCode!.Value);
+
         string orderNumber = await GenerateOrderNumberAsync(cancellationToken).ConfigureAwait(false);
 
         SalesOrder so = new()
         {
-            OrderNumber = orderNumber, CustomerId = request.CustomerId, Status = nameof(SalesOrderStatus.Draft),
+            OrderNumber = orderNumber, CustomerId = request.CustomerId,
+            CustomerAccountId = request.CustomerAccountId, CurrencyCode = request.CurrencyCode,
+            Status = nameof(SalesOrderStatus.Draft),
             WarehouseId = request.WarehouseId, RequestedShipDate = request.RequestedShipDate,
             ShippingStreetLine1 = request.ShippingStreetLine1, ShippingStreetLine2 = request.ShippingStreetLine2,
             ShippingCity = request.ShippingCity, ShippingStateProvince = request.ShippingStateProvince,
@@ -60,11 +69,8 @@ public sealed class SalesOrderService : BaseFulfillmentEntityService, ISalesOrde
             Notes = request.Notes, TotalAmount = 0, CreatedAtUtc = DateTime.UtcNow, CreatedByUserId = userId
         };
 
-        foreach (CreateSalesOrderLineRequest lineReq in request.Lines)
-        {
-            SalesOrderLine line = new() { ProductId = lineReq.ProductId, OrderedQuantity = lineReq.OrderedQuantity, UnitPrice = lineReq.UnitPrice, LineTotal = lineReq.OrderedQuantity * lineReq.UnitPrice, Notes = lineReq.Notes };
+        foreach (SalesOrderLine line in linesResult.Value!)
             so.Lines.Add(line);
-        }
 
         so.TotalAmount = so.Lines.Sum(l => l.LineTotal);
         Context.SalesOrders.Add(so);
@@ -73,6 +79,52 @@ public sealed class SalesOrderService : BaseFulfillmentEntityService, ISalesOrde
         await _eventService.RecordEventAsync("SalesOrderCreated", "SalesOrder", so.Id, userId, null, cancellationToken).ConfigureAwait(false);
 
         return await GetByIdAsync(so.Id, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Resolves each incoming line's unit price from the Product Price Catalog per CHG-FEAT-007 §2.3.
+    /// Returns a list of SalesOrderLine entities on success or a FULF_PRICE_NOT_FOUND failure on the first
+    /// unresolved product/currency pair (no partial sales order is created).
+    /// </summary>
+    private async Task<Result<List<SalesOrderLine>>> BuildResolvedLinesAsync(
+        CreateSalesOrderRequest request,
+        CancellationToken cancellationToken)
+    {
+        List<SalesOrderLine> resolved = [];
+        DateTime nowUtc = DateTime.UtcNow;
+
+        foreach (CreateSalesOrderLineRequest lineReq in request.Lines)
+        {
+            ProductPrice? catalogPrice = await _priceResolver
+                .ResolveAsync(lineReq.ProductId, request.CurrencyCode, nowUtc, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (catalogPrice is null)
+                return Result<List<SalesOrderLine>>.Failure(
+                    "FULF_PRICE_NOT_FOUND",
+                    $"No active price exists for product {lineReq.ProductId} in currency {request.CurrencyCode}. Add a price to the catalog first.",
+                    400,
+                    new Dictionary<string, object?>
+                    {
+                        ["productId"] = lineReq.ProductId,
+                        ["currencyCode"] = request.CurrencyCode
+                    });
+
+            decimal effectiveUnitPrice = lineReq.UnitPrice ?? catalogPrice.UnitPrice;
+
+            SalesOrderLine line = new()
+            {
+                ProductId = lineReq.ProductId,
+                OrderedQuantity = lineReq.OrderedQuantity,
+                UnitPrice = effectiveUnitPrice,
+                LineTotal = lineReq.OrderedQuantity * effectiveUnitPrice,
+                Notes = lineReq.Notes
+            };
+
+            resolved.Add(line);
+        }
+
+        return Result<List<SalesOrderLine>>.Success(resolved);
     }
 
     /// <inheritdoc />
@@ -127,7 +179,33 @@ public sealed class SalesOrderService : BaseFulfillmentEntityService, ISalesOrde
         bool duplicateProduct = so.Lines.Any(l => l.ProductId == request.ProductId);
         if (duplicateProduct) return Result<SalesOrderLineDto>.Failure("DUPLICATE_SO_LINE", "This product is already on the sales order.", 409);
 
-        SalesOrderLine line = new() { SalesOrderId = soId, ProductId = request.ProductId, OrderedQuantity = request.OrderedQuantity, UnitPrice = request.UnitPrice, LineTotal = request.OrderedQuantity * request.UnitPrice, Notes = request.Notes };
+        ProductPrice? catalogPrice = await _priceResolver
+            .ResolveAsync(request.ProductId, so.CurrencyCode, DateTime.UtcNow, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (catalogPrice is null)
+            return Result<SalesOrderLineDto>.Failure(
+                "FULF_PRICE_NOT_FOUND",
+                $"No active price exists for product {request.ProductId} in currency {so.CurrencyCode}. Add a price to the catalog first.",
+                400,
+                new Dictionary<string, object?>
+                {
+                    ["productId"] = request.ProductId,
+                    ["currencyCode"] = so.CurrencyCode
+                });
+
+        decimal effectiveUnitPrice = request.UnitPrice ?? catalogPrice.UnitPrice;
+
+        SalesOrderLine line = new()
+        {
+            SalesOrderId = soId,
+            ProductId = request.ProductId,
+            OrderedQuantity = request.OrderedQuantity,
+            UnitPrice = effectiveUnitPrice,
+            LineTotal = request.OrderedQuantity * effectiveUnitPrice,
+            Notes = request.Notes
+        };
+
         Context.SalesOrderLines.Add(line);
         so.TotalAmount = so.Lines.Sum(l => l.LineTotal) + line.LineTotal;
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -145,7 +223,27 @@ public sealed class SalesOrderService : BaseFulfillmentEntityService, ISalesOrde
         SalesOrderLine? line = so.Lines.FirstOrDefault(l => l.Id == lineId);
         if (line is null) return Result<SalesOrderLineDto>.Failure("SO_LINE_NOT_FOUND", "Sales order line not found.", 404);
 
-        line.OrderedQuantity = request.OrderedQuantity; line.UnitPrice = request.UnitPrice; line.LineTotal = request.OrderedQuantity * request.UnitPrice; line.Notes = request.Notes;
+        ProductPrice? catalogPrice = await _priceResolver
+            .ResolveAsync(line.ProductId, so.CurrencyCode, DateTime.UtcNow, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (catalogPrice is null)
+            return Result<SalesOrderLineDto>.Failure(
+                "FULF_PRICE_NOT_FOUND",
+                $"No active price exists for product {line.ProductId} in currency {so.CurrencyCode}. Add a price to the catalog first.",
+                400,
+                new Dictionary<string, object?>
+                {
+                    ["productId"] = line.ProductId,
+                    ["currencyCode"] = so.CurrencyCode
+                });
+
+        decimal effectiveUnitPrice = request.UnitPrice ?? catalogPrice.UnitPrice;
+
+        line.OrderedQuantity = request.OrderedQuantity;
+        line.UnitPrice = effectiveUnitPrice;
+        line.LineTotal = request.OrderedQuantity * effectiveUnitPrice;
+        line.Notes = request.Notes;
         so.TotalAmount = so.Lines.Sum(l => l.LineTotal);
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 

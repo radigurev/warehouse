@@ -36,6 +36,8 @@ public sealed class CreateSalesOrderRequestValidatorTests
         CreateSalesOrderRequest request = new()
         {
             CustomerId = 1,
+            CustomerAccountId = 1,
+            CurrencyCode = "USD",
             WarehouseId = 1,
             ShippingStreetLine1 = "123 Main St",
             ShippingCity = "Springfield",
@@ -58,6 +60,8 @@ public sealed class CreateSalesOrderRequestValidatorTests
         CreateSalesOrderRequest request = new()
         {
             CustomerId = 0,
+            CustomerAccountId = 1,
+            CurrencyCode = "USD",
             WarehouseId = 1,
             ShippingStreetLine1 = "123 Main St",
             ShippingCity = "Springfield",
@@ -81,6 +85,8 @@ public sealed class CreateSalesOrderRequestValidatorTests
         CreateSalesOrderRequest request = new()
         {
             CustomerId = 1,
+            CustomerAccountId = 1,
+            CurrencyCode = "USD",
             WarehouseId = 0,
             ShippingStreetLine1 = "123 Main St",
             ShippingCity = "Springfield",
@@ -104,6 +110,8 @@ public sealed class CreateSalesOrderRequestValidatorTests
         CreateSalesOrderRequest request = new()
         {
             CustomerId = 1,
+            CustomerAccountId = 1,
+            CurrencyCode = "USD",
             WarehouseId = 1,
             RequestedShipDate = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-1)),
             ShippingStreetLine1 = "123 Main St",
@@ -128,6 +136,8 @@ public sealed class CreateSalesOrderRequestValidatorTests
         CreateSalesOrderRequest request = new()
         {
             CustomerId = 1,
+            CustomerAccountId = 1,
+            CurrencyCode = "USD",
             WarehouseId = 1,
             ShippingStreetLine1 = "123 Main St",
             ShippingCity = "Springfield",
@@ -151,6 +161,8 @@ public sealed class CreateSalesOrderRequestValidatorTests
         CreateSalesOrderRequest request = new()
         {
             CustomerId = 1,
+            CustomerAccountId = 1,
+            CurrencyCode = "USD",
             WarehouseId = 1,
             ShippingStreetLine1 = "123 Main St",
             ShippingCity = "Springfield",
@@ -174,6 +186,8 @@ public sealed class CreateSalesOrderRequestValidatorTests
         CreateSalesOrderRequest request = new()
         {
             CustomerId = 1,
+            CustomerAccountId = 1,
+            CurrencyCode = "USD",
             WarehouseId = 1,
             ShippingStreetLine1 = "123 Main St",
             ShippingCity = "Springfield",
@@ -197,6 +211,8 @@ public sealed class CreateSalesOrderRequestValidatorTests
         CreateSalesOrderRequest request = new()
         {
             CustomerId = 1,
+            CustomerAccountId = 1,
+            CurrencyCode = "USD",
             WarehouseId = 1,
             ShippingStreetLine1 = "123 Main St",
             ShippingCity = "Springfield",
@@ -220,6 +236,8 @@ public sealed class CreateSalesOrderRequestValidatorTests
         CreateSalesOrderRequest request = new()
         {
             CustomerId = 1,
+            CustomerAccountId = 1,
+            CurrencyCode = "USD",
             WarehouseId = 1,
             ShippingStreetLine1 = "123 Main St",
             ShippingCity = "Springfield",
@@ -234,6 +252,87 @@ public sealed class CreateSalesOrderRequestValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e => e.ErrorCode == "INVALID_UNIT_PRICE");
+    }
+
+    /// <summary>CHG-FEAT-007 §3 V9 / §4 E11 — missing CustomerAccountId is rejected.</summary>
+    [Test]
+    [Category("CHG-FEAT-007")]
+    public async Task CreateSalesOrderValidator_MissingCustomerAccountId_ReturnsInvalid()
+    {
+        // Arrange
+        CreateSalesOrderRequest request = new()
+        {
+            CustomerId = 1,
+            CustomerAccountId = 0,
+            CurrencyCode = "USD",
+            WarehouseId = 1,
+            ShippingStreetLine1 = "123 Main St",
+            ShippingCity = "Springfield",
+            ShippingPostalCode = "62704",
+            ShippingCountryCode = "US",
+            Lines = [new CreateSalesOrderLineRequest { ProductId = 1, OrderedQuantity = 10m, UnitPrice = 5m }]
+        };
+
+        // Act
+        ValidationResult result = await _sut.ValidateAsync(request);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.ErrorCode == "SO_INVALID_CUSTOMER_ACCOUNT");
+    }
+
+    /// <summary>CHG-FEAT-007 §3 V10 / §4 E12 — missing CurrencyCode is rejected.</summary>
+    [Test]
+    [Category("CHG-FEAT-007")]
+    public async Task CreateSalesOrderValidator_MissingCurrencyCode_ReturnsInvalid()
+    {
+        // Arrange
+        CreateSalesOrderRequest request = new()
+        {
+            CustomerId = 1,
+            CustomerAccountId = 1,
+            CurrencyCode = "",
+            WarehouseId = 1,
+            ShippingStreetLine1 = "123 Main St",
+            ShippingCity = "Springfield",
+            ShippingPostalCode = "62704",
+            ShippingCountryCode = "US",
+            Lines = [new CreateSalesOrderLineRequest { ProductId = 1, OrderedQuantity = 10m, UnitPrice = 5m }]
+        };
+
+        // Act
+        ValidationResult result = await _sut.ValidateAsync(request);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.ErrorCode == "SO_INVALID_CURRENCY");
+    }
+
+    /// <summary>CHG-FEAT-007 §3 V10 — lowercase CurrencyCode is rejected (must be 3 uppercase ASCII letters).</summary>
+    [Test]
+    [Category("CHG-FEAT-007")]
+    public async Task CreateSalesOrderValidator_LowercaseCurrencyCode_ReturnsInvalid()
+    {
+        // Arrange
+        CreateSalesOrderRequest request = new()
+        {
+            CustomerId = 1,
+            CustomerAccountId = 1,
+            CurrencyCode = "usd",
+            WarehouseId = 1,
+            ShippingStreetLine1 = "123 Main St",
+            ShippingCity = "Springfield",
+            ShippingPostalCode = "62704",
+            ShippingCountryCode = "US",
+            Lines = [new CreateSalesOrderLineRequest { ProductId = 1, OrderedQuantity = 10m, UnitPrice = 5m }]
+        };
+
+        // Act
+        ValidationResult result = await _sut.ValidateAsync(request);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.ErrorCode == "SO_INVALID_CURRENCY");
     }
 }
 

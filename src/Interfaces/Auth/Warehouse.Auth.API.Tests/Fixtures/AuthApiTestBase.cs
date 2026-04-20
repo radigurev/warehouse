@@ -180,4 +180,14 @@ public abstract class AuthApiTestBase
         AuthDbContext context = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
         return await action(context);
     }
+
+    /// <summary>
+    /// Resolves a scoped service from the test host and executes the provided action.
+    /// </summary>
+    protected async Task WithScopedServiceAsync<TService>(Func<TService, Task> action) where TService : notnull
+    {
+        using IServiceScope scope = _factory.Services.CreateScope();
+        TService service = scope.ServiceProvider.GetRequiredService<TService>();
+        await action(service);
+    }
 }

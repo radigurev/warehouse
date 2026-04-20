@@ -109,6 +109,8 @@ public abstract class FulfillmentTestBase
         {
             OrderNumber = $"SO-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString()[..4]}",
             CustomerId = customerId,
+            CustomerAccountId = 1,
+            CurrencyCode = "USD",
             Status = status,
             WarehouseId = warehouseId,
             ShippingStreetLine1 = "123 Main St",
@@ -149,6 +151,8 @@ public abstract class FulfillmentTestBase
         {
             OrderNumber = $"SO-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString()[..4]}",
             CustomerId = customerId,
+            CustomerAccountId = 1,
+            CurrencyCode = "USD",
             Status = status,
             WarehouseId = warehouseId,
             ShippingStreetLine1 = "123 Main St",

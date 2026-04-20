@@ -5,12 +5,18 @@ namespace Warehouse.Common.Models;
 /// </summary>
 public sealed class Result
 {
-    private Result(bool isSuccess, string? errorCode, string? errorMessage, int? statusCode)
+    private Result(
+        bool isSuccess,
+        string? errorCode,
+        string? errorMessage,
+        int? statusCode,
+        IReadOnlyDictionary<string, object?>? extensions)
     {
         IsSuccess = isSuccess;
         ErrorCode = errorCode;
         ErrorMessage = errorMessage;
         StatusCode = statusCode;
+        Extensions = extensions;
     }
 
     /// <summary>
@@ -34,13 +40,28 @@ public sealed class Result
     public int? StatusCode { get; }
 
     /// <summary>
+    /// Gets optional structured context carried onto ProblemDetails.Extensions, or null when none.
+    /// </summary>
+    public IReadOnlyDictionary<string, object?>? Extensions { get; }
+
+    /// <summary>
     /// Creates a successful result.
     /// </summary>
-    public static Result Success() => new(true, null, null, null);
+    public static Result Success() => new(true, null, null, null, null);
 
     /// <summary>
     /// Creates a failed result with the specified error details.
     /// </summary>
     public static Result Failure(string errorCode, string errorMessage, int statusCode)
-        => new(false, errorCode, errorMessage, statusCode);
+        => new(false, errorCode, errorMessage, statusCode, null);
+
+    /// <summary>
+    /// Creates a failed result with the specified error details and structured extensions (propagated to ProblemDetails.Extensions).
+    /// </summary>
+    public static Result Failure(
+        string errorCode,
+        string errorMessage,
+        int statusCode,
+        IReadOnlyDictionary<string, object?> extensions)
+        => new(false, errorCode, errorMessage, statusCode, extensions);
 }

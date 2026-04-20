@@ -86,6 +86,12 @@ public sealed class FulfillmentDbContext : DbContext
     public DbSet<FulfillmentEvent> FulfillmentEvents { get; set; } = null!;
 
     /// <summary>
+    /// Gets or sets the ProductPrices DbSet (Fulfillment-owned price catalog).
+    /// <para>Added by CHG-FEAT-007.</para>
+    /// </summary>
+    public DbSet<ProductPrice> ProductPrices { get; set; } = null!;
+
+    /// <summary>
     /// Configures entity defaults, indexes, and relationships via Fluent API.
     /// </summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -106,6 +112,7 @@ public sealed class FulfillmentDbContext : DbContext
         ConfigureCustomerReturn(modelBuilder);
         ConfigureCustomerReturnLine(modelBuilder);
         ConfigureFulfillmentEvent(modelBuilder);
+        ConfigureProductPrice(modelBuilder);
     }
 
     /// <summary>
@@ -121,6 +128,8 @@ public sealed class FulfillmentDbContext : DbContext
 
             e.Property(p => p.OrderNumber).IsRequired().HasMaxLength(20).HasColumnType("nvarchar(20)");
             e.Property(p => p.CustomerId).IsRequired();
+            e.Property(p => p.CustomerAccountId).IsRequired();
+            e.Property(p => p.CurrencyCode).IsRequired().HasMaxLength(3).HasColumnType("nvarchar(3)");
             e.Property(p => p.Status).IsRequired().HasMaxLength(30).HasColumnType("nvarchar(30)").HasDefaultValue("Draft");
             e.Property(p => p.WarehouseId).IsRequired();
             e.Property(p => p.RequestedShipDate).HasColumnType("date");
@@ -154,6 +163,9 @@ public sealed class FulfillmentDbContext : DbContext
 
             e.HasIndex(p => p.WarehouseId)
                 .HasDatabaseName("IX_SalesOrders_WarehouseId");
+
+            e.HasIndex(p => p.CustomerAccountId)
+                .HasDatabaseName("IX_SalesOrders_CustomerAccountId");
 
             e.HasOne(so => so.Carrier)
                 .WithMany()
@@ -637,6 +649,37 @@ public sealed class FulfillmentDbContext : DbContext
 
             e.HasIndex(p => p.OccurredAtUtc)
                 .HasDatabaseName("IX_FulfillmentEvents_OccurredAtUtc");
+        });
+    }
+
+    /// <summary>
+    /// Configures the ProductPrice entity mapping, constraints, and indexes.
+    /// <para>Added by CHG-FEAT-007. See also <see cref="ProductPrice"/>.</para>
+    /// </summary>
+    private static void ConfigureProductPrice(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<ProductPrice>(e =>
+        {
+            e.ToTable("ProductPrices", "fulfillment");
+            e.HasKey(p => p.Id);
+            e.Property(p => p.Id).UseIdentityColumn();
+
+            e.Property(p => p.ProductId).IsRequired();
+            e.Property(p => p.CurrencyCode).IsRequired().HasMaxLength(3).HasColumnType("nvarchar(3)");
+            e.Property(p => p.UnitPrice).IsRequired().HasColumnType("decimal(18,4)");
+            e.Property(p => p.ValidFrom).HasColumnType("datetime2(7)");
+            e.Property(p => p.ValidTo).HasColumnType("datetime2(7)");
+            e.Property(p => p.CreatedAtUtc).IsRequired().HasColumnType("datetime2(7)").HasDefaultValueSql("SYSUTCDATETIME()");
+            e.Property(p => p.CreatedByUserId).IsRequired();
+            e.Property(p => p.ModifiedAtUtc).HasColumnType("datetime2(7)");
+
+            e.HasIndex(p => new { p.ProductId, p.CurrencyCode, p.ValidFrom })
+                .IsUnique()
+                .HasFilter(null)
+                .HasDatabaseName("UX_ProductPrices_ProductId_CurrencyCode_ValidFrom");
+
+            e.HasIndex(p => new { p.ProductId, p.CurrencyCode, p.ValidFrom, p.ValidTo })
+                .HasDatabaseName("IX_ProductPrices_ProductId_CurrencyCode_ValidFrom_ValidTo");
         });
     }
 }

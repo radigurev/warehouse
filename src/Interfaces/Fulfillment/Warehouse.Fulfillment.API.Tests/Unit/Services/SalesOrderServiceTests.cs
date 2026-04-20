@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Moq;
 using Warehouse.Common.Enums;
 using Warehouse.Common.Models;
@@ -22,6 +23,7 @@ public sealed class SalesOrderServiceTests : FulfillmentTestBase
 {
     private Mock<IFulfillmentEventService> _mockEventService = null!;
     private Mock<INomenclatureResolver> _mockNomenclatureResolver = null!;
+    private Mock<IProductPriceResolver> _mockPriceResolver = null!;
     private SalesOrderService _sut = null!;
 
     [SetUp]
@@ -30,7 +32,24 @@ public sealed class SalesOrderServiceTests : FulfillmentTestBase
         base.SetUp();
         _mockEventService = new Mock<IFulfillmentEventService>();
         _mockNomenclatureResolver = new Mock<INomenclatureResolver>();
-        _sut = new SalesOrderService(Context, Mapper, _mockEventService.Object, _mockNomenclatureResolver.Object);
+        _mockPriceResolver = new Mock<IProductPriceResolver>();
+
+        // Default: resolver returns a stable $25 USD price so pre-existing tests that do not care
+        // about price resolution continue to work. Override in specific tests when exercising the
+        // FULF_PRICE_NOT_FOUND path or custom catalog prices (CHG-FEAT-007 §2.3).
+        _mockPriceResolver
+            .Setup(r => r.ResolveAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((int productId, string currencyCode, DateTime _, CancellationToken __) => new Warehouse.Fulfillment.DBModel.Models.ProductPrice
+            {
+                Id = 1,
+                ProductId = productId,
+                CurrencyCode = currencyCode,
+                UnitPrice = 25m,
+                CreatedAtUtc = DateTime.UtcNow,
+                CreatedByUserId = 1
+            });
+
+        _sut = new SalesOrderService(Context, Mapper, _mockEventService.Object, _mockNomenclatureResolver.Object, _mockPriceResolver.Object);
     }
 
     [Test]
@@ -39,7 +58,7 @@ public sealed class SalesOrderServiceTests : FulfillmentTestBase
         // Arrange
         CreateSalesOrderRequest request = new()
         {
-            CustomerId = 1, WarehouseId = 1,
+            CustomerId = 1, CustomerAccountId = 1, CurrencyCode = "USD", WarehouseId = 1,
             ShippingStreetLine1 = "123 Main St", ShippingCity = "Springfield",
             ShippingPostalCode = "62704", ShippingCountryCode = "US",
             Lines = [new CreateSalesOrderLineRequest { ProductId = 100, OrderedQuantity = 10, UnitPrice = 25 }]
@@ -66,7 +85,7 @@ public sealed class SalesOrderServiceTests : FulfillmentTestBase
         // Arrange
         CreateSalesOrderRequest request = new()
         {
-            CustomerId = 1, WarehouseId = 1,
+            CustomerId = 1, CustomerAccountId = 1, CurrencyCode = "USD", WarehouseId = 1,
             ShippingStreetLine1 = "123 Main St", ShippingCity = "Springfield",
             ShippingPostalCode = "62704", ShippingCountryCode = "US",
             Lines = [new CreateSalesOrderLineRequest { ProductId = 100, OrderedQuantity = 5, UnitPrice = 10 }]
@@ -85,7 +104,7 @@ public sealed class SalesOrderServiceTests : FulfillmentTestBase
         // Arrange
         CreateSalesOrderRequest request = new()
         {
-            CustomerId = 1, WarehouseId = 1,
+            CustomerId = 1, CustomerAccountId = 1, CurrencyCode = "USD", WarehouseId = 1,
             ShippingStreetLine1 = "123 Main St", ShippingCity = "Springfield",
             ShippingPostalCode = "62704", ShippingCountryCode = "US",
             Lines =
@@ -108,7 +127,7 @@ public sealed class SalesOrderServiceTests : FulfillmentTestBase
         // Arrange
         CreateSalesOrderRequest request = new()
         {
-            CustomerId = 1, WarehouseId = 1,
+            CustomerId = 1, CustomerAccountId = 1, CurrencyCode = "USD", WarehouseId = 1,
             ShippingStreetLine1 = "123 Main St", ShippingCity = "Springfield",
             ShippingPostalCode = "62704", ShippingCountryCode = "US",
             Lines = [new CreateSalesOrderLineRequest { ProductId = 100, OrderedQuantity = 5, UnitPrice = 10 }]
@@ -660,6 +679,270 @@ public sealed class SalesOrderServiceTests : FulfillmentTestBase
         {
             Assert.That(result.IsSuccess, Is.True);
             Assert.That(so.TotalAmount, Is.EqualTo(250m));
+        });
+    }
+
+    /// <summary>CHG-FEAT-007 §2.3 — add line without UnitPrice uses the resolved catalog price.</summary>
+    [Test]
+    [Category("CHG-FEAT-007")]
+    public async Task CreateLineAsync_NoUnitPriceProvided_UsesResolvedCatalogPrice()
+    {
+        // Arrange
+        SalesOrder so = await SeedSalesOrderAsync(status: nameof(SalesOrderStatus.Draft));
+        _mockPriceResolver
+            .Setup(r => r.ResolveAsync(250, "USD", It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ProductPrice
+            {
+                Id = 1,
+                ProductId = 250,
+                CurrencyCode = "USD",
+                UnitPrice = 88.8800m,
+                CreatedAtUtc = DateTime.UtcNow,
+                CreatedByUserId = 1
+            });
+        CreateSalesOrderLineRequest request = new() { ProductId = 250, OrderedQuantity = 2m, UnitPrice = null };
+
+        // Act
+        Result<SalesOrderLineDto> result = await _sut.AddLineAsync(so.Id, request, CancellationToken.None);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.IsSuccess, Is.True);
+            Assert.That(result.Value!.UnitPrice, Is.EqualTo(88.88m));
+            Assert.That(result.Value.LineTotal, Is.EqualTo(177.76m));
+        });
+    }
+
+    /// <summary>CHG-FEAT-007 §2.3 — caller-supplied UnitPrice is preserved verbatim even when catalog has a different price.</summary>
+    [Test]
+    [Category("CHG-FEAT-007")]
+    public async Task CreateLineAsync_UnitPriceProvided_PreservesCallerOverride()
+    {
+        // Arrange
+        SalesOrder so = await SeedSalesOrderAsync(status: nameof(SalesOrderStatus.Draft));
+        _mockPriceResolver
+            .Setup(r => r.ResolveAsync(260, "USD", It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ProductPrice
+            {
+                Id = 2,
+                ProductId = 260,
+                CurrencyCode = "USD",
+                UnitPrice = 99m,
+                CreatedAtUtc = DateTime.UtcNow,
+                CreatedByUserId = 1
+            });
+        CreateSalesOrderLineRequest request = new() { ProductId = 260, OrderedQuantity = 2m, UnitPrice = 17m };
+
+        // Act
+        Result<SalesOrderLineDto> result = await _sut.AddLineAsync(so.Id, request, CancellationToken.None);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.IsSuccess, Is.True);
+            Assert.That(result.Value!.UnitPrice, Is.EqualTo(17m));
+        });
+    }
+
+    /// <summary>CHG-FEAT-007 §2.3 — override does NOT bypass the catalog existence check.</summary>
+    [Test]
+    [Category("CHG-FEAT-007")]
+    public async Task CreateLineAsync_UnitPriceProvidedButNoActivePriceExists_StillReturnsNotFoundError()
+    {
+        // Arrange
+        SalesOrder so = await SeedSalesOrderAsync(status: nameof(SalesOrderStatus.Draft));
+        _mockPriceResolver
+            .Setup(r => r.ResolveAsync(270, "USD", It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ProductPrice?)null);
+        CreateSalesOrderLineRequest request = new() { ProductId = 270, OrderedQuantity = 2m, UnitPrice = 30m };
+
+        // Act
+        Result<SalesOrderLineDto> result = await _sut.AddLineAsync(so.Id, request, CancellationToken.None);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.ErrorCode, Is.EqualTo("FULF_PRICE_NOT_FOUND"));
+            Assert.That(result.StatusCode, Is.EqualTo(400));
+        });
+    }
+
+    /// <summary>CHG-FEAT-007 §2.3 / §2.4 — no catalog entry blocks add-line with FULF_PRICE_NOT_FOUND (and nothing is persisted).</summary>
+    [Test]
+    [Category("CHG-FEAT-007")]
+    public async Task CreateLineAsync_NoActivePrice_ReturnsFulfPriceNotFoundError()
+    {
+        // Arrange
+        SalesOrder so = await SeedSalesOrderAsync(status: nameof(SalesOrderStatus.Draft));
+        _mockPriceResolver
+            .Setup(r => r.ResolveAsync(280, "USD", It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ProductPrice?)null);
+        CreateSalesOrderLineRequest request = new() { ProductId = 280, OrderedQuantity = 2m, UnitPrice = null };
+
+        // Act
+        Result<SalesOrderLineDto> result = await _sut.AddLineAsync(so.Id, request, CancellationToken.None);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.ErrorCode, Is.EqualTo("FULF_PRICE_NOT_FOUND"));
+            Assert.That(result.StatusCode, Is.EqualTo(400));
+        });
+
+        int persistedCount = await Context.SalesOrderLines.CountAsync(l => l.ProductId == 280, CancellationToken.None);
+        Assert.That(persistedCount, Is.Zero, "No partial line MUST be persisted (§2.4).");
+    }
+
+    /// <summary>CHG-FEAT-007 §2.3 step 1 — resolver is invoked with the currency stored directly on the SO header.</summary>
+    [Test]
+    [Category("CHG-FEAT-007")]
+    public async Task CreateLineAsync_UsesCustomerAccountCurrency_AsLookupKey()
+    {
+        // Arrange
+        SalesOrder so = await SeedSalesOrderAsync(status: nameof(SalesOrderStatus.Draft));
+        so.CurrencyCode = "EUR";
+        await Context.SaveChangesAsync(CancellationToken.None);
+
+        _mockPriceResolver
+            .Setup(r => r.ResolveAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((int pid, string cur, DateTime _, CancellationToken __) => new ProductPrice
+            {
+                Id = 1,
+                ProductId = pid,
+                CurrencyCode = cur,
+                UnitPrice = 10m,
+                CreatedAtUtc = DateTime.UtcNow,
+                CreatedByUserId = 1
+            });
+
+        CreateSalesOrderLineRequest request = new() { ProductId = 290, OrderedQuantity = 1m, UnitPrice = null };
+
+        // Act
+        await _sut.AddLineAsync(so.Id, request, CancellationToken.None);
+
+        // Assert
+        _mockPriceResolver.Verify(
+            r => r.ResolveAsync(290, "EUR", It.IsAny<DateTime>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    /// <summary>CHG-FEAT-007 §2.3 — update without UnitPrice re-resolves and applies the latest catalog price.</summary>
+    [Test]
+    [Category("CHG-FEAT-007")]
+    public async Task UpdateLineAsync_NoUnitPriceProvided_RerunsResolverAndUpdatesPrice()
+    {
+        // Arrange
+        SalesOrder so = await SeedSalesOrderAsync(status: nameof(SalesOrderStatus.Draft), productId: 300, unitPrice: 25m);
+        int lineId = so.Lines.First().Id;
+        _mockPriceResolver
+            .Setup(r => r.ResolveAsync(300, "USD", It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ProductPrice
+            {
+                Id = 99,
+                ProductId = 300,
+                CurrencyCode = "USD",
+                UnitPrice = 33m,
+                CreatedAtUtc = DateTime.UtcNow,
+                CreatedByUserId = 1
+            });
+        UpdateSalesOrderLineRequest request = new() { OrderedQuantity = 4m, UnitPrice = null };
+
+        // Act
+        Result<SalesOrderLineDto> result = await _sut.UpdateLineAsync(so.Id, lineId, request, CancellationToken.None);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.IsSuccess, Is.True);
+            Assert.That(result.Value!.UnitPrice, Is.EqualTo(33m));
+            Assert.That(result.Value.LineTotal, Is.EqualTo(132m));
+        });
+    }
+
+    /// <summary>CHG-FEAT-007 §2.3 — update with explicit UnitPrice preserves the caller override.</summary>
+    [Test]
+    [Category("CHG-FEAT-007")]
+    public async Task UpdateLineAsync_UnitPriceProvided_PreservesCallerOverride()
+    {
+        // Arrange
+        SalesOrder so = await SeedSalesOrderAsync(status: nameof(SalesOrderStatus.Draft), productId: 310, unitPrice: 25m);
+        int lineId = so.Lines.First().Id;
+        _mockPriceResolver
+            .Setup(r => r.ResolveAsync(310, "USD", It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ProductPrice
+            {
+                Id = 99,
+                ProductId = 310,
+                CurrencyCode = "USD",
+                UnitPrice = 99m,
+                CreatedAtUtc = DateTime.UtcNow,
+                CreatedByUserId = 1
+            });
+        UpdateSalesOrderLineRequest request = new() { OrderedQuantity = 2m, UnitPrice = 5m };
+
+        // Act
+        Result<SalesOrderLineDto> result = await _sut.UpdateLineAsync(so.Id, lineId, request, CancellationToken.None);
+
+        // Assert
+        Assert.That(result.Value!.UnitPrice, Is.EqualTo(5m));
+    }
+
+    /// <summary>CHG-FEAT-007 §2.3 — update path blocks when catalog lost coverage since the SO was created.</summary>
+    [Test]
+    [Category("CHG-FEAT-007")]
+    public async Task UpdateLineAsync_NoActivePrice_ReturnsFulfPriceNotFoundError()
+    {
+        // Arrange
+        SalesOrder so = await SeedSalesOrderAsync(status: nameof(SalesOrderStatus.Draft), productId: 320, unitPrice: 25m);
+        int lineId = so.Lines.First().Id;
+        _mockPriceResolver
+            .Setup(r => r.ResolveAsync(320, "USD", It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ProductPrice?)null);
+        UpdateSalesOrderLineRequest request = new() { OrderedQuantity = 2m, UnitPrice = null };
+
+        // Act
+        Result<SalesOrderLineDto> result = await _sut.UpdateLineAsync(so.Id, lineId, request, CancellationToken.None);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.ErrorCode, Is.EqualTo("FULF_PRICE_NOT_FOUND"));
+            Assert.That(result.StatusCode, Is.EqualTo(400));
+        });
+    }
+
+    /// <summary>CHG-FEAT-007 §2.9 — CustomerAccountId and CurrencyCode from the request are persisted on the SO header.</summary>
+    [Test]
+    [Category("CHG-FEAT-007")]
+    public async Task CreateSalesOrderAsync_CustomerAccountIdAndCurrencyCode_PersistedOnHeader()
+    {
+        // Arrange
+        CreateSalesOrderRequest request = new()
+        {
+            CustomerId = 1,
+            CustomerAccountId = 77,
+            CurrencyCode = "EUR",
+            WarehouseId = 1,
+            ShippingStreetLine1 = "123 Main St",
+            ShippingCity = "Berlin",
+            ShippingPostalCode = "10115",
+            ShippingCountryCode = "DE",
+            Lines = [new CreateSalesOrderLineRequest { ProductId = 400, OrderedQuantity = 1m, UnitPrice = 10m }]
+        };
+
+        // Act
+        Result<SalesOrderDetailDto> result = await _sut.CreateAsync(request, 1, CancellationToken.None);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.IsSuccess, Is.True);
+            Assert.That(result.Value!.CustomerAccountId, Is.EqualTo(77));
+            Assert.That(result.Value.CurrencyCode, Is.EqualTo("EUR"));
         });
     }
 }

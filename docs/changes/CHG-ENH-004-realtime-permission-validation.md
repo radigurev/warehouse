@@ -1,8 +1,8 @@
 # CHG-ENH-004 — Real-Time Permission Validation via Redis
 
-> Status: Draft
-> Last updated: 2026-04-09
-> Owner: TBD
+> Status: Implemented
+> Last updated: 2026-04-18
+> Owner: Radoslav
 > Priority: P1
 
 ## 1. Context & Scope
@@ -83,22 +83,22 @@ Permissions are currently embedded as claims in the JWT access token. This creat
 
 ### Unit Tests
 
-- [ ] `[Unit] PermissionService_CacheHit_ReturnsFromRedis` — verifies cached permissions are returned without calling Auth.API
-- [ ] `[Unit] PermissionService_CacheMiss_CallsAuthApi` — verifies fallback to HTTP call on cache miss
-- [ ] `[Unit] PermissionService_CacheMiss_PopulatesRedis` — verifies the result is written to Redis after HTTP call
-- [ ] `[Unit] PermissionService_BothUnavailable_ReturnsDenied` — verifies fail-closed behavior
-- [ ] `[Unit] RequirePermission_UserHasPermission_Allows` — verifies authorized request passes
-- [ ] `[Unit] RequirePermission_UserLacksPermission_Returns403` — verifies forbidden response
-- [ ] `[Unit] RequirePermission_NoToken_Returns401` — verifies unauthenticated request rejected
-- [ ] `[Unit] TokenService_GenerateAccessToken_NoPermissionClaims` — verifies JWT contains only identity claims
-- [ ] `[Unit] UserPermissionsCacheInvalidation_OnRoleAssignmentChange` — verifies Redis key deleted on UserRole change
-- [ ] `[Unit] UserPermissionsCacheInvalidation_OnRolePermissionChange` — verifies Redis keys deleted for all affected users
+- [x] `[Unit] PermissionService_CacheHit_ReturnsFromRedis` — verifies cached permissions are returned without calling Auth.API
+- [x] `[Unit] PermissionService_CacheMiss_CallsAuthApi` — verifies fallback to HTTP call on cache miss
+- [x] `[Unit] PermissionService_CacheMiss_PopulatesRedis` — verifies the result is written to Redis after HTTP call
+- [x] `[Unit] PermissionService_BothUnavailable_ReturnsDenied` — verifies fail-closed behavior
+- [x] `[Unit] RequirePermission_UserHasPermission_Allows` — verifies authorized request passes
+- [x] `[Unit] RequirePermission_UserLacksPermission_Returns403` — verifies forbidden response
+- [x] `[Unit] RequirePermission_NoToken_Returns401` — verifies unauthenticated request rejected
+- [x] `[Unit] TokenService_GenerateAccessToken_NoPermissionClaims` — verifies JWT contains only identity claims
+- [x] `[Unit] UserPermissionsCacheInvalidation_OnRoleAssignmentChange` — verifies Redis key deleted on UserRole change
+- [x] `[Unit] UserPermissionsCacheInvalidation_OnRolePermissionChange` — verifies Redis keys deleted for all affected users
 
 ### Integration Tests
 
-- [ ] `[Integration] GetUserPermissions_ReturnsResolvedSet` — verifies endpoint returns correct flattened permissions
-- [ ] `[Integration] PermissionRevoked_NextRequestDenied` — verifies that revoking a permission and invalidating cache results in denial on next request
-- [ ] `[Integration] Login_TokenContainsOnlyIdentityClaims` — verifies login response JWT has no permission/role claims
+- [x] `[Integration] GetUserPermissions_ReturnsResolvedSet` — verifies endpoint returns correct flattened permissions
+- [x] `[Integration] PermissionRevoked_NextRequestDenied` — verifies that revoking a permission and invalidating cache results in denial on next request
+- [x] `[Integration] Login_TokenContainsOnlyIdentityClaims` — verifies login response JWT has no permission/role claims
 
 ## 7. Detailed Design
 

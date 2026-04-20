@@ -233,6 +233,9 @@ This document provides a bidirectional mapping between SDD specifications and so
 | `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Controllers/CarrierServiceLevelsController.cs` | Controller | Carrier service level endpoints |
 | `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Controllers/CustomerReturnsController.cs` | Controller | Customer return endpoints |
 | `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Controllers/FulfillmentEventsController.cs` | Controller | Fulfillment event history endpoints |
+| `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Controllers/ProductPricesController.cs` | Controller | Product Price Catalog endpoints (CHG-FEAT-007) |
+| `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Services/ProductPriceService.cs` | Service | Product price CRUD (CHG-FEAT-007) |
+| `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Services/ProductPriceResolver.cs` | Service | Price resolution algorithm (CHG-FEAT-007) |
 | `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Services/SalesOrderService.cs` | Service | SO lifecycle and status machine |
 | `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Services/PickListService.cs` | Service | Pick list generation and execution |
 | `src/Interfaces/Fulfillment/Warehouse.Fulfillment.API/Services/PackingService.cs` | Service | Packing business logic |

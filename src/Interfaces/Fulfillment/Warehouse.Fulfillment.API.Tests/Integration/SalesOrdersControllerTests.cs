@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Warehouse.Fulfillment.API.Tests.Fixtures;
 using Warehouse.ServiceModel.DTOs.Fulfillment;
 using Warehouse.ServiceModel.Requests.Fulfillment;
@@ -44,6 +45,8 @@ public sealed class SalesOrdersControllerTests : FulfillmentApiTestBase
         CreateSalesOrderRequest request = new()
         {
             CustomerId = 1,
+            CustomerAccountId = 1,
+            CurrencyCode = "USD",
             WarehouseId = 1,
             ShippingStreetLine1 = "123 Main St",
             ShippingCity = "Springfield",
@@ -67,6 +70,8 @@ public sealed class SalesOrdersControllerTests : FulfillmentApiTestBase
         CreateSalesOrderRequest request = new()
         {
             CustomerId = 0,
+            CustomerAccountId = 0,
+            CurrencyCode = "",
             WarehouseId = 0,
             ShippingStreetLine1 = "",
             ShippingCity = "",
@@ -250,6 +255,7 @@ public sealed class SalesOrdersControllerTests : FulfillmentApiTestBase
         // Arrange
         HttpClient client = CreateAuthenticatedClient("sales-orders:create", "sales-orders:read", "sales-orders:update");
         SalesOrderDetailDto created = await CreateSalesOrderAndReadAsync(client);
+        await EnsureProductPriceAsync(200, "USD", 15m);
         CreateSalesOrderLineRequest lineRequest = new()
         {
             ProductId = 200,
@@ -339,6 +345,7 @@ public sealed class SalesOrdersControllerTests : FulfillmentApiTestBase
         // Arrange
         HttpClient client = CreateAuthenticatedClient("sales-orders:create", "sales-orders:read", "sales-orders:update");
         SalesOrderDetailDto created = await CreateSalesOrderAndReadAsync(client);
+        await EnsureProductPriceAsync(201, "USD", 10m);
         CreateSalesOrderLineRequest secondLine = new()
         {
             ProductId = 201,
@@ -380,6 +387,8 @@ public sealed class SalesOrdersControllerTests : FulfillmentApiTestBase
         CreateSalesOrderRequest request = new()
         {
             CustomerId = 1,
+            CustomerAccountId = 1,
+            CurrencyCode = "USD",
             WarehouseId = 1,
             ShippingStreetLine1 = "123 Main St",
             ShippingCity = "Springfield",
@@ -403,6 +412,8 @@ public sealed class SalesOrdersControllerTests : FulfillmentApiTestBase
         CreateSalesOrderRequest request = new()
         {
             CustomerId = 1,
+            CustomerAccountId = 1,
+            CurrencyCode = "USD",
             WarehouseId = 1,
             ShippingStreetLine1 = "123 Main St",
             ShippingCity = "Springfield",
@@ -416,5 +427,167 @@ public sealed class SalesOrdersControllerTests : FulfillmentApiTestBase
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    /// <summary>CHG-FEAT-007 §2.3 — line create without UnitPrice uses the catalog price end-to-end.</summary>
+    [Test]
+    [Category("CHG-FEAT-007")]
+    public async Task CreateSalesOrderLine_NoUnitPrice_UsesCatalogPrice()
+    {
+        // Arrange
+        HttpClient client = CreateAuthenticatedClient("sales-orders:create", "sales-orders:read", "sales-orders:update");
+        await EnsureProductPriceAsync(productId: 1500, currencyCode: "USD", unitPrice: 77.77m);
+        SalesOrderDetailDto so = await CreateSalesOrderAndReadAsync(client, productId: 1499, unitPrice: 10m);
+
+        CreateSalesOrderLineRequest lineRequest = new()
+        {
+            ProductId = 1500,
+            OrderedQuantity = 3m,
+            UnitPrice = null
+        };
+
+        // Act
+        HttpResponseMessage response = await client.PostAsJsonAsync($"/api/v1/sales-orders/{so.Id}/lines", lineRequest);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        SalesOrderLineDto? body = await response.Content.ReadFromJsonAsync<SalesOrderLineDto>();
+        body.Should().NotBeNull();
+        body!.ProductId.Should().Be(1500);
+        body.UnitPrice.Should().Be(77.77m);
+    }
+
+    /// <summary>CHG-FEAT-007 §2.4 / §4 E6 — missing catalog entry blocks line creation with FULF_PRICE_NOT_FOUND.</summary>
+    [Test]
+    [Category("CHG-FEAT-007")]
+    public async Task CreateSalesOrderLine_NoActivePrice_Returns400FulfPriceNotFound()
+    {
+        // Arrange
+        HttpClient client = CreateAuthenticatedClient("sales-orders:create", "sales-orders:read", "sales-orders:update");
+        SalesOrderDetailDto so = await CreateSalesOrderAndReadAsync(client, productId: 1600, unitPrice: 10m);
+
+        // Attempt to add a line for a product with NO catalog coverage.
+        CreateSalesOrderLineRequest lineRequest = new()
+        {
+            ProductId = 1601,
+            OrderedQuantity = 2m,
+            UnitPrice = null
+        };
+
+        // Act
+        HttpResponseMessage response = await client.PostAsJsonAsync($"/api/v1/sales-orders/{so.Id}/lines", lineRequest);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        string raw = await response.Content.ReadAsStringAsync();
+        raw.Should().Contain("FULF_PRICE_NOT_FOUND");
+        raw.Should().Contain("\"productId\":1601");
+        raw.Should().Contain("\"currencyCode\":\"USD\"");
+    }
+
+    /// <summary>CHG-FEAT-007 §2.3 — caller-supplied UnitPrice is preserved end-to-end.</summary>
+    [Test]
+    [Category("CHG-FEAT-007")]
+    public async Task CreateSalesOrderLine_UnitPriceProvided_PreservesOverride()
+    {
+        // Arrange
+        HttpClient client = CreateAuthenticatedClient("sales-orders:create", "sales-orders:read", "sales-orders:update");
+        await EnsureProductPriceAsync(productId: 1700, currencyCode: "USD", unitPrice: 50m);
+        SalesOrderDetailDto so = await CreateSalesOrderAndReadAsync(client, productId: 1699, unitPrice: 10m);
+
+        CreateSalesOrderLineRequest lineRequest = new()
+        {
+            ProductId = 1700,
+            OrderedQuantity = 2m,
+            UnitPrice = 42m
+        };
+
+        // Act
+        HttpResponseMessage response = await client.PostAsJsonAsync($"/api/v1/sales-orders/{so.Id}/lines", lineRequest);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        SalesOrderLineDto? body = await response.Content.ReadFromJsonAsync<SalesOrderLineDto>();
+        body.Should().NotBeNull();
+        body!.UnitPrice.Should().Be(42m, "caller override MUST be preserved (CHG-FEAT-007 §2.3).");
+    }
+
+    /// <summary>CHG-FEAT-007 §2.3 — update path is blocked when catalog loses coverage.</summary>
+    [Test]
+    [Category("CHG-FEAT-007")]
+    public async Task UpdateSalesOrderLine_NoActivePrice_Returns400FulfPriceNotFound()
+    {
+        // Arrange
+        HttpClient client = CreateAuthenticatedClient("sales-orders:create", "sales-orders:read", "sales-orders:update");
+        SalesOrderDetailDto so = await CreateSalesOrderAndReadAsync(client, productId: 1800, unitPrice: 10m);
+        int lineId = so.Lines[0].Id;
+
+        // Remove the catalog entry for this product, then attempt to update the line.
+        await WithDbContextAsync(async db =>
+        {
+            List<Warehouse.Fulfillment.DBModel.Models.ProductPrice> rows =
+                await db.ProductPrices.Where(p => p.ProductId == 1800 && p.CurrencyCode == "USD").ToListAsync();
+            db.ProductPrices.RemoveRange(rows);
+            await db.SaveChangesAsync();
+        });
+
+        UpdateSalesOrderLineRequest update = new()
+        {
+            OrderedQuantity = 5m,
+            UnitPrice = null
+        };
+
+        // Act
+        HttpResponseMessage response = await client.PutAsJsonAsync($"/api/v1/sales-orders/{so.Id}/lines/{lineId}", update);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        string raw = await response.Content.ReadAsStringAsync();
+        raw.Should().Contain("FULF_PRICE_NOT_FOUND");
+    }
+
+    /// <summary>CHG-FEAT-007 §2.9 — SO create with valid CustomerAccountId and CurrencyCode returns 201.</summary>
+    [Test]
+    [Category("CHG-FEAT-007")]
+    public async Task PostSalesOrder_ValidCustomerAccountAndCurrency_Returns201()
+    {
+        // Arrange
+        HttpClient client = CreateAuthenticatedClient("sales-orders:create", "sales-orders:read");
+
+        // Act
+        HttpResponseMessage response = await CreateSalesOrderViaApiAsync(
+            client, customerAccountId: 42, currencyCode: "USD");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        SalesOrderDetailDto? body = await response.Content.ReadFromJsonAsync<SalesOrderDetailDto>();
+        body.Should().NotBeNull();
+    }
+
+    /// <summary>CHG-FEAT-007 §2.9 / §4 E11 — missing CustomerAccountId returns 400.</summary>
+    [Test]
+    [Category("CHG-FEAT-007")]
+    public async Task PostSalesOrder_MissingCustomerAccountId_Returns400()
+    {
+        // Arrange
+        HttpClient client = CreateAuthenticatedClient("sales-orders:create");
+        CreateSalesOrderRequest request = new()
+        {
+            CustomerId = 1,
+            CustomerAccountId = 0,
+            CurrencyCode = "USD",
+            WarehouseId = 1,
+            ShippingStreetLine1 = "123 Main St",
+            ShippingCity = "Springfield",
+            ShippingPostalCode = "62704",
+            ShippingCountryCode = "US",
+            Lines = [new CreateSalesOrderLineRequest { ProductId = 100, OrderedQuantity = 1m, UnitPrice = 10m }]
+        };
+
+        // Act
+        HttpResponseMessage response = await client.PostAsJsonAsync("/api/v1/sales-orders", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 }

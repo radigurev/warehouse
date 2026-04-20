@@ -72,7 +72,7 @@ Test classes reference spec IDs: `{TestClassName}_SDD_{DOMAIN}_{NNN}_{Descriptio
 | SDD-AUTH-001 | Infrastructure | Authentication and Authorization | Part 2, Section 6 — Personnel Model | Implemented |
 | SDD-UI-001 | Core | Auth Administration SPA | — | Implemented |
 | SDD-UI-002 | Domain | Form Display Mode (Modal vs Page) | — | Draft |
-| SDD-UI-003 | Domain | User Settings | — | Draft |
+| SDD-UI-003 | Domain | User Settings | — | Implemented |
 | SDD-UI-004 | Core | Purchasing SPA | — | Implemented |
 | SDD-UI-005 | Core | Fulfillment SPA | — | Implemented |
 | SDD-CUST-001 | Domain | Customers and Accounts | — | Implemented |
@@ -115,6 +115,7 @@ Test classes reference spec IDs: `{TestClassName}_SDD_{DOMAIN}_{NNN}_{Descriptio
 | CHG-REFAC-011 | Frontend CRUD API Factory and List View Composable | SDD-UI-001 | Implemented |
 | CHG-REFAC-012 | Frontend Navigation Strategy and Utilities | SDD-UI-001 | Implemented |
 | CHG-REFAC-013 | SOLID Principle Violation Fixes | Cross-cutting | Implemented |
+| CHG-FEAT-007 | Fulfillment Product Price Catalog | SDD-FULF-001, SDD-AUTH-001 | Implemented |
 
 ## Status Legend
 
@@ -143,7 +144,7 @@ Test classes reference spec IDs: `{TestClassName}_SDD_{DOMAIN}_{NNN}_{Descriptio
 | `SDD-EVTLOG` | 002 |
 | `SDD-OBS` | 002 |
 | `SDD-FILT` | 001 |
-| `CHG-FEAT` | 001 |
+| `CHG-FEAT` | 008 |
 | `CHG-ENH` | 007 |
 | `CHG-FIX` | 001 |
 | `CHG-REFAC` | 014 |

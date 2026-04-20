@@ -31,17 +31,27 @@ public sealed class UpdateSalesOrderRequestValidator : AbstractValidator<UpdateS
         RuleFor(x => x.ShippingCountryCode)
             .NotEmpty().WithErrorCode("INVALID_SHIPPING_ADDRESS").WithMessage("Shipping country code is required.")
             .Length(2).WithErrorCode("INVALID_SHIPPING_ADDRESS").WithMessage("Shipping country code must be a 2-letter ISO 3166-1 alpha-2 code.")
-            .MustAsync(async (code, cancellation) =>
-            {
-                if (!await featureManager.IsEnabledAsync(FeatureFlags.EnableNomenclatureValidation).ConfigureAwait(false))
-                    return true;
-
-                bool? valid = await nomenclatureResolver.ValidateCountryCodeAsync(code, cancellation).ConfigureAwait(false);
-                return valid ?? true;
-            })
+            .Must(code => ValidateCountryCodeSync(nomenclatureResolver, featureManager, code))
             .WithErrorCode("INVALID_COUNTRY_CODE")
             .WithMessage(x => $"The country code '{x.ShippingCountryCode}' is not recognized. Please select a valid country.");
 
         RuleFor(x => x.Notes).MaximumLength(2000).WithErrorCode("INVALID_NOTES").When(x => !string.IsNullOrEmpty(x.Notes));
+    }
+
+    /// <summary>
+    /// Synchronously validates the country code against the Nomenclature cache when enabled by feature flag.
+    /// Blocks briefly on the async resolver — safe because the underlying resolver is fail-open (returns null on Redis errors)
+    /// and this validator runs inside ASP.NET's synchronous auto-validation pipeline.
+    /// </summary>
+    private static bool ValidateCountryCodeSync(
+        INomenclatureResolver nomenclatureResolver,
+        IFeatureManager featureManager,
+        string code)
+    {
+        bool enabled = featureManager.IsEnabledAsync(FeatureFlags.EnableNomenclatureValidation).GetAwaiter().GetResult();
+        if (!enabled) return true;
+
+        bool? valid = nomenclatureResolver.ValidateCountryCodeAsync(code, CancellationToken.None).GetAwaiter().GetResult();
+        return valid ?? true;
     }
 }

@@ -14,6 +14,12 @@ public sealed record SalesOrderDto
     /// <summary>Gets the customer ID.</summary>
     public required int CustomerId { get; init; }
 
+    /// <summary>Gets the customer account ID cached on the SO header. Added by CHG-FEAT-007.</summary>
+    public required int CustomerAccountId { get; init; }
+
+    /// <summary>Gets the ISO 4217 currency code cached on the SO header. Added by CHG-FEAT-007.</summary>
+    public required string CurrencyCode { get; init; }
+
     /// <summary>Gets the current status.</summary>
     public required string Status { get; init; }
 
