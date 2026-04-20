@@ -116,6 +116,7 @@ Test classes reference spec IDs: `{TestClassName}_SDD_{DOMAIN}_{NNN}_{Descriptio
 | CHG-REFAC-012 | Frontend Navigation Strategy and Utilities | SDD-UI-001 | Implemented |
 | CHG-REFAC-013 | SOLID Principle Violation Fixes | Cross-cutting | Implemented |
 | CHG-FEAT-007 | Fulfillment Product Price Catalog | SDD-FULF-001, SDD-AUTH-001 | Implemented |
+| CHG-FIX-001 | Bearer token forwarding in IUserPermissionService HttpClient | SDD-AUTH-001 | Implemented |
 
 ## Status Legend
 
@@ -146,6 +147,6 @@ Test classes reference spec IDs: `{TestClassName}_SDD_{DOMAIN}_{NNN}_{Descriptio
 | `SDD-FILT` | 001 |
 | `CHG-FEAT` | 008 |
 | `CHG-ENH` | 007 |
-| `CHG-FIX` | 001 |
+| `CHG-FIX` | 002 |
 | `CHG-REFAC` | 014 |
 | `CHG-DEBT` | 001 |

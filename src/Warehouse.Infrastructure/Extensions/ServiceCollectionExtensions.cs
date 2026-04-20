@@ -87,12 +87,15 @@ public static class ServiceCollectionExtensions
             ?? "http://localhost:5001";
 
         services.AddCorrelationId();
+        services.AddHttpContextAccessor();
+        services.AddTransient<BearerTokenForwardingHandler>();
 
         services.AddHttpClient<IUserPermissionService, UserPermissionService>(client =>
             {
                 client.BaseAddress = new Uri(authApiBaseAddress);
             })
             .AddHttpMessageHandler<CorrelationIdDelegatingHandler>()
+            .AddHttpMessageHandler<BearerTokenForwardingHandler>()
             .AddStandardResilienceHandler(options =>
             {
                 options.Retry.MaxRetryAttempts = 2;
