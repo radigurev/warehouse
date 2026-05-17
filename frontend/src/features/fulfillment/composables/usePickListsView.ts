@@ -1,4 +1,5 @@
 import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { useListView } from '@shared/composables/useListView';
 import { searchPickLists, cancelPickList } from '@features/fulfillment/api/pick-lists';
 import type { PickListDto, SearchPickListsRequest } from '@features/fulfillment/types/fulfillment';
@@ -9,6 +10,7 @@ import { useI18n } from 'vue-i18n';
 export function usePickListsView() {
   const { t } = useI18n();
   const notification = useNotificationStore();
+  const router = useRouter();
 
   const base = useListView<PickListDto, SearchPickListsRequest>({
     fetchFn: searchPickLists,
@@ -20,6 +22,10 @@ export function usePickListsView() {
       detailRoute: (p: PickListDto) => ({ name: 'pick-list-detail', params: { id: p.id } }),
     },
   });
+
+  function handleDetail(pickList: PickListDto): void {
+    router.push({ name: 'pick-list-detail', params: { id: pickList.id } });
+  }
 
   const selectedPickList = base.selectedItem;
   const showCancelDialog = ref(false);
@@ -65,6 +71,7 @@ export function usePickListsView() {
 
   return {
     ...base,
+    handleDetail,
     selectedPickList,
     showCancelDialog,
     cancelling,

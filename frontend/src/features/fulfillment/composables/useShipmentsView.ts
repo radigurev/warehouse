@@ -1,4 +1,5 @@
 import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { useListView } from '@shared/composables/useListView';
 import { searchShipments, updateShipmentStatus } from '@features/fulfillment/api/shipments';
 import { useNotificationStore } from '@shared/stores/notification';
@@ -9,6 +10,7 @@ import { useI18n } from 'vue-i18n';
 export function useShipmentsView() {
   const { t } = useI18n();
   const notification = useNotificationStore();
+  const router = useRouter();
 
   const showStatusDialog = ref(false);
   const selectedShipment = ref<ShipmentDto | null>(null);
@@ -23,6 +25,10 @@ export function useShipmentsView() {
       detailRoute: (s: ShipmentDto) => ({ name: 'shipment-detail', params: { id: s.id } }),
     },
   });
+
+  function handleDetail(shipment: ShipmentDto): void {
+    router.push({ name: 'shipment-detail', params: { id: shipment.id } });
+  }
 
   const headers = computed(() => [
     { title: t('shipments.columns.shipmentNumber'), key: 'shipmentNumber', sortable: true },
@@ -70,6 +76,7 @@ export function useShipmentsView() {
 
   return {
     ...base,
+    handleDetail,
     headers,
     getStatusColor,
     isTerminalStatus,
