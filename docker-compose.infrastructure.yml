@@ -227,6 +227,8 @@ services:
       - RabbitMQ__Host=rabbitmq
       - PermissionValidation__AuthApiBaseAddress=http://auth-api:8080
       - LOKI_ENDPOINT=http://loki:3100
+      - FeatureManagement__EnableSeedFulfillmentReferenceData=true
+      - FeatureManagement__EnableSeedFulfillmentDemoData=true
     depends_on:
       - sqlserver
       - redis
