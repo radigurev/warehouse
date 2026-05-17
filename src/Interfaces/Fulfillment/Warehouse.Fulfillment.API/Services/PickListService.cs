@@ -26,16 +26,24 @@ public sealed class PickListService : BaseFulfillmentEntityService, IPickListSer
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly ICorrelationIdAccessor _correlationIdAccessor;
     private readonly IFulfillmentEventService _eventService;
+    private readonly IFulfillmentLookupResolver _lookupResolver;
 
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
-    public PickListService(FulfillmentDbContext context, IMapper mapper, IPublishEndpoint publishEndpoint, ICorrelationIdAccessor correlationIdAccessor, IFulfillmentEventService eventService)
+    public PickListService(
+        FulfillmentDbContext context,
+        IMapper mapper,
+        IPublishEndpoint publishEndpoint,
+        ICorrelationIdAccessor correlationIdAccessor,
+        IFulfillmentEventService eventService,
+        IFulfillmentLookupResolver lookupResolver)
         : base(context, mapper)
     {
         _publishEndpoint = publishEndpoint;
         _correlationIdAccessor = correlationIdAccessor;
         _eventService = eventService;
+        _lookupResolver = lookupResolver;
     }
 
     /// <inheritdoc />
@@ -82,9 +90,10 @@ public sealed class PickListService : BaseFulfillmentEntityService, IPickListSer
     /// <inheritdoc />
     public async Task<Result<PickListDetailDto>> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
-        PickList? pickList = await Context.PickLists.Include(pl => pl.Lines).FirstOrDefaultAsync(pl => pl.Id == id, cancellationToken).ConfigureAwait(false);
+        PickList? pickList = await GetPickListWithDetailsAsync(id, cancellationToken).ConfigureAwait(false);
         if (pickList is null) return Result<PickListDetailDto>.Failure("PICK_LIST_NOT_FOUND", "Pick list not found.", 404);
         PickListDetailDto dto = Mapper.Map<PickListDetailDto>(pickList);
+        dto = await EnrichDetailDtoAsync(dto, cancellationToken).ConfigureAwait(false);
         return Result<PickListDetailDto>.Success(dto);
     }
 
@@ -95,8 +104,12 @@ public sealed class PickListService : BaseFulfillmentEntityService, IPickListSer
         int totalCount = await query.CountAsync(cancellationToken).ConfigureAwait(false);
 
         IQueryable<PickList> sorted = request.SortDescending ? query.OrderByDescending(pl => pl.CreatedAtUtc) : query.OrderBy(pl => pl.CreatedAtUtc);
-        List<PickList> items = await sorted.Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync(cancellationToken).ConfigureAwait(false);
+        List<PickList> items = await sorted
+            .Include(pl => pl.SalesOrder)
+            .Skip((request.Page - 1) * request.PageSize).Take(request.PageSize)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
         IReadOnlyList<PickListDto> dtos = Mapper.Map<IReadOnlyList<PickListDto>>(items);
+        dtos = await EnrichListDtosAsync(dtos, cancellationToken).ConfigureAwait(false);
         PaginatedResponse<PickListDto> response = new() { Items = dtos, Page = request.Page, PageSize = request.PageSize, TotalCount = totalCount };
         return Result<PaginatedResponse<PickListDto>>.Success(response);
     }
@@ -125,13 +138,14 @@ public sealed class PickListService : BaseFulfillmentEntityService, IPickListSer
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         PickListLineDto dto = Mapper.Map<PickListLineDto>(line);
+        dto = await EnrichLineDtoAsync(dto, cancellationToken).ConfigureAwait(false);
         return Result<PickListLineDto>.Success(dto);
     }
 
     /// <inheritdoc />
     public async Task<Result<PickListDetailDto>> CancelAsync(int id, int userId, CancellationToken cancellationToken)
     {
-        PickList? pickList = await Context.PickLists.Include(pl => pl.Lines).FirstOrDefaultAsync(pl => pl.Id == id, cancellationToken).ConfigureAwait(false);
+        PickList? pickList = await GetPickListWithDetailsAsync(id, cancellationToken).ConfigureAwait(false);
         if (pickList is null) return Result<PickListDetailDto>.Failure("PICK_LIST_NOT_FOUND", "Pick list not found.", 404);
         if (pickList.Status == nameof(PickListStatus.Completed)) return Result<PickListDetailDto>.Failure("PICK_LIST_ALREADY_COMPLETED", "Pick list has already been completed.", 409);
 
@@ -143,7 +157,99 @@ public sealed class PickListService : BaseFulfillmentEntityService, IPickListSer
         await _eventService.RecordEventAsync("PickListCancelled", "PickList", id, userId, null, cancellationToken).ConfigureAwait(false);
 
         PickListDetailDto dto = Mapper.Map<PickListDetailDto>(pickList);
+        dto = await EnrichDetailDtoAsync(dto, cancellationToken).ConfigureAwait(false);
         return Result<PickListDetailDto>.Success(dto);
+    }
+
+    /// <summary>
+    /// Enriches the pick list detail DTO with cross-schema display names (warehouse, per-line product + location).
+    /// </summary>
+    private async Task<PickListDetailDto> EnrichDetailDtoAsync(
+        PickListDetailDto dto,
+        CancellationToken cancellationToken)
+    {
+        string? warehouseName = await _lookupResolver.ResolveWarehouseNameAsync(dto.WarehouseId, cancellationToken).ConfigureAwait(false);
+
+        IReadOnlyCollection<int> productIds = dto.Lines.Select(l => l.ProductId).Distinct().ToArray();
+        IReadOnlyCollection<int> locationIds = dto.Lines.Where(l => l.SourceLocationId.HasValue).Select(l => l.SourceLocationId!.Value).Distinct().ToArray();
+
+        IReadOnlyDictionary<int, (string Code, string Name)> products =
+            await _lookupResolver.ResolveProductsAsync(productIds, cancellationToken).ConfigureAwait(false);
+        IReadOnlyDictionary<int, string> locations =
+            await _lookupResolver.ResolveStorageLocationCodesAsync(locationIds, cancellationToken).ConfigureAwait(false);
+
+        IReadOnlyList<PickListLineDto> enrichedLines = dto.Lines
+            .Select(line => EnrichLine(line, products, locations))
+            .ToArray();
+
+        return dto with { WarehouseName = warehouseName, Lines = enrichedLines };
+    }
+
+    /// <summary>
+    /// Returns a copy of the pick list line with product and source location display fields hydrated.
+    /// </summary>
+    private static PickListLineDto EnrichLine(
+        PickListLineDto line,
+        IReadOnlyDictionary<int, (string Code, string Name)> products,
+        IReadOnlyDictionary<int, string> locations)
+    {
+        string? productCode = null;
+        string? productName = null;
+        if (products.TryGetValue(line.ProductId, out (string Code, string Name) info))
+        {
+            productCode = info.Code;
+            productName = info.Name;
+        }
+
+        string? locationCode = line.SourceLocationId.HasValue
+            ? locations.GetValueOrDefault(line.SourceLocationId.Value)
+            : null;
+
+        return line with { ProductCode = productCode, ProductName = productName, SourceLocationCode = locationCode };
+    }
+
+    /// <summary>
+    /// Enriches a single pick list line DTO (used after ConfirmPickAsync).
+    /// </summary>
+    private async Task<PickListLineDto> EnrichLineDtoAsync(
+        PickListLineDto dto,
+        CancellationToken cancellationToken)
+    {
+        IReadOnlyCollection<int> productIds = new[] { dto.ProductId };
+        IReadOnlyDictionary<int, (string Code, string Name)> products =
+            await _lookupResolver.ResolveProductsAsync(productIds, cancellationToken).ConfigureAwait(false);
+
+        IReadOnlyDictionary<int, string> locations = dto.SourceLocationId.HasValue
+            ? await _lookupResolver.ResolveStorageLocationCodesAsync(new[] { dto.SourceLocationId.Value }, cancellationToken).ConfigureAwait(false)
+            : new Dictionary<int, string>();
+
+        return EnrichLine(dto, products, locations);
+    }
+
+    /// <summary>
+    /// Batch-resolves warehouse names for the list view DTOs.
+    /// </summary>
+    private async Task<IReadOnlyList<PickListDto>> EnrichListDtosAsync(
+        IReadOnlyList<PickListDto> dtos,
+        CancellationToken cancellationToken)
+    {
+        if (dtos.Count == 0) return dtos;
+
+        IReadOnlyCollection<int> warehouseIds = dtos.Select(d => d.WarehouseId).Distinct().ToArray();
+        IReadOnlyDictionary<int, string> warehouseNames =
+            await _lookupResolver.ResolveWarehouseNamesAsync(warehouseIds, cancellationToken).ConfigureAwait(false);
+
+        return dtos
+            .Select(d => d with { WarehouseName = warehouseNames.GetValueOrDefault(d.WarehouseId) })
+            .ToArray();
+    }
+
+    private async Task<PickList?> GetPickListWithDetailsAsync(int id, CancellationToken cancellationToken)
+    {
+        return await Context.PickLists
+            .Include(pl => pl.Lines)
+            .Include(pl => pl.SalesOrder)
+            .FirstOrDefaultAsync(pl => pl.Id == id, cancellationToken).ConfigureAwait(false);
     }
 
     private List<SalesOrderLine> GetUnallocatedLines(SalesOrder so)

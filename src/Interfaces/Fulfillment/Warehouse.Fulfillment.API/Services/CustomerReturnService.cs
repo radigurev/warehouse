@@ -26,16 +26,24 @@ public sealed class CustomerReturnService : BaseFulfillmentEntityService, ICusto
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly ICorrelationIdAccessor _correlationIdAccessor;
     private readonly IFulfillmentEventService _eventService;
+    private readonly IFulfillmentLookupResolver _lookupResolver;
 
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
-    public CustomerReturnService(FulfillmentDbContext context, IMapper mapper, IPublishEndpoint publishEndpoint, ICorrelationIdAccessor correlationIdAccessor, IFulfillmentEventService eventService)
+    public CustomerReturnService(
+        FulfillmentDbContext context,
+        IMapper mapper,
+        IPublishEndpoint publishEndpoint,
+        ICorrelationIdAccessor correlationIdAccessor,
+        IFulfillmentEventService eventService,
+        IFulfillmentLookupResolver lookupResolver)
         : base(context, mapper)
     {
         _publishEndpoint = publishEndpoint;
         _correlationIdAccessor = correlationIdAccessor;
         _eventService = eventService;
+        _lookupResolver = lookupResolver;
     }
 
     /// <inheritdoc />
@@ -73,6 +81,7 @@ public sealed class CustomerReturnService : BaseFulfillmentEntityService, ICusto
         CustomerReturn? cr = await GetReturnWithDetailsAsync(id, cancellationToken).ConfigureAwait(false);
         if (cr is null) return Result<CustomerReturnDetailDto>.Failure("RETURN_NOT_FOUND", "Customer return not found.", 404);
         CustomerReturnDetailDto dto = Mapper.Map<CustomerReturnDetailDto>(cr);
+        dto = await EnrichDetailDtoAsync(dto, cr, cancellationToken).ConfigureAwait(false);
         return Result<CustomerReturnDetailDto>.Success(dto);
     }
 
@@ -83,8 +92,12 @@ public sealed class CustomerReturnService : BaseFulfillmentEntityService, ICusto
         int totalCount = await query.CountAsync(cancellationToken).ConfigureAwait(false);
 
         IQueryable<CustomerReturn> sorted = request.SortDescending ? query.OrderByDescending(cr => cr.CreatedAtUtc) : query.OrderBy(cr => cr.CreatedAtUtc);
-        List<CustomerReturn> items = await sorted.Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync(cancellationToken).ConfigureAwait(false);
+        List<CustomerReturn> items = await sorted
+            .Include(cr => cr.SalesOrder)
+            .Skip((request.Page - 1) * request.PageSize).Take(request.PageSize)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
         IReadOnlyList<CustomerReturnDto> dtos = Mapper.Map<IReadOnlyList<CustomerReturnDto>>(items);
+        dtos = await EnrichListDtosAsync(dtos, items, cancellationToken).ConfigureAwait(false);
         PaginatedResponse<CustomerReturnDto> response = new() { Items = dtos, Page = request.Page, PageSize = request.PageSize, TotalCount = totalCount };
         return Result<PaginatedResponse<CustomerReturnDto>>.Success(response);
     }
@@ -103,6 +116,7 @@ public sealed class CustomerReturnService : BaseFulfillmentEntityService, ICusto
         await _eventService.RecordEventAsync("CustomerReturnConfirmed", "CustomerReturn", id, userId, null, cancellationToken).ConfigureAwait(false);
 
         CustomerReturnDetailDto dto = Mapper.Map<CustomerReturnDetailDto>(cr);
+        dto = await EnrichDetailDtoAsync(dto, cr, cancellationToken).ConfigureAwait(false);
         return Result<CustomerReturnDetailDto>.Success(dto);
     }
 
@@ -121,6 +135,7 @@ public sealed class CustomerReturnService : BaseFulfillmentEntityService, ICusto
         await _eventService.RecordEventAsync("CustomerReturnReceived", "CustomerReturn", id, userId, null, cancellationToken).ConfigureAwait(false);
 
         CustomerReturnDetailDto dto = Mapper.Map<CustomerReturnDetailDto>(cr);
+        dto = await EnrichDetailDtoAsync(dto, cr, cancellationToken).ConfigureAwait(false);
         return Result<CustomerReturnDetailDto>.Success(dto);
     }
 
@@ -136,6 +151,7 @@ public sealed class CustomerReturnService : BaseFulfillmentEntityService, ICusto
         await _eventService.RecordEventAsync("CustomerReturnClosed", "CustomerReturn", id, userId, null, cancellationToken).ConfigureAwait(false);
 
         CustomerReturnDetailDto dto = Mapper.Map<CustomerReturnDetailDto>(cr);
+        dto = await EnrichDetailDtoAsync(dto, cr, cancellationToken).ConfigureAwait(false);
         return Result<CustomerReturnDetailDto>.Success(dto);
     }
 
@@ -152,7 +168,97 @@ public sealed class CustomerReturnService : BaseFulfillmentEntityService, ICusto
         await _eventService.RecordEventAsync("CustomerReturnCancelled", "CustomerReturn", id, userId, null, cancellationToken).ConfigureAwait(false);
 
         CustomerReturnDetailDto dto = Mapper.Map<CustomerReturnDetailDto>(cr);
+        dto = await EnrichDetailDtoAsync(dto, cr, cancellationToken).ConfigureAwait(false);
         return Result<CustomerReturnDetailDto>.Success(dto);
+    }
+
+    /// <summary>
+    /// Enriches a customer return detail DTO with customer name, sales order number, and
+    /// per-line cross-schema display names (product code/name, warehouse name, location code).
+    /// </summary>
+    private async Task<CustomerReturnDetailDto> EnrichDetailDtoAsync(
+        CustomerReturnDetailDto dto,
+        CustomerReturn entity,
+        CancellationToken cancellationToken)
+    {
+        string? customerName = await _lookupResolver.ResolveCustomerNameAsync(dto.CustomerId, cancellationToken).ConfigureAwait(false);
+        string? salesOrderNumber = entity.SalesOrder?.OrderNumber;
+
+        IReadOnlyCollection<int> productIds = dto.Lines.Select(l => l.ProductId).Distinct().ToArray();
+        IReadOnlyCollection<int> warehouseIds = dto.Lines.Select(l => l.WarehouseId).Distinct().ToArray();
+        IReadOnlyCollection<int> locationIds = dto.Lines.Where(l => l.LocationId.HasValue).Select(l => l.LocationId!.Value).Distinct().ToArray();
+
+        IReadOnlyDictionary<int, (string Code, string Name)> products =
+            await _lookupResolver.ResolveProductsAsync(productIds, cancellationToken).ConfigureAwait(false);
+        IReadOnlyDictionary<int, string> warehouses =
+            await _lookupResolver.ResolveWarehouseNamesAsync(warehouseIds, cancellationToken).ConfigureAwait(false);
+        IReadOnlyDictionary<int, string> locations =
+            await _lookupResolver.ResolveStorageLocationCodesAsync(locationIds, cancellationToken).ConfigureAwait(false);
+
+        IReadOnlyList<CustomerReturnLineDto> enrichedLines = dto.Lines
+            .Select(line => EnrichLine(line, products, warehouses, locations))
+            .ToArray();
+
+        return dto with
+        {
+            CustomerName = customerName,
+            SalesOrderNumber = salesOrderNumber,
+            Lines = enrichedLines
+        };
+    }
+
+    /// <summary>
+    /// Returns a copy of the customer return line with cross-schema display fields hydrated.
+    /// </summary>
+    private static CustomerReturnLineDto EnrichLine(
+        CustomerReturnLineDto line,
+        IReadOnlyDictionary<int, (string Code, string Name)> products,
+        IReadOnlyDictionary<int, string> warehouses,
+        IReadOnlyDictionary<int, string> locations)
+    {
+        string? productCode = null;
+        string? productName = null;
+        if (products.TryGetValue(line.ProductId, out (string Code, string Name) info))
+        {
+            productCode = info.Code;
+            productName = info.Name;
+        }
+
+        string? warehouseName = warehouses.GetValueOrDefault(line.WarehouseId);
+        string? locationCode = line.LocationId.HasValue ? locations.GetValueOrDefault(line.LocationId.Value) : null;
+
+        return line with
+        {
+            ProductCode = productCode,
+            ProductName = productName,
+            WarehouseName = warehouseName,
+            LocationCode = locationCode
+        };
+    }
+
+    /// <summary>
+    /// Batch-resolves customer names and sales order numbers for the paginated list view.
+    /// </summary>
+    private async Task<IReadOnlyList<CustomerReturnDto>> EnrichListDtosAsync(
+        IReadOnlyList<CustomerReturnDto> dtos,
+        IReadOnlyList<CustomerReturn> entities,
+        CancellationToken cancellationToken)
+    {
+        if (dtos.Count == 0) return dtos;
+
+        IReadOnlyCollection<int> customerIds = dtos.Select(d => d.CustomerId).Distinct().ToArray();
+        IReadOnlyDictionary<int, string> customerNames =
+            await _lookupResolver.ResolveCustomerNamesAsync(customerIds, cancellationToken).ConfigureAwait(false);
+
+        Dictionary<int, string?> soNumbersById = entities.ToDictionary(e => e.Id, e => e.SalesOrder?.OrderNumber);
+
+        return dtos
+            .Select(d => d with
+            {
+                CustomerName = customerNames.GetValueOrDefault(d.CustomerId),
+                SalesOrderNumber = soNumbersById.GetValueOrDefault(d.Id)
+            })
+            .ToArray();
     }
 
     private async Task PublishCustomerReturnReceivedEventAsync(CustomerReturn cr, int userId, CancellationToken cancellationToken)
@@ -171,7 +277,10 @@ public sealed class CustomerReturnService : BaseFulfillmentEntityService, ICusto
 
     private async Task<CustomerReturn?> GetReturnWithDetailsAsync(int id, CancellationToken cancellationToken)
     {
-        return await Context.CustomerReturns.Include(cr => cr.Lines).FirstOrDefaultAsync(cr => cr.Id == id, cancellationToken).ConfigureAwait(false);
+        return await Context.CustomerReturns
+            .Include(cr => cr.Lines)
+            .Include(cr => cr.SalesOrder)
+            .FirstOrDefaultAsync(cr => cr.Id == id, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<string> GenerateReturnNumberAsync(CancellationToken cancellationToken)

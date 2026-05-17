@@ -1,7 +1,8 @@
 namespace Warehouse.ServiceModel.DTOs.Fulfillment;
 
 /// <summary>
-/// Parcel DTO including packed items.
+/// Parcel DTO including packed items. Uses unit-suffixed dimension field names
+/// (<c>WeightKg</c>, <c>LengthCm</c>, etc.) to match the frontend contract.
 /// </summary>
 public sealed record ParcelDto
 {
@@ -14,17 +15,17 @@ public sealed record ParcelDto
     /// <summary>Gets the sales order ID.</summary>
     public required int SalesOrderId { get; init; }
 
-    /// <summary>Gets the optional weight (kg).</summary>
-    public decimal? Weight { get; init; }
+    /// <summary>Gets the optional weight in kilograms (mapped from entity Weight).</summary>
+    public decimal? WeightKg { get; init; }
 
-    /// <summary>Gets the optional length (cm).</summary>
-    public decimal? Length { get; init; }
+    /// <summary>Gets the optional length in centimeters (mapped from entity Length).</summary>
+    public decimal? LengthCm { get; init; }
 
-    /// <summary>Gets the optional width (cm).</summary>
-    public decimal? Width { get; init; }
+    /// <summary>Gets the optional width in centimeters (mapped from entity Width).</summary>
+    public decimal? WidthCm { get; init; }
 
-    /// <summary>Gets the optional height (cm).</summary>
-    public decimal? Height { get; init; }
+    /// <summary>Gets the optional height in centimeters (mapped from entity Height).</summary>
+    public decimal? HeightCm { get; init; }
 
     /// <summary>Gets the optional tracking number.</summary>
     public string? TrackingNumber { get; init; }

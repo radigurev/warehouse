@@ -19,6 +19,7 @@ namespace Warehouse.Fulfillment.API.Tests.Unit.Services;
 public sealed class PackingServiceTests : FulfillmentTestBase
 {
     private Mock<IFulfillmentEventService> _mockEventService = null!;
+    private Mock<IFulfillmentLookupResolver> _mockLookupResolver = null!;
     private PackingService _sut = null!;
 
     [SetUp]
@@ -26,7 +27,8 @@ public sealed class PackingServiceTests : FulfillmentTestBase
     {
         base.SetUp();
         _mockEventService = new Mock<IFulfillmentEventService>();
-        _sut = new PackingService(Context, Mapper, _mockEventService.Object);
+        _mockLookupResolver = new Mock<IFulfillmentLookupResolver>();
+        _sut = new PackingService(Context, Mapper, _mockEventService.Object, _mockLookupResolver.Object);
     }
 
     [Test]
@@ -45,7 +47,7 @@ public sealed class PackingServiceTests : FulfillmentTestBase
         {
             Assert.That(result.IsSuccess, Is.True);
             Assert.That(result.Value!.ParcelNumber, Does.StartWith("PKG-"));
-            Assert.That(result.Value.Weight, Is.EqualTo(2.5m));
+            Assert.That(result.Value.WeightKg, Is.EqualTo(2.5m));
         });
     }
 
@@ -196,7 +198,7 @@ public sealed class PackingServiceTests : FulfillmentTestBase
         Assert.Multiple(() =>
         {
             Assert.That(result.IsSuccess, Is.True);
-            Assert.That(result.Value!.Weight, Is.EqualTo(5.0m));
+            Assert.That(result.Value!.WeightKg, Is.EqualTo(5.0m));
         });
     }
 

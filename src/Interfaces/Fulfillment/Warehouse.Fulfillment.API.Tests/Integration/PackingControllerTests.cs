@@ -61,7 +61,7 @@ public sealed class PackingControllerTests : FulfillmentApiTestBase
         ParcelDto? body = await response.Content.ReadFromJsonAsync<ParcelDto>();
         body.Should().NotBeNull();
         body!.SalesOrderId.Should().Be(so.Id);
-        body.Weight.Should().Be(2.5m);
+        body.WeightKg.Should().Be(2.5m);
     }
 
     [Test]
@@ -140,7 +140,7 @@ public sealed class PackingControllerTests : FulfillmentApiTestBase
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         ParcelDto? body = await response.Content.ReadFromJsonAsync<ParcelDto>();
         body.Should().NotBeNull();
-        body!.Weight.Should().Be(3.0m);
+        body!.WeightKg.Should().Be(3.0m);
         body.TrackingNumber.Should().Be("TRK-123");
     }
 

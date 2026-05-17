@@ -14,8 +14,14 @@ public sealed record ShipmentDto
     /// <summary>Gets the sales order ID.</summary>
     public required int SalesOrderId { get; init; }
 
+    /// <summary>Gets the parent sales order number (mapped from SalesOrder.OrderNumber).</summary>
+    public required string SalesOrderNumber { get; init; }
+
     /// <summary>Gets the optional carrier ID.</summary>
     public int? CarrierId { get; init; }
+
+    /// <summary>Gets the optional carrier display name (from the local Fulfillment schema).</summary>
+    public string? CarrierName { get; init; }
 
     /// <summary>Gets the current status.</summary>
     public required string Status { get; init; }

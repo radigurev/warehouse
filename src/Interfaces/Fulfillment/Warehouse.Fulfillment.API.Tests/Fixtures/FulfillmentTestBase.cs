@@ -117,6 +117,10 @@ public abstract class FulfillmentTestBase
             ShippingCity = "Springfield",
             ShippingPostalCode = "62704",
             ShippingCountryCode = "US",
+            BillingStreetLine1 = "123 Main St",
+            BillingCity = "Springfield",
+            BillingPostalCode = "62704",
+            BillingCountryCode = "US",
             TotalAmount = orderedQuantity * unitPrice,
             CreatedAtUtc = DateTime.UtcNow,
             CreatedByUserId = 1
@@ -159,6 +163,10 @@ public abstract class FulfillmentTestBase
             ShippingCity = "Springfield",
             ShippingPostalCode = "62704",
             ShippingCountryCode = "US",
+            BillingStreetLine1 = "123 Main St",
+            BillingCity = "Springfield",
+            BillingPostalCode = "62704",
+            BillingCountryCode = "US",
             TotalAmount = 0,
             CreatedAtUtc = DateTime.UtcNow,
             CreatedByUserId = 1

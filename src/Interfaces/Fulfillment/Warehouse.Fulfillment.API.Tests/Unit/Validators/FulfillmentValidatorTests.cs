@@ -43,6 +43,10 @@ public sealed class CreateSalesOrderRequestValidatorTests
             ShippingCity = "Springfield",
             ShippingPostalCode = "62704",
             ShippingCountryCode = "US",
+            BillingStreetLine1 = "123 Main St",
+            BillingCity = "Springfield",
+            BillingPostalCode = "62704",
+            BillingCountryCode = "US",
             Lines = [new CreateSalesOrderLineRequest { ProductId = 1, OrderedQuantity = 10m, UnitPrice = 5.99m }]
         };
 
@@ -67,6 +71,10 @@ public sealed class CreateSalesOrderRequestValidatorTests
             ShippingCity = "Springfield",
             ShippingPostalCode = "62704",
             ShippingCountryCode = "US",
+            BillingStreetLine1 = "123 Main St",
+            BillingCity = "Springfield",
+            BillingPostalCode = "62704",
+            BillingCountryCode = "US",
             Lines = [new CreateSalesOrderLineRequest { ProductId = 1, OrderedQuantity = 10m, UnitPrice = 5.99m }]
         };
 
@@ -92,6 +100,10 @@ public sealed class CreateSalesOrderRequestValidatorTests
             ShippingCity = "Springfield",
             ShippingPostalCode = "62704",
             ShippingCountryCode = "US",
+            BillingStreetLine1 = "123 Main St",
+            BillingCity = "Springfield",
+            BillingPostalCode = "62704",
+            BillingCountryCode = "US",
             Lines = [new CreateSalesOrderLineRequest { ProductId = 1, OrderedQuantity = 10m, UnitPrice = 5.99m }]
         };
 
@@ -118,6 +130,10 @@ public sealed class CreateSalesOrderRequestValidatorTests
             ShippingCity = "Springfield",
             ShippingPostalCode = "62704",
             ShippingCountryCode = "US",
+            BillingStreetLine1 = "123 Main St",
+            BillingCity = "Springfield",
+            BillingPostalCode = "62704",
+            BillingCountryCode = "US",
             Lines = [new CreateSalesOrderLineRequest { ProductId = 1, OrderedQuantity = 10m, UnitPrice = 5.99m }]
         };
 
@@ -143,6 +159,10 @@ public sealed class CreateSalesOrderRequestValidatorTests
             ShippingCity = "Springfield",
             ShippingPostalCode = "62704",
             ShippingCountryCode = "",
+            BillingStreetLine1 = "123 Main St",
+            BillingCity = "Springfield",
+            BillingPostalCode = "62704",
+            BillingCountryCode = "",
             Lines = [new CreateSalesOrderLineRequest { ProductId = 1, OrderedQuantity = 10m, UnitPrice = 5.99m }]
         };
 
@@ -168,6 +188,10 @@ public sealed class CreateSalesOrderRequestValidatorTests
             ShippingCity = "Springfield",
             ShippingPostalCode = "62704",
             ShippingCountryCode = "US",
+            BillingStreetLine1 = "123 Main St",
+            BillingCity = "Springfield",
+            BillingPostalCode = "62704",
+            BillingCountryCode = "US",
             Lines = []
         };
 
@@ -193,6 +217,10 @@ public sealed class CreateSalesOrderRequestValidatorTests
             ShippingCity = "Springfield",
             ShippingPostalCode = "62704",
             ShippingCountryCode = "US",
+            BillingStreetLine1 = "123 Main St",
+            BillingCity = "Springfield",
+            BillingPostalCode = "62704",
+            BillingCountryCode = "US",
             Lines = [new CreateSalesOrderLineRequest { ProductId = 0, OrderedQuantity = 10m, UnitPrice = 5.99m }]
         };
 
@@ -218,6 +246,10 @@ public sealed class CreateSalesOrderRequestValidatorTests
             ShippingCity = "Springfield",
             ShippingPostalCode = "62704",
             ShippingCountryCode = "US",
+            BillingStreetLine1 = "123 Main St",
+            BillingCity = "Springfield",
+            BillingPostalCode = "62704",
+            BillingCountryCode = "US",
             Lines = [new CreateSalesOrderLineRequest { ProductId = 1, OrderedQuantity = 0m, UnitPrice = 5.99m }]
         };
 
@@ -243,6 +275,10 @@ public sealed class CreateSalesOrderRequestValidatorTests
             ShippingCity = "Springfield",
             ShippingPostalCode = "62704",
             ShippingCountryCode = "US",
+            BillingStreetLine1 = "123 Main St",
+            BillingCity = "Springfield",
+            BillingPostalCode = "62704",
+            BillingCountryCode = "US",
             Lines = [new CreateSalesOrderLineRequest { ProductId = 1, OrderedQuantity = 10m, UnitPrice = -1m }]
         };
 
@@ -270,6 +306,10 @@ public sealed class CreateSalesOrderRequestValidatorTests
             ShippingCity = "Springfield",
             ShippingPostalCode = "62704",
             ShippingCountryCode = "US",
+            BillingStreetLine1 = "123 Main St",
+            BillingCity = "Springfield",
+            BillingPostalCode = "62704",
+            BillingCountryCode = "US",
             Lines = [new CreateSalesOrderLineRequest { ProductId = 1, OrderedQuantity = 10m, UnitPrice = 5m }]
         };
 
@@ -297,6 +337,10 @@ public sealed class CreateSalesOrderRequestValidatorTests
             ShippingCity = "Springfield",
             ShippingPostalCode = "62704",
             ShippingCountryCode = "US",
+            BillingStreetLine1 = "123 Main St",
+            BillingCity = "Springfield",
+            BillingPostalCode = "62704",
+            BillingCountryCode = "US",
             Lines = [new CreateSalesOrderLineRequest { ProductId = 1, OrderedQuantity = 10m, UnitPrice = 5m }]
         };
 
@@ -324,6 +368,10 @@ public sealed class CreateSalesOrderRequestValidatorTests
             ShippingCity = "Springfield",
             ShippingPostalCode = "62704",
             ShippingCountryCode = "US",
+            BillingStreetLine1 = "123 Main St",
+            BillingCity = "Springfield",
+            BillingPostalCode = "62704",
+            BillingCountryCode = "US",
             Lines = [new CreateSalesOrderLineRequest { ProductId = 1, OrderedQuantity = 10m, UnitPrice = 5m }]
         };
 

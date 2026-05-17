@@ -139,6 +139,12 @@ public sealed class FulfillmentDbContext : DbContext
             e.Property(p => p.ShippingStateProvince).HasMaxLength(100).HasColumnType("nvarchar(100)");
             e.Property(p => p.ShippingPostalCode).IsRequired().HasMaxLength(20).HasColumnType("nvarchar(20)");
             e.Property(p => p.ShippingCountryCode).IsRequired().HasMaxLength(2).HasColumnType("nvarchar(2)");
+            e.Property(p => p.BillingStreetLine1).IsRequired().HasMaxLength(200).HasColumnType("nvarchar(200)");
+            e.Property(p => p.BillingStreetLine2).HasMaxLength(200).HasColumnType("nvarchar(200)");
+            e.Property(p => p.BillingCity).IsRequired().HasMaxLength(100).HasColumnType("nvarchar(100)");
+            e.Property(p => p.BillingStateProvince).HasMaxLength(100).HasColumnType("nvarchar(100)");
+            e.Property(p => p.BillingPostalCode).IsRequired().HasMaxLength(20).HasColumnType("nvarchar(20)");
+            e.Property(p => p.BillingCountryCode).IsRequired().HasMaxLength(2).HasColumnType("nvarchar(2)");
             e.Property(p => p.Notes).HasMaxLength(2000).HasColumnType("nvarchar(2000)");
             e.Property(p => p.TotalAmount).IsRequired().HasColumnType("decimal(18,4)").HasDefaultValue(0m);
             e.Property(p => p.CreatedAtUtc).IsRequired().HasColumnType("datetime2(7)").HasDefaultValueSql("SYSUTCDATETIME()");

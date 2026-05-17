@@ -41,6 +41,19 @@ public sealed class CreateSalesOrderRequestValidator : AbstractValidator<CreateS
             .WithErrorCode("INVALID_COUNTRY_CODE")
             .WithMessage(x => $"The country code '{x.ShippingCountryCode}' is not recognized. Please select a valid country.");
 
+        RuleFor(x => x.BillingStreetLine1).NotEmpty().MaximumLength(200).WithErrorCode("INVALID_BILLING_ADDRESS").WithMessage("Billing street line 1 is required (max 200 characters).");
+        RuleFor(x => x.BillingStreetLine2).MaximumLength(200).WithErrorCode("INVALID_BILLING_ADDRESS").When(x => !string.IsNullOrEmpty(x.BillingStreetLine2));
+        RuleFor(x => x.BillingCity).NotEmpty().MaximumLength(100).WithErrorCode("INVALID_BILLING_ADDRESS").WithMessage("Billing city is required (max 100 characters).");
+        RuleFor(x => x.BillingStateProvince).MaximumLength(100).WithErrorCode("INVALID_BILLING_ADDRESS").When(x => !string.IsNullOrEmpty(x.BillingStateProvince));
+        RuleFor(x => x.BillingPostalCode).NotEmpty().MaximumLength(20).WithErrorCode("INVALID_BILLING_ADDRESS").WithMessage("Billing postal code is required (max 20 characters).");
+
+        RuleFor(x => x.BillingCountryCode)
+            .NotEmpty().WithErrorCode("INVALID_BILLING_ADDRESS").WithMessage("Billing country code is required.")
+            .Length(2).WithErrorCode("INVALID_BILLING_ADDRESS").WithMessage("Billing country code must be a 2-letter ISO 3166-1 alpha-2 code.")
+            .Must(code => ValidateCountryCodeSync(nomenclatureResolver, featureManager, code))
+            .WithErrorCode("INVALID_COUNTRY_CODE")
+            .WithMessage(x => $"The country code '{x.BillingCountryCode}' is not recognized. Please select a valid country.");
+
         RuleFor(x => x.Notes).MaximumLength(2000).WithErrorCode("INVALID_NOTES").When(x => !string.IsNullOrEmpty(x.Notes));
         RuleFor(x => x.Lines).NotEmpty().WithErrorCode("SO_MUST_HAVE_LINES").WithMessage("Sales order must have at least one line.");
 

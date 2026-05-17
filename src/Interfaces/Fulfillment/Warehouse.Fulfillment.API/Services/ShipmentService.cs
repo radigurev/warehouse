@@ -37,6 +37,7 @@ public sealed class ShipmentService : BaseFulfillmentEntityService, IShipmentSer
     private readonly ICorrelationIdAccessor _correlationIdAccessor;
     private readonly IFulfillmentEventService _eventService;
     private readonly INomenclatureResolver _nomenclatureResolver;
+    private readonly IFulfillmentLookupResolver _lookupResolver;
 
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
@@ -47,13 +48,15 @@ public sealed class ShipmentService : BaseFulfillmentEntityService, IShipmentSer
         IPublishEndpoint publishEndpoint,
         ICorrelationIdAccessor correlationIdAccessor,
         IFulfillmentEventService eventService,
-        INomenclatureResolver nomenclatureResolver)
+        INomenclatureResolver nomenclatureResolver,
+        IFulfillmentLookupResolver lookupResolver)
         : base(context, mapper)
     {
         _publishEndpoint = publishEndpoint;
         _correlationIdAccessor = correlationIdAccessor;
         _eventService = eventService;
         _nomenclatureResolver = nomenclatureResolver;
+        _lookupResolver = lookupResolver;
     }
 
     /// <inheritdoc />
@@ -109,7 +112,7 @@ public sealed class ShipmentService : BaseFulfillmentEntityService, IShipmentSer
         Shipment? shipment = await GetShipmentWithDetailsAsync(id, cancellationToken).ConfigureAwait(false);
         if (shipment is null) return Result<ShipmentDetailDto>.Failure("SHIPMENT_NOT_FOUND", "Shipment not found.", 404);
         ShipmentDetailDto dto = Mapper.Map<ShipmentDetailDto>(shipment);
-        dto = await EnrichDetailDtoAsync(dto, cancellationToken).ConfigureAwait(false);
+        dto = await EnrichDetailDtoAsync(dto, shipment, cancellationToken).ConfigureAwait(false);
         return Result<ShipmentDetailDto>.Success(dto);
     }
 
@@ -120,7 +123,11 @@ public sealed class ShipmentService : BaseFulfillmentEntityService, IShipmentSer
         int totalCount = await query.CountAsync(cancellationToken).ConfigureAwait(false);
 
         IQueryable<Shipment> sorted = request.SortDescending ? query.OrderByDescending(s => s.DispatchedAtUtc) : query.OrderBy(s => s.DispatchedAtUtc);
-        List<Shipment> items = await sorted.Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync(cancellationToken).ConfigureAwait(false);
+        List<Shipment> items = await sorted
+            .Include(s => s.SalesOrder)
+            .Include(s => s.Carrier)
+            .Skip((request.Page - 1) * request.PageSize).Take(request.PageSize)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
         IReadOnlyList<ShipmentDto> dtos = Mapper.Map<IReadOnlyList<ShipmentDto>>(items);
         PaginatedResponse<ShipmentDto> response = new() { Items = dtos, Page = request.Page, PageSize = request.PageSize, TotalCount = totalCount };
         return Result<PaginatedResponse<ShipmentDto>>.Success(response);
@@ -145,7 +152,7 @@ public sealed class ShipmentService : BaseFulfillmentEntityService, IShipmentSer
         await _eventService.RecordEventAsync("ShipmentStatusUpdated", "Shipment", id, userId, null, cancellationToken).ConfigureAwait(false);
 
         ShipmentDetailDto dto = Mapper.Map<ShipmentDetailDto>(shipment);
-        dto = await EnrichDetailDtoAsync(dto, cancellationToken).ConfigureAwait(false);
+        dto = await EnrichDetailDtoAsync(dto, shipment, cancellationToken).ConfigureAwait(false);
         return Result<ShipmentDetailDto>.Success(dto);
     }
 
@@ -161,16 +168,82 @@ public sealed class ShipmentService : BaseFulfillmentEntityService, IShipmentSer
     }
 
     /// <summary>
-    /// Resolves the shipping country name from Nomenclature cache and enriches the DTO.
+    /// Enriches the shipment detail DTO with shipping country name, per-line product codes/names,
+    /// and a hydrated list of parcels loaded from the sales-order scope.
     /// </summary>
     private async Task<ShipmentDetailDto> EnrichDetailDtoAsync(
-        ShipmentDetailDto dto, CancellationToken cancellationToken)
+        ShipmentDetailDto dto,
+        Shipment shipment,
+        CancellationToken cancellationToken)
     {
         string? countryName = await _nomenclatureResolver
             .ResolveCountryNameAsync(dto.ShippingCountryCode, cancellationToken)
             .ConfigureAwait(false);
 
-        return dto with { ShippingCountryName = countryName };
+        IReadOnlyList<SalesOrderParcelSummaryDto> parcels =
+            await LoadParcelsAsync(shipment.SalesOrderId, cancellationToken).ConfigureAwait(false);
+
+        IReadOnlyCollection<int> lineProductIds = dto.Lines.Select(l => l.ProductId).Distinct().ToArray();
+        IReadOnlyCollection<int> parcelProductIds = parcels.SelectMany(p => p.Items.Select(i => i.ProductId)).Distinct().ToArray();
+        IReadOnlyCollection<int> allProductIds = lineProductIds.Concat(parcelProductIds).Distinct().ToArray();
+
+        IReadOnlyDictionary<int, (string Code, string Name)> products =
+            await _lookupResolver.ResolveProductsAsync(allProductIds, cancellationToken).ConfigureAwait(false);
+
+        IReadOnlyList<ShipmentLineDto> enrichedLines = dto.Lines
+            .Select(l => EnrichShipmentLine(l, products))
+            .ToArray();
+
+        IReadOnlyList<SalesOrderParcelSummaryDto> enrichedParcels = parcels
+            .Select(p => EnrichParcel(p, products))
+            .ToArray();
+
+        return dto with
+        {
+            ShippingCountryName = countryName,
+            Lines = enrichedLines,
+            Parcels = enrichedParcels
+        };
+    }
+
+    /// <summary>
+    /// Loads parcel summaries for the sales order associated with a shipment.
+    /// </summary>
+    private async Task<IReadOnlyList<SalesOrderParcelSummaryDto>> LoadParcelsAsync(int salesOrderId, CancellationToken cancellationToken)
+    {
+        List<Parcel> parcels = await Context.Parcels
+            .AsNoTracking()
+            .Include(p => p.Items)
+            .Where(p => p.SalesOrderId == salesOrderId)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+        return Mapper.Map<IReadOnlyList<SalesOrderParcelSummaryDto>>(parcels);
+    }
+
+    /// <summary>
+    /// Returns a copy of the shipment line with product code/name hydrated from the lookup.
+    /// </summary>
+    private static ShipmentLineDto EnrichShipmentLine(
+        ShipmentLineDto line,
+        IReadOnlyDictionary<int, (string Code, string Name)> products)
+    {
+        if (!products.TryGetValue(line.ProductId, out (string Code, string Name) info))
+            return line;
+        return line with { ProductCode = info.Code, ProductName = info.Name };
+    }
+
+    /// <summary>
+    /// Returns a copy of the parcel with each item's product code/name resolved from the lookup.
+    /// </summary>
+    private static SalesOrderParcelSummaryDto EnrichParcel(
+        SalesOrderParcelSummaryDto parcel,
+        IReadOnlyDictionary<int, (string Code, string Name)> products)
+    {
+        IReadOnlyList<SalesOrderParcelItemSummaryDto> enrichedItems = parcel.Items
+            .Select(item => products.TryGetValue(item.ProductId, out (string Code, string Name) info)
+                ? item with { ProductCode = info.Code, ProductName = info.Name }
+                : item)
+            .ToArray();
+        return parcel with { Items = enrichedItems };
     }
 
     private static bool IsValidTransition(string currentStatus, string newStatus)
@@ -196,7 +269,13 @@ public sealed class ShipmentService : BaseFulfillmentEntityService, IShipmentSer
 
     private async Task<Shipment?> GetShipmentWithDetailsAsync(int id, CancellationToken cancellationToken)
     {
-        return await Context.Shipments.Include(s => s.Lines).Include(s => s.TrackingEntries).FirstOrDefaultAsync(s => s.Id == id, cancellationToken).ConfigureAwait(false);
+        return await Context.Shipments
+            .Include(s => s.Lines)
+            .Include(s => s.TrackingEntries)
+            .Include(s => s.SalesOrder)
+            .Include(s => s.Carrier)
+            .Include(s => s.CarrierServiceLevel)
+            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<string> GenerateShipmentNumberAsync(CancellationToken cancellationToken)

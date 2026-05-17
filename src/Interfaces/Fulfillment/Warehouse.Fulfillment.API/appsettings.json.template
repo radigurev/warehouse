@@ -29,7 +29,9 @@
     "Password": "warehouse"
   },
   "FeatureManagement": {
-    "EnableNomenclatureValidation": false
+    "EnableNomenclatureValidation": false,
+    "EnableSeedFulfillmentReferenceData": true,
+    "EnableSeedFulfillmentDemoData": false
   },
   "Kestrel": {
     "Endpoints": {

@@ -27,6 +27,7 @@ public sealed class ShipmentServiceTests : FulfillmentTestBase
     private Mock<ICorrelationIdAccessor> _mockCorrelationIdAccessor = null!;
     private Mock<IFulfillmentEventService> _mockEventService = null!;
     private Mock<INomenclatureResolver> _mockNomenclatureResolver = null!;
+    private Mock<IFulfillmentLookupResolver> _mockLookupResolver = null!;
     private ShipmentService _sut = null!;
 
     [SetUp]
@@ -37,7 +38,8 @@ public sealed class ShipmentServiceTests : FulfillmentTestBase
         _mockCorrelationIdAccessor = new Mock<ICorrelationIdAccessor>();
         _mockEventService = new Mock<IFulfillmentEventService>();
         _mockNomenclatureResolver = new Mock<INomenclatureResolver>();
-        _sut = new ShipmentService(Context, Mapper, _mockPublishEndpoint.Object, _mockCorrelationIdAccessor.Object, _mockEventService.Object, _mockNomenclatureResolver.Object);
+        _mockLookupResolver = new Mock<IFulfillmentLookupResolver>();
+        _sut = new ShipmentService(Context, Mapper, _mockPublishEndpoint.Object, _mockCorrelationIdAccessor.Object, _mockEventService.Object, _mockNomenclatureResolver.Object, _mockLookupResolver.Object);
     }
 
     [Test]
@@ -200,7 +202,7 @@ public sealed class ShipmentServiceTests : FulfillmentTestBase
         {
             Assert.That(result.IsSuccess, Is.True);
             Assert.That(result.Value!.Id, Is.EqualTo(shipment.Id));
-            Assert.That(result.Value.TrackingEntries, Has.Count.GreaterThanOrEqualTo(1));
+            Assert.That(result.Value.TrackingHistory, Has.Count.GreaterThanOrEqualTo(1));
         });
     }
 

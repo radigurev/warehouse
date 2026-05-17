@@ -25,6 +25,7 @@ public sealed class PickListServiceTests : FulfillmentTestBase
     private Mock<IPublishEndpoint> _mockPublishEndpoint = null!;
     private Mock<ICorrelationIdAccessor> _mockCorrelationIdAccessor = null!;
     private Mock<IFulfillmentEventService> _mockEventService = null!;
+    private Mock<IFulfillmentLookupResolver> _mockLookupResolver = null!;
     private PickListService _sut = null!;
 
     [SetUp]
@@ -34,7 +35,8 @@ public sealed class PickListServiceTests : FulfillmentTestBase
         _mockPublishEndpoint = new Mock<IPublishEndpoint>();
         _mockCorrelationIdAccessor = new Mock<ICorrelationIdAccessor>();
         _mockEventService = new Mock<IFulfillmentEventService>();
-        _sut = new PickListService(Context, Mapper, _mockPublishEndpoint.Object, _mockCorrelationIdAccessor.Object, _mockEventService.Object);
+        _mockLookupResolver = new Mock<IFulfillmentLookupResolver>();
+        _sut = new PickListService(Context, Mapper, _mockPublishEndpoint.Object, _mockCorrelationIdAccessor.Object, _mockEventService.Object, _mockLookupResolver.Object);
     }
 
     [Test]
@@ -188,7 +190,7 @@ public sealed class PickListServiceTests : FulfillmentTestBase
         Assert.Multiple(() =>
         {
             Assert.That(result.IsSuccess, Is.True);
-            Assert.That(result.Value!.ActualQuantity, Is.EqualTo(10m));
+            Assert.That(result.Value!.ActualPickedQuantity, Is.EqualTo(10m));
             Assert.That(result.Value.Status, Is.EqualTo(nameof(PickListStatus.Completed)));
         });
     }

@@ -17,17 +17,26 @@ public sealed record PickListLineDto
     /// <summary>Gets the product ID.</summary>
     public required int ProductId { get; init; }
 
+    /// <summary>Gets the optional product code resolved from the Inventory schema.</summary>
+    public string? ProductCode { get; init; }
+
+    /// <summary>Gets the optional product display name resolved from the Inventory schema.</summary>
+    public string? ProductName { get; init; }
+
     /// <summary>Gets the warehouse ID.</summary>
     public required int WarehouseId { get; init; }
 
-    /// <summary>Gets the optional location ID.</summary>
-    public int? LocationId { get; init; }
+    /// <summary>Gets the optional source location ID (mapped from entity LocationId).</summary>
+    public int? SourceLocationId { get; init; }
+
+    /// <summary>Gets the optional source location code resolved from the Inventory schema.</summary>
+    public string? SourceLocationCode { get; init; }
 
     /// <summary>Gets the requested pick quantity.</summary>
     public required decimal RequestedQuantity { get; init; }
 
-    /// <summary>Gets the actual picked quantity (null if not yet picked).</summary>
-    public decimal? ActualQuantity { get; init; }
+    /// <summary>Gets the actual picked quantity (null if not yet picked). Mapped from entity ActualQuantity.</summary>
+    public decimal? ActualPickedQuantity { get; init; }
 
     /// <summary>Gets the line pick status.</summary>
     public required string Status { get; init; }

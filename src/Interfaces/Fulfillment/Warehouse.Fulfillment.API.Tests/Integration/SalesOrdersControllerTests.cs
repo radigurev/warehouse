@@ -52,6 +52,10 @@ public sealed class SalesOrdersControllerTests : FulfillmentApiTestBase
             ShippingCity = "Springfield",
             ShippingPostalCode = "62704",
             ShippingCountryCode = "US",
+            BillingStreetLine1 = "123 Main St",
+            BillingCity = "Springfield",
+            BillingPostalCode = "62704",
+            BillingCountryCode = "US",
             Lines = []
         };
 
@@ -77,6 +81,10 @@ public sealed class SalesOrdersControllerTests : FulfillmentApiTestBase
             ShippingCity = "",
             ShippingPostalCode = "",
             ShippingCountryCode = "",
+            BillingStreetLine1 = "",
+            BillingCity = "",
+            BillingPostalCode = "",
+            BillingCountryCode = "",
             Lines = [new CreateSalesOrderLineRequest { ProductId = 0, OrderedQuantity = -1, UnitPrice = -1 }]
         };
 
@@ -170,6 +178,10 @@ public sealed class SalesOrdersControllerTests : FulfillmentApiTestBase
             ShippingCity = "Chicago",
             ShippingPostalCode = "60601",
             ShippingCountryCode = "US",
+            BillingStreetLine1 = "456 Updated Ave",
+            BillingCity = "Chicago",
+            BillingPostalCode = "60601",
+            BillingCountryCode = "US",
             Notes = "Updated notes"
         };
 
@@ -394,6 +406,10 @@ public sealed class SalesOrdersControllerTests : FulfillmentApiTestBase
             ShippingCity = "Springfield",
             ShippingPostalCode = "62704",
             ShippingCountryCode = "US",
+            BillingStreetLine1 = "123 Main St",
+            BillingCity = "Springfield",
+            BillingPostalCode = "62704",
+            BillingCountryCode = "US",
             Lines = [new CreateSalesOrderLineRequest { ProductId = 100, OrderedQuantity = 10m, UnitPrice = 25m }]
         };
 
@@ -419,6 +435,10 @@ public sealed class SalesOrdersControllerTests : FulfillmentApiTestBase
             ShippingCity = "Springfield",
             ShippingPostalCode = "62704",
             ShippingCountryCode = "US",
+            BillingStreetLine1 = "123 Main St",
+            BillingCity = "Springfield",
+            BillingPostalCode = "62704",
+            BillingCountryCode = "US",
             Lines = [new CreateSalesOrderLineRequest { ProductId = 100, OrderedQuantity = 10m, UnitPrice = 25m }]
         };
 
@@ -581,6 +601,10 @@ public sealed class SalesOrdersControllerTests : FulfillmentApiTestBase
             ShippingCity = "Springfield",
             ShippingPostalCode = "62704",
             ShippingCountryCode = "US",
+            BillingStreetLine1 = "123 Main St",
+            BillingCity = "Springfield",
+            BillingPostalCode = "62704",
+            BillingCountryCode = "US",
             Lines = [new CreateSalesOrderLineRequest { ProductId = 100, OrderedQuantity = 1m, UnitPrice = 10m }]
         };
 
@@ -589,5 +613,53 @@ public sealed class SalesOrdersControllerTests : FulfillmentApiTestBase
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    /// <summary>CHG-FIX-002 §2.1 — authenticated user with sales-orders:create gets a well-formed preview number.</summary>
+    [Test]
+    [Category("CHG-FIX-002")]
+    public async Task GetNextOrderNumber_WithCreatePermission_Returns200WithFormattedNumber()
+    {
+        // Arrange
+        HttpClient client = CreateAuthenticatedClient("sales-orders:create");
+
+        // Act
+        HttpResponseMessage response = await client.GetAsync("/api/v1/sales-orders/next-number");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        string body = await response.Content.ReadAsStringAsync();
+        string trimmed = body.Trim('"');
+        trimmed.Should().MatchRegex(@"^SO-\d{8}-\d{4}$");
+    }
+
+    /// <summary>CHG-FIX-002 §4 E1 — caller without sales-orders:create is rejected.</summary>
+    [Test]
+    [Category("CHG-FIX-002")]
+    public async Task GetNextOrderNumber_WithoutCreatePermission_Returns403()
+    {
+        // Arrange
+        HttpClient client = CreateAuthenticatedClient("sales-orders:read");
+
+        // Act
+        HttpResponseMessage response = await client.GetAsync("/api/v1/sales-orders/next-number");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    /// <summary>CHG-FIX-002 §4 E2 — anonymous caller is rejected.</summary>
+    [Test]
+    [Category("CHG-FIX-002")]
+    public async Task GetNextOrderNumber_Anonymous_Returns401()
+    {
+        // Arrange
+        HttpClient client = CreateClient();
+
+        // Act
+        HttpResponseMessage response = await client.GetAsync("/api/v1/sales-orders/next-number");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 }

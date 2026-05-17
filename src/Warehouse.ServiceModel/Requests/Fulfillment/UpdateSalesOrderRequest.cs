@@ -29,6 +29,24 @@ public sealed record UpdateSalesOrderRequest
     /// <summary>Gets the shipping address country code (ISO 3166-1 alpha-2). Required.</summary>
     public required string ShippingCountryCode { get; init; }
 
+    /// <summary>Gets the billing address street line 1. Required.</summary>
+    public required string BillingStreetLine1 { get; init; }
+
+    /// <summary>Gets the billing address street line 2. Optional.</summary>
+    public string? BillingStreetLine2 { get; init; }
+
+    /// <summary>Gets the billing address city. Required.</summary>
+    public required string BillingCity { get; init; }
+
+    /// <summary>Gets the billing address state/province. Optional.</summary>
+    public string? BillingStateProvince { get; init; }
+
+    /// <summary>Gets the billing address postal code. Required.</summary>
+    public required string BillingPostalCode { get; init; }
+
+    /// <summary>Gets the billing address country code (ISO 3166-1 alpha-2). Required.</summary>
+    public required string BillingCountryCode { get; init; }
+
     /// <summary>Gets the optional carrier ID.</summary>
     public int? CarrierId { get; init; }
 

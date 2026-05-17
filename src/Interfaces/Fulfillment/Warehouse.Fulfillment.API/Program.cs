@@ -27,6 +27,8 @@ try
 
     app.UseWarehousePipeline("Warehouse Fulfillment API v1");
 
+    await SeedDatabaseAsync(app);
+
     app.Run();
 }
 catch (Exception ex)
@@ -90,10 +92,20 @@ static void ConfigureApplicationServices(IServiceCollection services)
     services.AddScoped<IFulfillmentEventService, FulfillmentEventService>();
     services.AddScoped<IProductPriceResolver, ProductPriceResolver>();
     services.AddScoped<IProductPriceService, ProductPriceService>();
+    services.AddScoped<IFulfillmentLookupResolver, FulfillmentLookupResolver>();
     services.AddScoped<ISalesOrderService, SalesOrderService>();
     services.AddScoped<IPickListService, PickListService>();
     services.AddScoped<IPackingService, PackingService>();
     services.AddScoped<IShipmentService, ShipmentService>();
     services.AddScoped<ICarrierService, CarrierService>();
     services.AddScoped<ICustomerReturnService, CustomerReturnService>();
+
+    services.AddScoped<DatabaseSeeder>();
+}
+
+static async Task SeedDatabaseAsync(WebApplication app)
+{
+    using IServiceScope scope = app.Services.CreateScope();
+    DatabaseSeeder seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+    await seeder.SeedAsync(CancellationToken.None);
 }

@@ -14,6 +14,12 @@ public sealed record SalesOrderLineDto
     /// <summary>Gets the product ID.</summary>
     public required int ProductId { get; init; }
 
+    /// <summary>Gets the optional product code resolved from the Inventory schema.</summary>
+    public string? ProductCode { get; init; }
+
+    /// <summary>Gets the optional product name resolved from the Inventory schema.</summary>
+    public string? ProductName { get; init; }
+
     /// <summary>Gets the ordered quantity.</summary>
     public required decimal OrderedQuantity { get; init; }
 

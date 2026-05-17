@@ -42,6 +42,19 @@ public sealed class SalesOrdersController : BaseApiController
     public async Task<IActionResult> SearchSOsAsync([FromQuery] SearchSalesOrdersRequest request, CancellationToken cancellationToken)
     { Result<PaginatedResponse<SalesOrderDto>> result = await _soService.SearchAsync(request, cancellationToken); return ToActionResult(result); }
 
+    /// <summary>
+    /// Returns the next SO number that would be assigned to a sales order created now.
+    /// Preview only — no DB writes. See <c>CHG-FIX-002 §2.1</c>.
+    /// </summary>
+    [HttpGet("next-number")]
+    [RequirePermission("sales-orders:create")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetNextOrderNumberAsync(CancellationToken cancellationToken)
+    {
+        string next = await _soService.GetNextOrderNumberAsync(cancellationToken);
+        return Ok(next);
+    }
+
     /// <summary>Gets a sales order by ID with lines and progress.</summary>
     [HttpGet("{id:int}", Name = "GetSalesOrderById")]
     [RequirePermission("sales-orders:read")]

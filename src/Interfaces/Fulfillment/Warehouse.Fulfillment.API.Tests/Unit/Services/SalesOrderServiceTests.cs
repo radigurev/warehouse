@@ -24,6 +24,7 @@ public sealed class SalesOrderServiceTests : FulfillmentTestBase
     private Mock<IFulfillmentEventService> _mockEventService = null!;
     private Mock<INomenclatureResolver> _mockNomenclatureResolver = null!;
     private Mock<IProductPriceResolver> _mockPriceResolver = null!;
+    private Mock<IFulfillmentLookupResolver> _mockLookupResolver = null!;
     private SalesOrderService _sut = null!;
 
     [SetUp]
@@ -33,6 +34,7 @@ public sealed class SalesOrderServiceTests : FulfillmentTestBase
         _mockEventService = new Mock<IFulfillmentEventService>();
         _mockNomenclatureResolver = new Mock<INomenclatureResolver>();
         _mockPriceResolver = new Mock<IProductPriceResolver>();
+        _mockLookupResolver = new Mock<IFulfillmentLookupResolver>();
 
         // Default: resolver returns a stable $25 USD price so pre-existing tests that do not care
         // about price resolution continue to work. Override in specific tests when exercising the
@@ -49,7 +51,7 @@ public sealed class SalesOrderServiceTests : FulfillmentTestBase
                 CreatedByUserId = 1
             });
 
-        _sut = new SalesOrderService(Context, Mapper, _mockEventService.Object, _mockNomenclatureResolver.Object, _mockPriceResolver.Object);
+        _sut = new SalesOrderService(Context, Mapper, _mockEventService.Object, _mockNomenclatureResolver.Object, _mockPriceResolver.Object, _mockLookupResolver.Object);
     }
 
     [Test]
@@ -61,6 +63,8 @@ public sealed class SalesOrderServiceTests : FulfillmentTestBase
             CustomerId = 1, CustomerAccountId = 1, CurrencyCode = "USD", WarehouseId = 1,
             ShippingStreetLine1 = "123 Main St", ShippingCity = "Springfield",
             ShippingPostalCode = "62704", ShippingCountryCode = "US",
+            BillingStreetLine1 = "123 Main St", BillingCity = "Springfield",
+            BillingPostalCode = "62704", BillingCountryCode = "US",
             Lines = [new CreateSalesOrderLineRequest { ProductId = 100, OrderedQuantity = 10, UnitPrice = 25 }]
         };
 
@@ -88,6 +92,8 @@ public sealed class SalesOrderServiceTests : FulfillmentTestBase
             CustomerId = 1, CustomerAccountId = 1, CurrencyCode = "USD", WarehouseId = 1,
             ShippingStreetLine1 = "123 Main St", ShippingCity = "Springfield",
             ShippingPostalCode = "62704", ShippingCountryCode = "US",
+            BillingStreetLine1 = "123 Main St", BillingCity = "Springfield",
+            BillingPostalCode = "62704", BillingCountryCode = "US",
             Lines = [new CreateSalesOrderLineRequest { ProductId = 100, OrderedQuantity = 5, UnitPrice = 10 }]
         };
 
@@ -107,6 +113,8 @@ public sealed class SalesOrderServiceTests : FulfillmentTestBase
             CustomerId = 1, CustomerAccountId = 1, CurrencyCode = "USD", WarehouseId = 1,
             ShippingStreetLine1 = "123 Main St", ShippingCity = "Springfield",
             ShippingPostalCode = "62704", ShippingCountryCode = "US",
+            BillingStreetLine1 = "123 Main St", BillingCity = "Springfield",
+            BillingPostalCode = "62704", BillingCountryCode = "US",
             Lines =
             [
                 new CreateSalesOrderLineRequest { ProductId = 100, OrderedQuantity = 10, UnitPrice = 25 },
@@ -130,6 +138,8 @@ public sealed class SalesOrderServiceTests : FulfillmentTestBase
             CustomerId = 1, CustomerAccountId = 1, CurrencyCode = "USD", WarehouseId = 1,
             ShippingStreetLine1 = "123 Main St", ShippingCity = "Springfield",
             ShippingPostalCode = "62704", ShippingCountryCode = "US",
+            BillingStreetLine1 = "123 Main St", BillingCity = "Springfield",
+            BillingPostalCode = "62704", BillingCountryCode = "US",
             Lines = [new CreateSalesOrderLineRequest { ProductId = 100, OrderedQuantity = 5, UnitPrice = 10 }]
         };
 
@@ -186,7 +196,9 @@ public sealed class SalesOrderServiceTests : FulfillmentTestBase
         UpdateSalesOrderRequest request = new()
         {
             WarehouseId = 2, ShippingStreetLine1 = "456 Oak Ave",
-            ShippingCity = "Portland", ShippingPostalCode = "97201", ShippingCountryCode = "US"
+            ShippingCity = "Portland", ShippingPostalCode = "97201", ShippingCountryCode = "US",
+            BillingStreetLine1 = "456 Oak Ave",
+            BillingCity = "Portland", BillingPostalCode = "97201", BillingCountryCode = "US"
         };
 
         // Act
@@ -208,7 +220,9 @@ public sealed class SalesOrderServiceTests : FulfillmentTestBase
         UpdateSalesOrderRequest request = new()
         {
             WarehouseId = 2, ShippingStreetLine1 = "456 Oak Ave",
-            ShippingCity = "Portland", ShippingPostalCode = "97201", ShippingCountryCode = "US"
+            ShippingCity = "Portland", ShippingPostalCode = "97201", ShippingCountryCode = "US",
+            BillingStreetLine1 = "456 Oak Ave",
+            BillingCity = "Portland", BillingPostalCode = "97201", BillingCountryCode = "US"
         };
 
         // Act
@@ -931,6 +945,10 @@ public sealed class SalesOrderServiceTests : FulfillmentTestBase
             ShippingCity = "Berlin",
             ShippingPostalCode = "10115",
             ShippingCountryCode = "DE",
+            BillingStreetLine1 = "123 Main St",
+            BillingCity = "Berlin",
+            BillingPostalCode = "10115",
+            BillingCountryCode = "DE",
             Lines = [new CreateSalesOrderLineRequest { ProductId = 400, OrderedQuantity = 1m, UnitPrice = 10m }]
         };
 
@@ -944,5 +962,58 @@ public sealed class SalesOrderServiceTests : FulfillmentTestBase
             Assert.That(result.Value!.CustomerAccountId, Is.EqualTo(77));
             Assert.That(result.Value.CurrencyCode, Is.EqualTo("EUR"));
         });
+    }
+
+    /// <summary>CHG-FIX-002 §2.1 — preview returns a well-formed SO number ending in 0001 when no SOs exist for today.</summary>
+    [Test]
+    [Category("CHG-FIX-002")]
+    public async Task GetNextOrderNumberAsync_NoExistingSOsToday_ReturnsSequence0001()
+    {
+        // Arrange
+        string expectedPrefix = $"SO-{DateTime.UtcNow:yyyyMMdd}-";
+
+        // Act
+        string next = await _sut.GetNextOrderNumberAsync(CancellationToken.None);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(next, Does.StartWith(expectedPrefix));
+            Assert.That(next, Does.EndWith("0001"));
+            Assert.That(next, Does.Match(@"^SO-\d{8}-\d{4}$"));
+        });
+    }
+
+    /// <summary>CHG-FIX-002 §2.1 — counter increments off existing same-day SOs.</summary>
+    [Test]
+    [Category("CHG-FIX-002")]
+    public async Task GetNextOrderNumberAsync_WithThreeExistingSOsToday_ReturnsSequence0004()
+    {
+        // Arrange
+        await SeedSalesOrderAsync();
+        await SeedSalesOrderAsync();
+        await SeedSalesOrderAsync();
+
+        // Act
+        string next = await _sut.GetNextOrderNumberAsync(CancellationToken.None);
+
+        // Assert
+        Assert.That(next, Does.EndWith("0004"));
+    }
+
+    /// <summary>CHG-FIX-002 §2.1 — preview is a pure read; calling it does not mutate the SalesOrders set.</summary>
+    [Test]
+    [Category("CHG-FIX-002")]
+    public async Task GetNextOrderNumberAsync_DoesNotMutateDatabase()
+    {
+        // Arrange
+        int countBefore = await Context.SalesOrders.CountAsync(CancellationToken.None);
+
+        // Act
+        await _sut.GetNextOrderNumberAsync(CancellationToken.None);
+
+        // Assert
+        int countAfter = await Context.SalesOrders.CountAsync(CancellationToken.None);
+        Assert.That(countAfter, Is.EqualTo(countBefore));
     }
 }

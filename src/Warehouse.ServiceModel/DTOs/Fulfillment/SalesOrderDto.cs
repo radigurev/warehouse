@@ -14,6 +14,9 @@ public sealed record SalesOrderDto
     /// <summary>Gets the customer ID.</summary>
     public required int CustomerId { get; init; }
 
+    /// <summary>Gets the customer display name resolved from the Customers schema. Null when unresolved.</summary>
+    public string? CustomerName { get; init; }
+
     /// <summary>Gets the customer account ID cached on the SO header. Added by CHG-FEAT-007.</summary>
     public required int CustomerAccountId { get; init; }
 
@@ -25,6 +28,9 @@ public sealed record SalesOrderDto
 
     /// <summary>Gets the ship-from warehouse ID.</summary>
     public required int WarehouseId { get; init; }
+
+    /// <summary>Gets the warehouse display name resolved from the Inventory schema. Null when unresolved.</summary>
+    public string? WarehouseName { get; init; }
 
     /// <summary>Gets the requested ship date.</summary>
     public DateOnly? RequestedShipDate { get; init; }

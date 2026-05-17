@@ -125,7 +125,7 @@ public sealed class PickListsControllerTests : FulfillmentApiTestBase
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         PickListLineDto? body = await response.Content.ReadFromJsonAsync<PickListLineDto>();
         body.Should().NotBeNull();
-        body!.ActualQuantity.Should().Be(10m);
+        body!.ActualPickedQuantity.Should().Be(10m);
         body.Status.Should().Be("Completed");
     }
 

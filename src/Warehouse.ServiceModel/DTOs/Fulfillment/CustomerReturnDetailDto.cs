@@ -14,8 +14,14 @@ public sealed record CustomerReturnDetailDto
     /// <summary>Gets the customer ID.</summary>
     public required int CustomerId { get; init; }
 
+    /// <summary>Gets the optional customer display name resolved from the Customers schema. Null when unresolved.</summary>
+    public string? CustomerName { get; init; }
+
     /// <summary>Gets the optional sales order ID.</summary>
     public int? SalesOrderId { get; init; }
+
+    /// <summary>Gets the optional parent sales order number resolved from the Fulfillment schema. Null when no SO linked or unresolved.</summary>
+    public string? SalesOrderNumber { get; init; }
 
     /// <summary>Gets the current status.</summary>
     public required string Status { get; init; }

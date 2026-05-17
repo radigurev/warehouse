@@ -1,7 +1,7 @@
 namespace Warehouse.ServiceModel.DTOs.Fulfillment;
 
 /// <summary>
-/// Full shipment representation including lines, carrier, and tracking details.
+/// Full shipment representation including lines, carrier, packed parcels, and tracking history.
 /// </summary>
 public sealed record ShipmentDetailDto
 {
@@ -14,11 +14,20 @@ public sealed record ShipmentDetailDto
     /// <summary>Gets the sales order ID.</summary>
     public required int SalesOrderId { get; init; }
 
+    /// <summary>Gets the parent sales order number (mapped from SalesOrder.OrderNumber).</summary>
+    public required string SalesOrderNumber { get; init; }
+
     /// <summary>Gets the optional carrier ID.</summary>
     public int? CarrierId { get; init; }
 
+    /// <summary>Gets the optional carrier display name (from the local Fulfillment schema).</summary>
+    public string? CarrierName { get; init; }
+
     /// <summary>Gets the optional carrier service level ID.</summary>
     public int? CarrierServiceLevelId { get; init; }
+
+    /// <summary>Gets the optional carrier service level display name (from the local Fulfillment schema).</summary>
+    public string? CarrierServiceLevelName { get; init; }
 
     /// <summary>Gets the current status.</summary>
     public required string Status { get; init; }
@@ -56,9 +65,15 @@ public sealed record ShipmentDetailDto
     /// <summary>Gets the UTC dispatch timestamp.</summary>
     public required DateTime DispatchedAtUtc { get; init; }
 
+    /// <summary>Gets the ID of the user who dispatched the shipment.</summary>
+    public required int DispatchedByUserId { get; init; }
+
     /// <summary>Gets the collection of shipment lines.</summary>
     public required IReadOnlyList<ShipmentLineDto> Lines { get; init; }
 
-    /// <summary>Gets the collection of tracking entries.</summary>
-    public required IReadOnlyList<ShipmentTrackingDto> TrackingEntries { get; init; }
+    /// <summary>Gets the parcels packed into this shipment (loaded via sales-order scope).</summary>
+    public required IReadOnlyList<SalesOrderParcelSummaryDto> Parcels { get; init; }
+
+    /// <summary>Gets the collection of tracking entries recorded for this shipment (renamed from TrackingEntries).</summary>
+    public required IReadOnlyList<ShipmentTrackingDto> TrackingHistory { get; init; }
 }

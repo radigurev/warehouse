@@ -18,14 +18,20 @@ namespace Warehouse.Fulfillment.API.Services;
 public sealed class PackingService : BaseFulfillmentEntityService, IPackingService
 {
     private readonly IFulfillmentEventService _eventService;
+    private readonly IFulfillmentLookupResolver _lookupResolver;
 
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
     /// </summary>
-    public PackingService(FulfillmentDbContext context, IMapper mapper, IFulfillmentEventService eventService)
+    public PackingService(
+        FulfillmentDbContext context,
+        IMapper mapper,
+        IFulfillmentEventService eventService,
+        IFulfillmentLookupResolver lookupResolver)
         : base(context, mapper)
     {
         _eventService = eventService;
+        _lookupResolver = lookupResolver;
     }
 
     /// <inheritdoc />
@@ -55,6 +61,7 @@ public sealed class PackingService : BaseFulfillmentEntityService, IPackingServi
         await _eventService.RecordEventAsync("ParcelCreated", "Parcel", parcel.Id, userId, null, cancellationToken).ConfigureAwait(false);
 
         ParcelDto dto = Mapper.Map<ParcelDto>(parcel);
+        dto = await EnrichParcelDtoAsync(dto, cancellationToken).ConfigureAwait(false);
         return Result<ParcelDto>.Success(dto);
     }
 
@@ -64,6 +71,7 @@ public sealed class PackingService : BaseFulfillmentEntityService, IPackingServi
         Parcel? parcel = await Context.Parcels.Include(p => p.Items).FirstOrDefaultAsync(p => p.Id == parcelId && p.SalesOrderId == soId, cancellationToken).ConfigureAwait(false);
         if (parcel is null) return Result<ParcelDto>.Failure("PARCEL_NOT_FOUND", "Parcel not found.", 404);
         ParcelDto dto = Mapper.Map<ParcelDto>(parcel);
+        dto = await EnrichParcelDtoAsync(dto, cancellationToken).ConfigureAwait(false);
         return Result<ParcelDto>.Success(dto);
     }
 
@@ -72,6 +80,7 @@ public sealed class PackingService : BaseFulfillmentEntityService, IPackingServi
     {
         List<Parcel> parcels = await Context.Parcels.Include(p => p.Items).Where(p => p.SalesOrderId == soId).AsNoTracking().ToListAsync(cancellationToken).ConfigureAwait(false);
         IReadOnlyList<ParcelDto> dtos = Mapper.Map<IReadOnlyList<ParcelDto>>(parcels);
+        dtos = await EnrichParcelDtosAsync(dtos, cancellationToken).ConfigureAwait(false);
         return Result<IReadOnlyList<ParcelDto>>.Success(dtos);
     }
 
@@ -91,6 +100,7 @@ public sealed class PackingService : BaseFulfillmentEntityService, IPackingServi
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         ParcelDto dto = Mapper.Map<ParcelDto>(parcel);
+        dto = await EnrichParcelDtoAsync(dto, cancellationToken).ConfigureAwait(false);
         return Result<ParcelDto>.Success(dto);
     }
 
@@ -142,6 +152,7 @@ public sealed class PackingService : BaseFulfillmentEntityService, IPackingServi
         await CheckAndTransitionToPackedAsync(soId, cancellationToken).ConfigureAwait(false);
 
         ParcelItemDto dto = Mapper.Map<ParcelItemDto>(item);
+        dto = await EnrichParcelItemDtoAsync(dto, cancellationToken).ConfigureAwait(false);
         return Result<ParcelItemDto>.Success(dto);
     }
 
@@ -157,6 +168,64 @@ public sealed class PackingService : BaseFulfillmentEntityService, IPackingServi
         Context.ParcelItems.Remove(item);
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return Result.Success();
+    }
+
+    /// <summary>
+    /// Enriches a single parcel DTO's item list with product code/name from the Inventory schema.
+    /// </summary>
+    private async Task<ParcelDto> EnrichParcelDtoAsync(ParcelDto dto, CancellationToken cancellationToken)
+    {
+        if (dto.Items.Count == 0) return dto;
+
+        IReadOnlyCollection<int> productIds = dto.Items.Select(i => i.ProductId).Distinct().ToArray();
+        IReadOnlyDictionary<int, (string Code, string Name)> products =
+            await _lookupResolver.ResolveProductsAsync(productIds, cancellationToken).ConfigureAwait(false);
+
+        IReadOnlyList<ParcelItemDto> enrichedItems = dto.Items
+            .Select(item => EnrichItem(item, products))
+            .ToArray();
+
+        return dto with { Items = enrichedItems };
+    }
+
+    /// <summary>
+    /// Batch-enriches a list of parcel DTOs in a single Inventory lookup call.
+    /// </summary>
+    private async Task<IReadOnlyList<ParcelDto>> EnrichParcelDtosAsync(
+        IReadOnlyList<ParcelDto> dtos,
+        CancellationToken cancellationToken)
+    {
+        if (dtos.Count == 0) return dtos;
+
+        IReadOnlyCollection<int> productIds = dtos.SelectMany(p => p.Items.Select(i => i.ProductId)).Distinct().ToArray();
+        IReadOnlyDictionary<int, (string Code, string Name)> products =
+            await _lookupResolver.ResolveProductsAsync(productIds, cancellationToken).ConfigureAwait(false);
+
+        return dtos
+            .Select(p => p with { Items = p.Items.Select(item => EnrichItem(item, products)).ToArray() })
+            .ToArray();
+    }
+
+    /// <summary>
+    /// Enriches a single parcel item DTO with product code/name from the Inventory schema.
+    /// </summary>
+    private async Task<ParcelItemDto> EnrichParcelItemDtoAsync(ParcelItemDto dto, CancellationToken cancellationToken)
+    {
+        IReadOnlyDictionary<int, (string Code, string Name)> products =
+            await _lookupResolver.ResolveProductsAsync(new[] { dto.ProductId }, cancellationToken).ConfigureAwait(false);
+        return EnrichItem(dto, products);
+    }
+
+    /// <summary>
+    /// Returns a copy of the parcel item with product code/name hydrated from the lookup.
+    /// </summary>
+    private static ParcelItemDto EnrichItem(
+        ParcelItemDto item,
+        IReadOnlyDictionary<int, (string Code, string Name)> products)
+    {
+        if (!products.TryGetValue(item.ProductId, out (string Code, string Name) info))
+            return item;
+        return item with { ProductCode = info.Code, ProductName = info.Name };
     }
 
     private async Task CheckAndTransitionToPackedAsync(int soId, CancellationToken cancellationToken)

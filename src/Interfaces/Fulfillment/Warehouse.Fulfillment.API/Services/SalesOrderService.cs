@@ -22,6 +22,7 @@ public sealed class SalesOrderService : BaseFulfillmentEntityService, ISalesOrde
     private readonly IFulfillmentEventService _eventService;
     private readonly INomenclatureResolver _nomenclatureResolver;
     private readonly IProductPriceResolver _priceResolver;
+    private readonly IFulfillmentLookupResolver _lookupResolver;
 
     /// <summary>
     /// Initializes a new instance with the specified dependencies.
@@ -31,12 +32,14 @@ public sealed class SalesOrderService : BaseFulfillmentEntityService, ISalesOrde
         IMapper mapper,
         IFulfillmentEventService eventService,
         INomenclatureResolver nomenclatureResolver,
-        IProductPriceResolver priceResolver)
+        IProductPriceResolver priceResolver,
+        IFulfillmentLookupResolver lookupResolver)
         : base(context, mapper)
     {
         _eventService = eventService;
         _nomenclatureResolver = nomenclatureResolver;
         _priceResolver = priceResolver;
+        _lookupResolver = lookupResolver;
     }
 
     /// <inheritdoc />
@@ -54,7 +57,7 @@ public sealed class SalesOrderService : BaseFulfillmentEntityService, ISalesOrde
         if (!linesResult.IsSuccess)
             return Result<SalesOrderDetailDto>.Failure(linesResult.ErrorCode!, linesResult.ErrorMessage!, linesResult.StatusCode!.Value);
 
-        string orderNumber = await GenerateOrderNumberAsync(cancellationToken).ConfigureAwait(false);
+        string orderNumber = await GetNextOrderNumberAsync(cancellationToken).ConfigureAwait(false);
 
         SalesOrder so = new()
         {
@@ -65,6 +68,9 @@ public sealed class SalesOrderService : BaseFulfillmentEntityService, ISalesOrde
             ShippingStreetLine1 = request.ShippingStreetLine1, ShippingStreetLine2 = request.ShippingStreetLine2,
             ShippingCity = request.ShippingCity, ShippingStateProvince = request.ShippingStateProvince,
             ShippingPostalCode = request.ShippingPostalCode, ShippingCountryCode = request.ShippingCountryCode,
+            BillingStreetLine1 = request.BillingStreetLine1, BillingStreetLine2 = request.BillingStreetLine2,
+            BillingCity = request.BillingCity, BillingStateProvince = request.BillingStateProvince,
+            BillingPostalCode = request.BillingPostalCode, BillingCountryCode = request.BillingCountryCode,
             CarrierId = request.CarrierId, CarrierServiceLevelId = request.CarrierServiceLevelId,
             Notes = request.Notes, TotalAmount = 0, CreatedAtUtc = DateTime.UtcNow, CreatedByUserId = userId
         };
@@ -145,8 +151,36 @@ public sealed class SalesOrderService : BaseFulfillmentEntityService, ISalesOrde
         query = ApplySorting(query, request.SortBy, request.SortDescending);
         List<SalesOrder> items = await query.Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync(cancellationToken).ConfigureAwait(false);
         IReadOnlyList<SalesOrderDto> dtos = Mapper.Map<IReadOnlyList<SalesOrderDto>>(items);
+        dtos = await EnrichListDtosAsync(dtos, cancellationToken).ConfigureAwait(false);
         PaginatedResponse<SalesOrderDto> response = new() { Items = dtos, Page = request.Page, PageSize = request.PageSize, TotalCount = totalCount };
         return Result<PaginatedResponse<SalesOrderDto>>.Success(response);
+    }
+
+    /// <summary>
+    /// Batch-resolves customer and warehouse display names for the paginated list.
+    /// </summary>
+    private async Task<IReadOnlyList<SalesOrderDto>> EnrichListDtosAsync(
+        IReadOnlyList<SalesOrderDto> dtos,
+        CancellationToken cancellationToken)
+    {
+        if (dtos.Count == 0)
+            return dtos;
+
+        IReadOnlyCollection<int> customerIds = dtos.Select(d => d.CustomerId).Distinct().ToArray();
+        IReadOnlyCollection<int> warehouseIds = dtos.Select(d => d.WarehouseId).Distinct().ToArray();
+
+        IReadOnlyDictionary<int, string> customerNames =
+            await _lookupResolver.ResolveCustomerNamesAsync(customerIds, cancellationToken).ConfigureAwait(false);
+        IReadOnlyDictionary<int, string> warehouseNames =
+            await _lookupResolver.ResolveWarehouseNamesAsync(warehouseIds, cancellationToken).ConfigureAwait(false);
+
+        return dtos
+            .Select(d => d with
+            {
+                CustomerName = customerNames.GetValueOrDefault(d.CustomerId),
+                WarehouseName = warehouseNames.GetValueOrDefault(d.WarehouseId)
+            })
+            .ToArray();
     }
 
     /// <inheritdoc />
@@ -160,6 +194,9 @@ public sealed class SalesOrderService : BaseFulfillmentEntityService, ISalesOrde
         so.ShippingStreetLine1 = request.ShippingStreetLine1; so.ShippingStreetLine2 = request.ShippingStreetLine2;
         so.ShippingCity = request.ShippingCity; so.ShippingStateProvince = request.ShippingStateProvince;
         so.ShippingPostalCode = request.ShippingPostalCode; so.ShippingCountryCode = request.ShippingCountryCode;
+        so.BillingStreetLine1 = request.BillingStreetLine1; so.BillingStreetLine2 = request.BillingStreetLine2;
+        so.BillingCity = request.BillingCity; so.BillingStateProvince = request.BillingStateProvince;
+        so.BillingPostalCode = request.BillingPostalCode; so.BillingCountryCode = request.BillingCountryCode;
         so.CarrierId = request.CarrierId; so.CarrierServiceLevelId = request.CarrierServiceLevelId;
         so.Notes = request.Notes; so.ModifiedAtUtc = DateTime.UtcNow; so.ModifiedByUserId = userId;
         await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -323,24 +360,112 @@ public sealed class SalesOrderService : BaseFulfillmentEntityService, ISalesOrde
     }
 
     /// <summary>
-    /// Resolves the shipping country name from Nomenclature cache and enriches the DTO.
+    /// Enriches a SalesOrderDetailDto with cross-schema display names (customer, warehouse, product codes/names),
+    /// shipping country name, and the dispatched shipment (if any).
     /// </summary>
     private async Task<SalesOrderDetailDto> EnrichDetailDtoAsync(
         SalesOrderDetailDto dto, CancellationToken cancellationToken)
     {
-        string? countryName = await _nomenclatureResolver
+        string? shippingCountryName = await _nomenclatureResolver
             .ResolveCountryNameAsync(dto.ShippingCountryCode, cancellationToken)
             .ConfigureAwait(false);
 
-        return dto with { ShippingCountryName = countryName };
+        string? billingCountryName = dto.BillingCountryCode == dto.ShippingCountryCode
+            ? shippingCountryName
+            : await _nomenclatureResolver
+                .ResolveCountryNameAsync(dto.BillingCountryCode, cancellationToken)
+                .ConfigureAwait(false);
+
+        string? customerName = await _lookupResolver.ResolveCustomerNameAsync(dto.CustomerId, cancellationToken)
+            .ConfigureAwait(false);
+        string? warehouseName = await _lookupResolver.ResolveWarehouseNameAsync(dto.WarehouseId, cancellationToken)
+            .ConfigureAwait(false);
+
+        IReadOnlyCollection<int> lineProductIds = dto.Lines.Select(l => l.ProductId).ToArray();
+        IReadOnlyCollection<int> parcelProductIds = dto.Parcels.SelectMany(p => p.Items.Select(i => i.ProductId)).ToArray();
+        IReadOnlyCollection<int> allProductIds = lineProductIds.Concat(parcelProductIds).Distinct().ToArray();
+        IReadOnlyDictionary<int, (string Code, string Name)> productLookup =
+            await _lookupResolver.ResolveProductsAsync(allProductIds, cancellationToken).ConfigureAwait(false);
+
+        IReadOnlyList<SalesOrderLineDto> enrichedLines = dto.Lines
+            .Select(line => EnrichLine(line, productLookup))
+            .ToArray();
+
+        IReadOnlyList<SalesOrderParcelSummaryDto> enrichedParcels = dto.Parcels
+            .Select(parcel => EnrichParcel(parcel, productLookup))
+            .ToArray();
+
+        SalesOrderShipmentSummaryDto? shipment = await LoadShipmentSummaryAsync(dto.Id, cancellationToken)
+            .ConfigureAwait(false);
+
+        return dto with
+        {
+            ShippingCountryName = shippingCountryName,
+            BillingCountryName = billingCountryName,
+            CustomerName = customerName,
+            WarehouseName = warehouseName,
+            Lines = enrichedLines,
+            Parcels = enrichedParcels,
+            Shipment = shipment
+        };
+    }
+
+    /// <summary>
+    /// Returns a copy of <paramref name="line"/> with <c>ProductCode</c> and <c>ProductName</c> resolved from <paramref name="products"/>.
+    /// </summary>
+    private static SalesOrderLineDto EnrichLine(
+        SalesOrderLineDto line,
+        IReadOnlyDictionary<int, (string Code, string Name)> products)
+    {
+        if (!products.TryGetValue(line.ProductId, out (string Code, string Name) info))
+            return line;
+        return line with { ProductCode = info.Code, ProductName = info.Name };
+    }
+
+    /// <summary>
+    /// Returns a copy of <paramref name="parcel"/> with each item's product code/name resolved from <paramref name="products"/>.
+    /// </summary>
+    private static SalesOrderParcelSummaryDto EnrichParcel(
+        SalesOrderParcelSummaryDto parcel,
+        IReadOnlyDictionary<int, (string Code, string Name)> products)
+    {
+        IReadOnlyList<SalesOrderParcelItemSummaryDto> enrichedItems = parcel.Items
+            .Select(item => products.TryGetValue(item.ProductId, out (string Code, string Name) info)
+                ? item with { ProductCode = info.Code, ProductName = info.Name }
+                : item)
+            .ToArray();
+        return parcel with { Items = enrichedItems };
+    }
+
+    /// <summary>
+    /// Loads the dispatched shipment summary for a sales order, or null when no shipment exists yet.
+    /// </summary>
+    private async Task<SalesOrderShipmentSummaryDto?> LoadShipmentSummaryAsync(int salesOrderId, CancellationToken cancellationToken)
+    {
+        Shipment? shipment = await Context.Shipments
+            .AsNoTracking()
+            .Include(s => s.Carrier)
+            .Include(s => s.CarrierServiceLevel)
+            .Include(s => s.Lines)
+            .FirstOrDefaultAsync(s => s.SalesOrderId == salesOrderId, cancellationToken)
+            .ConfigureAwait(false);
+        return shipment is null ? null : Mapper.Map<SalesOrderShipmentSummaryDto>(shipment);
     }
 
     private async Task<SalesOrder?> GetSOWithDetailsAsync(int id, CancellationToken cancellationToken)
     {
-        return await Context.SalesOrders.Include(so => so.Lines).FirstOrDefaultAsync(so => so.Id == id, cancellationToken).ConfigureAwait(false);
+        return await Context.SalesOrders
+            .Include(so => so.Lines)
+            .Include(so => so.PickLists)
+            .Include(so => so.Parcels).ThenInclude(p => p.Items)
+            .Include(so => so.Carrier)
+            .Include(so => so.CarrierServiceLevel)
+            .FirstOrDefaultAsync(so => so.Id == id, cancellationToken)
+            .ConfigureAwait(false);
     }
 
-    private async Task<string> GenerateOrderNumberAsync(CancellationToken cancellationToken)
+    /// <inheritdoc />
+    public async Task<string> GetNextOrderNumberAsync(CancellationToken cancellationToken)
     {
         string datePrefix = $"SO-{DateTime.UtcNow:yyyyMMdd}-";
         int count = await Context.SalesOrders.CountAsync(so => so.OrderNumber.StartsWith(datePrefix), cancellationToken).ConfigureAwait(false);

@@ -163,6 +163,10 @@ public abstract class FulfillmentApiTestBase
             ShippingCity = "Springfield",
             ShippingPostalCode = "62704",
             ShippingCountryCode = "US",
+            BillingStreetLine1 = $"123 Main St #{sequence}",
+            BillingCity = "Springfield",
+            BillingPostalCode = "62704",
+            BillingCountryCode = "US",
             Lines = [new CreateSalesOrderLineRequest { ProductId = productId, OrderedQuantity = orderedQuantity, UnitPrice = unitPrice }]
         };
 

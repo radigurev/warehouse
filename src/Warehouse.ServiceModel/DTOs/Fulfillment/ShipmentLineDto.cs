@@ -17,8 +17,14 @@ public sealed record ShipmentLineDto
     /// <summary>Gets the product ID.</summary>
     public required int ProductId { get; init; }
 
-    /// <summary>Gets the shipped quantity.</summary>
-    public required decimal Quantity { get; init; }
+    /// <summary>Gets the optional product code resolved from the Inventory schema.</summary>
+    public string? ProductCode { get; init; }
+
+    /// <summary>Gets the optional product display name resolved from the Inventory schema.</summary>
+    public string? ProductName { get; init; }
+
+    /// <summary>Gets the shipped quantity (mapped from entity Quantity).</summary>
+    public required decimal ShippedQuantity { get; init; }
 
     /// <summary>Gets the optional location ID.</summary>
     public int? LocationId { get; init; }

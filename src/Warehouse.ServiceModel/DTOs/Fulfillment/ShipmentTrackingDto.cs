@@ -17,9 +17,9 @@ public sealed record ShipmentTrackingDto
     /// <summary>Gets the optional tracking notes.</summary>
     public string? Notes { get; init; }
 
-    /// <summary>Gets the UTC timestamp when this status was recorded.</summary>
-    public required DateTime OccurredAtUtc { get; init; }
+    /// <summary>Gets the UTC timestamp when this status was recorded (mapped from entity OccurredAtUtc).</summary>
+    public required DateTime UpdatedAtUtc { get; init; }
 
-    /// <summary>Gets the user who recorded this status.</summary>
-    public required int RecordedByUserId { get; init; }
+    /// <summary>Gets the user who recorded this status (mapped from entity RecordedByUserId).</summary>
+    public required int UpdatedByUserId { get; init; }
 }

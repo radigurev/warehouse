@@ -14,11 +14,23 @@ public sealed record CustomerReturnLineDto
     /// <summary>Gets the product ID.</summary>
     public required int ProductId { get; init; }
 
+    /// <summary>Gets the optional product code resolved from the Inventory schema.</summary>
+    public string? ProductCode { get; init; }
+
+    /// <summary>Gets the optional product display name resolved from the Inventory schema.</summary>
+    public string? ProductName { get; init; }
+
     /// <summary>Gets the warehouse ID.</summary>
     public required int WarehouseId { get; init; }
 
+    /// <summary>Gets the optional warehouse display name resolved from the Inventory schema.</summary>
+    public string? WarehouseName { get; init; }
+
     /// <summary>Gets the optional location ID.</summary>
     public int? LocationId { get; init; }
+
+    /// <summary>Gets the optional storage location code resolved from the Inventory schema.</summary>
+    public string? LocationCode { get; init; }
 
     /// <summary>Gets the return quantity.</summary>
     public required decimal Quantity { get; init; }

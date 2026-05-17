@@ -14,6 +14,9 @@ public sealed record CarrierDto
     /// <summary>Gets the carrier name.</summary>
     public required string Name { get; init; }
 
+    /// <summary>Gets the optional contact email address.</summary>
+    public string? ContactEmail { get; init; }
+
     /// <summary>Gets whether the carrier is active.</summary>
     public required bool IsActive { get; init; }
 

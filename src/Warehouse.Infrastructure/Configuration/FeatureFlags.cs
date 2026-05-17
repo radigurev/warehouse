@@ -47,4 +47,18 @@ public static class FeatureFlags
     /// When disabled, only format-level validation runs.
     /// </summary>
     public const string EnableNomenclatureValidation = "EnableNomenclatureValidation";
+
+    /// <summary>
+    /// Gates seeding of Fulfillment reference data (carriers and service levels) on startup.
+    /// Safe to enable in any environment — data is idempotent by carrier Code.
+    /// </summary>
+    public const string EnableSeedFulfillmentReferenceData = "EnableSeedFulfillmentReferenceData";
+
+    /// <summary>
+    /// Gates seeding of Fulfillment demo transactional data (product prices, sample sales orders
+    /// with full pick/pack/ship lifecycle, fulfillment events). Intended for dev/demo environments only.
+    /// Skipped automatically when required cross-schema references (admin user, customer, account,
+    /// warehouse, products) cannot be resolved.
+    /// </summary>
+    public const string EnableSeedFulfillmentDemoData = "EnableSeedFulfillmentDemoData";
 }

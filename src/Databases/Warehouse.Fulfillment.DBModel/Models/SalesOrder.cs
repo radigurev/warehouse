@@ -86,6 +86,36 @@ public sealed class SalesOrder : IEntity
     public required string ShippingCountryCode { get; set; }
 
     /// <summary>
+    /// Gets or sets the billing address street line 1 (max 200 characters).
+    /// </summary>
+    public required string BillingStreetLine1 { get; set; }
+
+    /// <summary>
+    /// Gets or sets the billing address street line 2 (max 200 characters).
+    /// </summary>
+    public string? BillingStreetLine2 { get; set; }
+
+    /// <summary>
+    /// Gets or sets the billing address city (max 100 characters).
+    /// </summary>
+    public required string BillingCity { get; set; }
+
+    /// <summary>
+    /// Gets or sets the billing address state/province (max 100 characters).
+    /// </summary>
+    public string? BillingStateProvince { get; set; }
+
+    /// <summary>
+    /// Gets or sets the billing address postal code (max 20 characters).
+    /// </summary>
+    public required string BillingPostalCode { get; set; }
+
+    /// <summary>
+    /// Gets or sets the billing address ISO 3166-1 alpha-2 country code (2 characters).
+    /// </summary>
+    public required string BillingCountryCode { get; set; }
+
+    /// <summary>
     /// Gets or sets the optional carrier ID (FK to fulfillment.Carriers).
     /// </summary>
     public int? CarrierId { get; set; }

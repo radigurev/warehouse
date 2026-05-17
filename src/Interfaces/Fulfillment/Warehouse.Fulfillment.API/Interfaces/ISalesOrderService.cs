@@ -14,6 +14,13 @@ public interface ISalesOrderService
     /// <summary>Creates a new sales order with lines.</summary>
     Task<Result<SalesOrderDetailDto>> CreateAsync(CreateSalesOrderRequest request, int userId, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Returns the next SO number that would be assigned to a sales order created right now.
+    /// Pure read; no DB writes. Format: <c>SO-{YYYYMMDD}-{NNNN}</c>, UTC date, daily-resetting counter.
+    /// See <c>CHG-FIX-002 §2.1</c>.
+    /// </summary>
+    Task<string> GetNextOrderNumberAsync(CancellationToken cancellationToken);
+
     /// <summary>Gets a sales order by ID with lines and progress.</summary>
     Task<Result<SalesOrderDetailDto>> GetByIdAsync(int id, CancellationToken cancellationToken);
 
