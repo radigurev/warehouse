@@ -15,6 +15,6 @@ const visible = ref(true);
 const id = computed(() => Number(route.params.id));
 
 function goBack(): void {
-  router.push({ name: 'carrier-detail', params: { id: route.params.id } });
+  router.push({ name: 'carriers' });
 }
 </script>

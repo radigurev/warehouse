@@ -114,6 +114,17 @@
       :loading="vm.cancelling"
       @confirm="vm.handleCancel"
     />
+
+    <CustomerReturnFormDialog
+      v-model="vm.showFormDialog"
+      @saved="onSaved"
+      @cancelled="vm.showFormDialog = false"
+    />
+
+    <CustomerReturnDetailDialog
+      v-model="vm.showDetailDialog"
+      :return-id="vm.selectedReturn?.id ?? null"
+    />
   </div>
 </template>
 
@@ -123,8 +134,15 @@ import { useCustomerReturnsView } from '@features/fulfillment/composables/useCus
 import ActionChip from '@shared/components/atoms/ActionChip.vue';
 import ColumnFilter from '@shared/components/molecules/ColumnFilter.vue';
 import ConfirmDialog from '@shared/components/molecules/ConfirmDialog.vue';
+import CustomerReturnFormDialog from '@features/fulfillment/components/organisms/CustomerReturnFormDialog.vue';
+import CustomerReturnDetailDialog from '@features/fulfillment/components/organisms/CustomerReturnDetailDialog.vue';
 
 const vm = reactive(useCustomerReturnsView());
+
+async function onSaved(): Promise<void> {
+  vm.showFormDialog = false;
+  await vm.reload();
+}
 
 function returnStatusColor(status: string): string {
   const map: Record<string, string> = {

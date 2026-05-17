@@ -70,6 +70,18 @@
       :loading="vm.deactivating"
       @confirm="vm.handleDeactivate"
     />
+
+    <CarrierFormDialog
+      v-model="vm.showFormDialog"
+      :carrier-id="vm.selectedCarrier?.id ?? null"
+      @saved="onSaved"
+      @cancelled="vm.showFormDialog = false"
+    />
+
+    <CarrierDetailDialog
+      v-model="vm.showDetailDialog"
+      :carrier-id="vm.selectedCarrier?.id ?? null"
+    />
   </div>
 </template>
 
@@ -80,6 +92,13 @@ import StatusChip from '@shared/components/atoms/StatusChip.vue';
 import ActionChip from '@shared/components/atoms/ActionChip.vue';
 import ColumnFilter from '@shared/components/molecules/ColumnFilter.vue';
 import ConfirmDialog from '@shared/components/molecules/ConfirmDialog.vue';
+import CarrierFormDialog from '@features/fulfillment/components/organisms/CarrierFormDialog.vue';
+import CarrierDetailDialog from '@features/fulfillment/components/organisms/CarrierDetailDialog.vue';
 
 const vm = reactive(useCarriersView());
+
+async function onSaved(): Promise<void> {
+  vm.showFormDialog = false;
+  await vm.reload();
+}
 </script>

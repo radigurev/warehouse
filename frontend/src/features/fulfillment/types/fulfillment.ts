@@ -68,15 +68,17 @@ export interface SalesOrderDetailDto {
   id: number;
   orderNumber: string;
   customerId: number;
-  customerName: string;
+  customerName?: string | null;
+  customerAccountId?: number;
+  currencyCode?: string;
   status: SalesOrderStatus;
   warehouseId: number;
-  warehouseName: string;
+  warehouseName?: string | null;
   requestedShipDate: string | null;
   carrierId: number | null;
-  carrierName: string | null;
+  carrierName?: string | null;
   carrierServiceLevelId: number | null;
-  carrierServiceLevelName: string | null;
+  carrierServiceLevelName?: string | null;
   shippingStreetLine1: string;
   shippingStreetLine2: string | null;
   shippingCity: string;
@@ -84,17 +86,24 @@ export interface SalesOrderDetailDto {
   shippingPostalCode: string;
   shippingCountryCode: string;
   shippingCountryName?: string | null;
+  billingStreetLine1: string;
+  billingStreetLine2: string | null;
+  billingCity: string;
+  billingStateProvince: string | null;
+  billingPostalCode: string;
+  billingCountryCode: string;
+  billingCountryName?: string | null;
   notes: string | null;
   totalAmount: number;
-  createdByUserId: number;
+  createdByUserId?: number;
   createdAtUtc: string;
   confirmedAtUtc: string | null;
   shippedAtUtc: string | null;
   completedAtUtc: string | null;
   lines: SalesOrderLineDto[];
-  pickLists: PickListSummaryDto[];
-  parcels: ParcelDto[];
-  shipment: ShipmentSummaryDto | null;
+  pickLists?: PickListSummaryDto[];
+  parcels?: ParcelDto[];
+  shipment?: ShipmentSummaryDto | null;
 }
 
 export interface SalesOrderLineDto {
@@ -258,6 +267,16 @@ export interface ShipmentSummaryDto {
   id: number;
   shipmentNumber: string;
   status: ShipmentStatus;
+  carrierId?: number | null;
+  carrierName?: string | null;
+  carrierServiceLevelId?: number | null;
+  carrierServiceLevelName?: string | null;
+  trackingNumber?: string | null;
+  trackingUrl?: string | null;
+  notes?: string | null;
+  lineCount?: number;
+  totalQuantity?: number;
+  dispatchedByUserId?: number;
   dispatchedAtUtc: string;
 }
 
@@ -368,6 +387,8 @@ export interface FulfillmentEventDto {
 
 export interface CreateSalesOrderRequest {
   customerId: number;
+  customerAccountId: number;
+  currencyCode: string;
   warehouseId: number;
   requestedShipDate?: string | null;
   carrierId?: number | null;
@@ -378,6 +399,12 @@ export interface CreateSalesOrderRequest {
   shippingStateProvince?: string | null;
   shippingPostalCode: string;
   shippingCountryCode: string;
+  billingStreetLine1: string;
+  billingStreetLine2?: string | null;
+  billingCity: string;
+  billingStateProvince?: string | null;
+  billingPostalCode: string;
+  billingCountryCode: string;
   notes?: string | null;
   lines: CreateSalesOrderLineRequest[];
 }
@@ -400,6 +427,12 @@ export interface UpdateSalesOrderRequest {
   shippingStateProvince?: string | null;
   shippingPostalCode: string;
   shippingCountryCode: string;
+  billingStreetLine1: string;
+  billingStreetLine2?: string | null;
+  billingCity: string;
+  billingStateProvince?: string | null;
+  billingPostalCode: string;
+  billingCountryCode: string;
   notes?: string | null;
 }
 

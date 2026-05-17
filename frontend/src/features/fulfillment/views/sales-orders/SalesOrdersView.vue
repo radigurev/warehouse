@@ -65,8 +65,10 @@
           <ActionChip :label="vm.t('salesOrders.viewDetails')" icon="mdi-eye" color="info" :compact="vm.layout.isCompact" @click="vm.handleDetail(item)" />
           <ActionChip v-if="item.status === 'Draft'" :label="vm.t('common.edit')" icon="mdi-pencil" color="primary" :compact="vm.layout.isCompact" @click="vm.handleEdit(item)" />
           <ActionChip v-if="item.status === 'Draft'" :label="vm.t('salesOrders.confirm')" icon="mdi-check" color="success" :compact="vm.layout.isCompact" @click="vm.openConfirmDialog(item)" />
-          <ActionChip v-if="item.status === 'Draft' || item.status === 'Confirmed'" :label="vm.t('salesOrders.cancel')" icon="mdi-close" color="error" :compact="vm.layout.isCompact" @click="vm.openCancelDialog(item)" />
+          <ActionChip v-if="vm.canGeneratePickList(item)" :label="vm.t('salesOrders.generatePickList')" icon="mdi-clipboard-list" color="amber" :compact="vm.layout.isCompact" @click="vm.openGeneratePickListDialog(item)" />
+          <ActionChip v-if="vm.canDispatch(item)" :label="vm.t('salesOrders.dispatch')" icon="mdi-truck-fast" color="teal" :compact="vm.layout.isCompact" @click="vm.openDispatchDialog(item)" />
           <ActionChip v-if="item.status === 'Shipped'" :label="vm.t('salesOrders.complete')" icon="mdi-check-all" color="green" :compact="vm.layout.isCompact" @click="vm.openCompleteDialog(item)" />
+          <ActionChip v-if="item.status === 'Draft' || item.status === 'Confirmed'" :label="vm.t('salesOrders.cancel')" icon="mdi-close" color="error" :compact="vm.layout.isCompact" @click="vm.openCancelDialog(item)" />
         </template>
 
         <template #tfoot>
@@ -111,6 +113,35 @@
       :loading="vm.completing"
       @confirm="vm.handleComplete"
     />
+
+    <ConfirmDialog
+      v-model="vm.showGeneratePickListDialog"
+      :title="vm.t('salesOrders.generatePickList')"
+      :message="vm.t('salesOrders.generatePickListMessage', { orderNumber: vm.selectedOrder?.orderNumber })"
+      :confirm-text="vm.t('salesOrders.generatePickList')"
+      color="amber"
+      icon="mdi-clipboard-list"
+      :loading="vm.generatingPickList"
+      @confirm="vm.handleGeneratePickList"
+    />
+
+    <DispatchDialog
+      v-model="vm.showDispatchDialog"
+      :sales-order="vm.dispatchingOrder"
+      @dispatched="vm.onDispatched"
+    />
+
+    <SalesOrderFormDialog
+      v-model="vm.showFormDialog"
+      :so-id="vm.selectedOrder?.id ?? null"
+      @saved="onSaved"
+      @cancelled="vm.showFormDialog = false"
+    />
+
+    <SalesOrderDetailDialog
+      v-model="vm.showDetailDialog"
+      :so-id="vm.selectedOrder?.id ?? null"
+    />
   </div>
 </template>
 
@@ -120,8 +151,16 @@ import { useSalesOrdersView } from '@features/fulfillment/composables/useSalesOr
 import ActionChip from '@shared/components/atoms/ActionChip.vue';
 import ColumnFilter from '@shared/components/molecules/ColumnFilter.vue';
 import ConfirmDialog from '@shared/components/molecules/ConfirmDialog.vue';
+import SalesOrderFormDialog from '@features/fulfillment/components/organisms/SalesOrderFormDialog.vue';
+import SalesOrderDetailDialog from '@features/fulfillment/components/organisms/SalesOrderDetailDialog.vue';
+import DispatchDialog from '@features/fulfillment/components/organisms/DispatchDialog.vue';
 
 const vm = reactive(useSalesOrdersView());
+
+async function onSaved(): Promise<void> {
+  vm.showFormDialog = false;
+  await vm.reload();
+}
 
 function soStatusColor(status: string): string {
   const map: Record<string, string> = {

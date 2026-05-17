@@ -1,7 +1,14 @@
 import { ref, computed } from 'vue';
 import { useListView } from '@shared/composables/useListView';
-import { searchSalesOrders, confirmSalesOrder, cancelSalesOrder, completeSalesOrder } from '@features/fulfillment/api/sales-orders';
-import type { SalesOrderDto, SearchSalesOrdersRequest } from '@features/fulfillment/types/fulfillment';
+import {
+  searchSalesOrders,
+  confirmSalesOrder,
+  cancelSalesOrder,
+  completeSalesOrder,
+  getSalesOrderById,
+} from '@features/fulfillment/api/sales-orders';
+import { generatePickList } from '@features/fulfillment/api/pick-lists';
+import type { SalesOrderDto, SalesOrderDetailDto, SearchSalesOrdersRequest } from '@features/fulfillment/types/fulfillment';
 import { getApiErrorMessage } from '@shared/utils/getApiErrorMessage';
 import { useNotificationStore } from '@shared/stores/notification';
 import { useI18n } from 'vue-i18n';
@@ -27,9 +34,13 @@ export function useSalesOrdersView() {
   const showConfirmDialog = ref(false);
   const showCancelDialog = ref(false);
   const showCompleteDialog = ref(false);
+  const showGeneratePickListDialog = ref(false);
+  const showDispatchDialog = ref(false);
   const confirming = ref(false);
   const cancelling = ref(false);
   const completing = ref(false);
+  const generatingPickList = ref(false);
+  const dispatchingOrder = ref<SalesOrderDetailDto | null>(null);
 
   const headers = computed(() => [
     { title: t('salesOrders.columns.orderNumber'), key: 'orderNumber', sortable: true },
@@ -71,6 +82,14 @@ export function useSalesOrdersView() {
     return order.status === 'Shipped';
   }
 
+  function canGeneratePickList(order: SalesOrderDto): boolean {
+    return order.status === 'Confirmed' || order.status === 'Picking';
+  }
+
+  function canDispatch(order: SalesOrderDto): boolean {
+    return order.status === 'Packed';
+  }
+
   function openConfirmDialog(order: SalesOrderDto): void {
     selectedOrder.value = order;
     showConfirmDialog.value = true;
@@ -84,6 +103,20 @@ export function useSalesOrdersView() {
   function openCompleteDialog(order: SalesOrderDto): void {
     selectedOrder.value = order;
     showCompleteDialog.value = true;
+  }
+
+  function openGeneratePickListDialog(order: SalesOrderDto): void {
+    selectedOrder.value = order;
+    showGeneratePickListDialog.value = true;
+  }
+
+  async function openDispatchDialog(order: SalesOrderDto): Promise<void> {
+    try {
+      dispatchingOrder.value = await getSalesOrderById(order.id);
+      showDispatchDialog.value = true;
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
+    }
   }
 
   async function handleConfirm(): Promise<void> {
@@ -131,26 +164,57 @@ export function useSalesOrdersView() {
     }
   }
 
+  async function handleGeneratePickList(): Promise<void> {
+    if (!selectedOrder.value) return;
+    generatingPickList.value = true;
+    try {
+      await generatePickList({ salesOrderId: selectedOrder.value.id });
+      notification.success(t('salesOrders.pickListGenerated') + ' \u2713');
+      showGeneratePickListDialog.value = false;
+      await base.reload();
+    } catch (err) {
+      notification.error(getApiErrorMessage(err, t));
+    } finally {
+      generatingPickList.value = false;
+    }
+  }
+
+  async function onDispatched(): Promise<void> {
+    showDispatchDialog.value = false;
+    dispatchingOrder.value = null;
+    await base.reload();
+  }
+
   return {
     ...base,
     selectedOrder,
     showConfirmDialog,
     showCancelDialog,
     showCompleteDialog,
+    showGeneratePickListDialog,
+    showDispatchDialog,
     confirming,
     cancelling,
     completing,
+    generatingPickList,
+    dispatchingOrder,
     headers,
     getStatusColor,
     canEdit,
     canConfirm,
     canCancel,
     canComplete,
+    canGeneratePickList,
+    canDispatch,
     openConfirmDialog,
     openCancelDialog,
     openCompleteDialog,
+    openGeneratePickListDialog,
+    openDispatchDialog,
     handleConfirm,
     handleCancel,
     handleComplete,
+    handleGeneratePickList,
+    onDispatched,
   };
 }

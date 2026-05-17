@@ -20,6 +20,10 @@ export const getSalesOrderById = base.getById;
 export const createSalesOrder = base.create;
 export const updateSalesOrder = base.update;
 
+export function getNextSalesOrderNumber(): Promise<string> {
+  return apiClient.get<string>('/sales-orders/next-number').then((r) => r.data);
+}
+
 export function confirmSalesOrder(id: number): Promise<void> {
   return apiClient.post(`/sales-orders/${id}/confirm`, {}).then(() => undefined);
 }

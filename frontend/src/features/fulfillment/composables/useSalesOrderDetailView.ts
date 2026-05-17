@@ -39,9 +39,15 @@ export function useSalesOrderDetailView() {
     loading.value = true;
     try {
       so.value = await getSalesOrderById(soId);
-      await loadConfirmedPickLines();
     } catch {
       notFound.value = true;
+      loading.value = false;
+      return;
+    }
+    try {
+      await loadConfirmedPickLines();
+    } catch {
+      confirmedPickLines.value = [];
     } finally {
       loading.value = false;
     }
@@ -163,7 +169,8 @@ export function useSalesOrderDetailView() {
       confirmedPickLines.value = [];
       return;
     }
-    const completedSummaries = so.value.pickLists.filter((pl) => pl.status === 'Completed');
+    const pickLists = so.value.pickLists ?? [];
+    const completedSummaries = pickLists.filter((pl) => pl.status === 'Completed');
     if (completedSummaries.length === 0) {
       confirmedPickLines.value = [];
       return;
